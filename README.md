@@ -16,7 +16,7 @@ You'll need:
     ```
 4. Create a Google Sheets file [with headings like this one](https://docs.google.com/spreadsheets/d/1fjxxy_qHj--F-DfDXmpkA1py26n-jc2b5pcXQHbOfI4/edit?usp=sharing)
 5. Copy the spreadsheet's ID (found in the URL between "/d/" and "/edit") to the "empty_config.py" file and rename it to "config.py"
-6. Run the program
+6. In the terminal, navigate to the folder you downloaded the project into and run the program
     ```sh
-    python3 job_spreadsheet_assistant.py
+    python job_spreadsheet_assistant.py
     ```
