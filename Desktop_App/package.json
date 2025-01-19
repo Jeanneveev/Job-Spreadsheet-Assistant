@@ -1,0 +1,22 @@
+{
+  "name": "job_spreadsheet_assistant_desktop_app",
+  "version": "1.0.0",
+  "description": "The desktop app version of the Job Spreadsheet Assistant terminal program",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Jeanneveev/Job-Spreadsheet-Assistant.git"
+  },
+  "author": "Genevieve Jones",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jeanneveev/Job-Spreadsheet-Assistant/issues"
+  },
+  "homepage": "https://github.com/Jeanneveev/Job-Spreadsheet-Assistant#readme",
+  "devDependencies": {
+    "electron": "^34.0.0"
+  }
+}
