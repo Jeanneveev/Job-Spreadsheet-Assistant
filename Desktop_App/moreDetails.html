@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <title>Job Spreadsheet Assistant</title>
+    </head>
+    <body>
+        <h2 id="question">Please note if this is a <span id="moreDetail">ON-SITE, REMOTE, or HYBRID job</span></h2>
+        <form onsubmit="handleDetail(event)">
+            <input type="radio" class="line-1" id="opt1" value="On-site" />
+            <label for="opt1">On-site</label>
+            <input type="radio" class="line-1" id="opt2" value="Remote" />
+            <label for="opt2">Remote</label>
+            <br />
+            <input type="radio" class="line-2" id="opt3" value="Hybrid" />
+            <label for="opt3">Hybrid</label>
+            <input type="radio" class="line-2" id="opt4" value="N/A" />
+            <label for="opt4">N/A</label>
+        </form>
+        <!-- <script src="renderer.js"></script> -->
+    </body>
+</html>
