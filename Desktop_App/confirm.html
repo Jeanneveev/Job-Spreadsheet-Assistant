@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <title>Job Spreadsheet Assistant</title>
+    </head>
+    <body>
+        <h2 id="question">Are you sure the <span id="detail">detail</span> is "<span id="value">value</span>"?</h2>
+        <form id="confirm" onsubmit="handleSubmit(event)">
+            <input type="text" id="user_input" disabled="True" />
+            <button type="submit" id="yes">Yes</button>
+            <button type="submit" id="no">No</button>
+        </form>
+        <script type="module" src="./confirm.js"></script>
+    </body>
+</html>
