@@ -10,10 +10,16 @@ const confirmationForm=document.getElementById("confirm");
 const yesBtn=document.getElementById("yes");
 var q=getQuestionNum();
 confirmationForm.addEventListener("submit", (event)=>{
-    // event.preventDefault();
+    event.preventDefault();
+    const detailType=sessionStorage.getItem("detailType");
+    console.log("Detail type is",detailType);
     if(event.submitter==yesBtn){
-        // pushToBackendList(passedValue);
-        q+=1;
+        pushToBackendList(passedValue);
+        if(detailType=="base"){
+            q+=2;
+        }else{
+            q+=1;
+        }
         setQuestionNum(q);
     }
     confirmationForm.action="index.html";

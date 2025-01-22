@@ -18,6 +18,8 @@ def addNumbers(num1,num2):
 
 @app.route("/appendToList/<some_value>", methods=["POST"])
 def appendToList(some_value):
+    if some_value=="null":
+        some_value=""
     list_o_details.append(some_value)
     print(f"Appended {some_value}")
     return {"value":some_value}

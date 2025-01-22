@@ -1,3 +1,5 @@
+const SERVER_URL = "http://127.0.0.1:5000";
+
 function getQuestionNum(){
     if(sessionStorage.getItem("questionNum")!==null){
         console.log("exists");

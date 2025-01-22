@@ -6,18 +6,63 @@
         <title>Job Spreadsheet Assistant</title>
     </head>
     <body>
-        <h2 id="question">Please note if this is a <span id="moreDetail">ON-SITE, REMOTE, or HYBRID job</span></h2>
-        <form onsubmit="handleDetail(event)">
-            <input type="radio" class="line-1" id="opt1" value="On-site" />
-            <label for="opt1">On-site</label>
-            <input type="radio" class="line-1" id="opt2" value="Remote" />
-            <label for="opt2">Remote</label>
-            <br />
-            <input type="radio" class="line-2" id="opt3" value="Hybrid" />
-            <label for="opt3">Hybrid</label>
-            <input type="radio" class="line-2" id="opt4" value="N/A" />
-            <label for="opt4">N/A</label>
+        <p id="errorMsg"></p>
+        <h2 id="question">Please note if this is a <span id="moreDetail">detail</span></h2>
+        <form id="extraForm">
+
         </form>
-        <!-- <script src="renderer.js"></script> -->
+        <script type="module">
+            import { getQuestionNum,setQuestionNum,pushToBackendList } from "./parent.js"
+            const extraForm=document.getElementById("extraForm");
+            const detail=document.getElementById("moreDetail");
+            const passedDetail=sessionStorage.getItem("detail");
+            
+            /**
+             * On load, set the value in the title and load the options in the form
+            */
+            window.addEventListener("load", (event)=>{
+                detail.innerText=passedDetail;
+                buildForm();
+            });
+            
+            function buildForm(){
+                const options=sessionStorage.getItem("options");
+                const optionsList=options.split(",");
+                //for each option in optionsList, append a radio button input with 
+                var i=0;
+                optionsList.forEach(option => {
+                    var input=document.createElement("input");
+                    input.id=`opt${i}`;
+                    input.setAttribute("type","radio");
+                    input.setAttribute("name","opt");
+                    input.setAttribute("value",option);
+                    input.setAttribute("required","")
+                    var label=document.createElement("label");
+                    label.htmlFor=`opt${i}`;
+                    label.innerText=option;
+                    extraForm.appendChild(input);
+                    extraForm.appendChild(label);
+                    i+=1;
+                });
+                var submit=document.createElement("button");
+                submit.setAttribute("type","submit");
+                submit.innerText="Submit";
+                extraForm.appendChild(submit);
+            }
+
+            extraForm.addEventListener("submit", (event)=>{
+                // event.preventDefault();
+                const selectedOpt=document.querySelector('input[name="opt"]:checked').value;  //get the checked option
+                const baseValue=sessionStorage.getItem("value");
+                // console.log(baseValue)
+                console.log("selected",selectedOpt);
+                const totalValue=baseValue+` (${selectedOpt})`;
+                pushToBackendList(totalValue);
+                sessionStorage.setItem("detail",sessionStorage.getItem("baseDetail"));
+                sessionStorage.setItem("value",totalValue);
+                extraForm.action="confirm.html";
+                extraForm.submit();
+            });
+        </script>
     </body>
 </html>
