@@ -153,7 +153,7 @@ def main():
                     print("That's not a valid answer, please type \"YEARLY\",\"MONTHLY\", \"HOURLY\" or \"N/A\"")
 
 
-    print("Okay! So, in review, the job details are:")
+    print("\n\nOkay! So, in review, the job details are:")
     print(f"Name: {name}")
     print(f"Employer: {employer}")
     print(f"Type: {job_type}")
@@ -163,7 +163,7 @@ def main():
     print(f"Salary: {salary}")
     check=input("Correct? (y/n): ")
     match check:
-        case "y":
+        case "y"|"":
             service=getService()
             # job_details={"name":name,"employer":employer,"type":job_type,
             #              "loc":location,"source":source,"link":link,"salary":salary,

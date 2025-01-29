@@ -12,7 +12,7 @@
 
         </form>
         <script type="module">
-            import { getQuestionNum,setQuestionNum,pushToBackendList } from "./parent.js"
+            import { getQuestionNum,setQuestionNum } from "./parent.js"
             const extraForm=document.getElementById("extraForm");
             const detail=document.getElementById("moreDetail");
             const passedDetail=sessionStorage.getItem("detail");
@@ -57,7 +57,6 @@
                 // console.log(baseValue)
                 console.log("selected",selectedOpt);
                 const totalValue=baseValue+` (${selectedOpt})`;
-                pushToBackendList(totalValue);
                 sessionStorage.setItem("detail",sessionStorage.getItem("baseDetail"));
                 sessionStorage.setItem("value",totalValue);
                 extraForm.action="confirm.html";

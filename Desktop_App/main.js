@@ -1,4 +1,5 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow } = require('electron');
+const { exec } = require("child_process");
 
 /**
  * Connects to the Flask app
@@ -39,7 +40,19 @@ const createWindow = () => {
  * When all the windows close, quit the app
  */
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit()
+    if (process.platform !== 'darwin'){
+        /* Kill the Flask app on close too */
+        exec("taskkill /f /t /im python.exe", (err, stdout, stderr) => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            console.log(`stdout: ${stdout}`);
+            console.log(`stderr: ${stderr}`);
+            console.log('Flask process terminated');
+        });
+        app.quit();
+    }
 });
 
 /**
