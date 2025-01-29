@@ -16,6 +16,7 @@ const detailTypeMap={0:"regular",1:"regular",2:"regular",
     3:"base",4:"addon",5:"regular",6:"regular",
     7:"base",8:"addon"
 }    //a map of the indices of details to whether it's a regular or add-odd question
+const sectionName=["Name","Employer","Type","Location","Source Name","Source Link","Salary"]
 const extraQuestionOptions={4:["On-site","Remote","Hybrid","N/A"],8:["Yearly","Monthly","Hourly","Daily","N/A"]} //map of the indices of extra questions to their list of options
 /* TODO: ADD ANOTHER DICT TO ALLOW CUSTOMIZATION OF ADD-ON VALUES IN THE BACKEND INSTEAD OF JUST base (addon) */
 detail.innerText=details[numCurrDetail];
@@ -127,7 +128,14 @@ window.addEventListener("load", (event)=>{
     // console.log("Window loaded");
     let q=getQuestionNum();
     if(q>numCurrDetail){
-        loadNextQuestion(q);
+        if(q<details.length){
+            loadNextQuestion(q);
+        }else{
+            //all questions answered, move onto summary page
+            const sections=sectionName.join(",");
+            sessionStorage.setItem("sections",sections);
+            window.location.href="summary.html";
+        }
     }
     console.log(q,numCurrDetail);
 })
