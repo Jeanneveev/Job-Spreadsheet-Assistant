@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <style>
+            label{
+                display: block;
+            }
+            .inline{
+                display: inline;
+            }
+            .addon-label{
+                padding-right: 4rem;
+            }
+            .q-type-2{
+                padding-left: 2rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Add Question</h1>
+        <form id="form">
+            <label>* Question:<input type="text" name="question" id="question" placeholder="Please enter the JOB NAME" required /></label>
+            <label>* Detail:<input type="text" name="detail" id="detail" placeholder="Job Name" required /></label>
+            
+            <!-- NOTE: To label a group of fields, use <fieldset> and <legend> -->
+            <fieldset>
+                <legend>* Question Type:</legend>
+                <label><input type="radio" name="q_type" id="singular_q" value="singular" required />Singular</label>
+                <label><input type="radio" name="q_type" id="two_part_q" value="two-part" required />Two-Part</label>
+                <label class="q-type-2"><input type="radio" name="q_type_2" id="base_q" value="base" disabled />Base</label>
+                <label class="inline q-type-2 addon-label"><input type="radio" name="q_type_2" id="addon_q" value="add-on" disabled />Add-On</label>
+                <label for="addon_to" class="inline">To:</label>
+                <select name="addon_to" class="inline" id="addon_to" disabled>
+                    <option value="" disabled selected>Select a Base Question</option>
+                </select>
+            </fieldset>
+            <fieldset>
+                <legend>* Answer Type:</legend>
+                <label><input type="radio" name="a_type" id="mult" value="multiple-choice" required />Multiple-Choice</label>
+                <label><input type="radio" name="a_type" id="open" value="open-ended" required />Open-Ended</label>
+            </fieldset>
+            <button type="button" onclick="window.location.href='viewQuestion.html'">Cancel</button>
+            <button type="submit" id="submit">Continue</button>
+        </form>
+        <p>*: Required</p>
+        <script>
+            const SERVER_URL = "http://127.0.0.1:5000";
+            const form=document.getElementById("form");
+            /* If Two-Part is selected, enable base and add-on, and re-disable when it isn't */
+            const twopart=document.getElementById("two_part_q");
+            const base=document.getElementById("base_q");
+            const addon=document.getElementById("addon_q");
+            const dropdown=document.getElementById("addon_to");
+            const qTypeRadios=document.querySelectorAll('input[name="q_type"]'); // Select all radios with name q_type
+            // The event listener has to be added to ALL radio buttons in the group
+            qTypeRadios.forEach(radio => {
+                radio.addEventListener("change", () => {
+                    if(twopart.checked) {
+                        base.disabled = false;
+                        addon.disabled = false;
+                    } else {
+                        base.disabled = true;
+                        addon.disabled = true;
+                        /* If you selected one before disabling, this will uncheck it */
+                        base.checked=false;
+                        addon.checked=false;
+                    }
+                });
+            });
+            /* If add-on is selected, enable the addon_to dropdown */
+            const qType2Radios=document.querySelectorAll('input[name="q_type_2"]');
+            qType2Radios.forEach(radio => {
+                radio.addEventListener("change", () => {
+                    if(addon.checked){
+                        dropdown.disabled=false;
+                    } else {
+                        dropdown.disabled=true;
+                    }
+                });
+            });
+
+            /* Populate the addon_to dropdown with all the base questions' details
+                In other words, get all nodes.questions.detail where node.question.q_type=base
+            */
+            async function getBaseNodes() {
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_all_base`,{
+                        method: "GET"
+                    });
+                    const baseNodesJSON=await response.json();
+                    const baseNodes=baseNodesJSON.result;
+                    baseNodes.forEach(node => {
+                        //append node as an option in the select
+                        const option=document.createElement("option");
+                        option.innerText=node;
+                        dropdown.appendChild(option);
+                    });
+                }catch(e){
+                    console.error(e);
+                }
+            }
+
+
+            
+            /* 
+                On form submit, pass the data to the backend, but don't redirect to it.
+                Go to the View Questions page instead
+            */
+            async function sendForm() {
+                const formData=new FormData(form);
+                try{
+                    const response=await fetch(`${SERVER_URL}/add_question`,{
+                        method: "POST",
+                        body: formData
+                    });
+                }catch(e){
+                    console.error(e);
+                }
+            }
+            form.addEventListener("submit", (event)=>{
+                event.preventDefault();
+                sendForm();
+                const fData = new FormData(form);
+                const radioButtonValue = fData.get('q_type');
+
+                console.log(radioButtonValue);
+                getBaseNodes();
+            });
+        </script>
+    </body>
+</html>
