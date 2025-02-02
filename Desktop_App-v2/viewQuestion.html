@@ -3,10 +3,143 @@
     <head>
         <meta charset='UTF-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <style>
+            table, td, th {  
+                border: 1px solid #ddd;
+                text-align: left;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            th, td {
+                padding: 15px;
+            }
+        </style>
     </head>
     <body>
         <button onclick="window.location.href='addQuestion.html'">Add Questions</button>
-        <p>Reached View Questions</p>
+        <table id="table">
+            <thead>
+                <tr>
+                    <th scope="col">Question</th>
+                    <th scope="col">Detail</th>
+                    <th scope="col">Q. Type</th>
+                    <th scope="col">A. Type</th>
+                    <!-- <th scope="col">Select</th> -->
+                </tr>
+            </thead>
+            <!-- Table details get inserted here -->
+        </table>
+        <button>Save Questions</button>
+        <button>Load Questions</button>
         <button onclick="window.location.href='index.html'">Back to Home</button>
+        <script>
+            const SERVER_URL = "http://127.0.0.1:5000";
+            const table=document.getElementById("table");
+
+            /* Get the JSON of all the questions
+                NOTE: Format is: list[dict[Node]]
+            */
+            async function get_JSON(){
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_ll_json`,{
+                        method: "GET"
+                    });
+                    const ll_json=await response.json();
+                    return ll_json.result;
+                }catch(error){
+                    console.error(error);
+                }
+            }
+
+            /* Make a table row based off of a dict of a Node */
+            function createQuestionRow(node){
+                const tr=document.createElement("tr");
+                const td_qstr=document.createElement("td");
+                const qstr=document.createTextNode(node.question.q_str);
+                const td_detail=document.createElement("td");
+                const qdetail=document.createTextNode(node.question.q_detail);
+                const td_qtype=document.createElement("td");
+                const qtype=document.createTextNode(node.question.q_type);
+                const td_atype=document.createElement("td");
+                const atype=document.createTextNode(node.question.a_type);
+
+                td_qstr.appendChild(qstr);
+                td_detail.appendChild(qdetail);
+                td_qtype.appendChild(qtype);
+                td_atype.appendChild(atype);
+                tr.appendChild(td_qstr);
+                tr.appendChild(td_detail);
+                tr.appendChild(td_qtype);
+                tr.appendChild(td_atype);
+                
+                return tr;
+            }
+            function createAddonRow(node){
+                const tr=document.createElement("tr");
+                const td_qstr=document.createElement("td");
+                const qstr=document.createTextNode(node.addon.q_str);
+                const td_detail=document.createElement("td");
+                const qdetail=document.createTextNode(node.addon.q_detail);
+                const td_qtype=document.createElement("td");
+                const qtype=document.createTextNode(node.addon.q_type);
+                const td_atype=document.createElement("td");
+                const atype=document.createTextNode(node.addon.a_type);
+
+                td_qstr.appendChild(qstr);
+                td_detail.appendChild(qdetail);
+                td_qtype.appendChild(qtype);
+                td_atype.appendChild(atype);
+                tr.appendChild(td_qstr);
+                tr.appendChild(td_detail);
+                tr.appendChild(td_qtype);
+                tr.appendChild(td_atype);
+                
+                return tr;
+            }
+            function appendToTable(node_list){
+                /* Add the nodes to the table
+                    NOTE: node includes "question" and maybe "addon" dicts
+                */
+                let tbody=document.createElement("tbody");
+                let question_row;
+                let addon_row;
+                console.log(node_list);
+                node_list.forEach(node => {
+                    // console.log("node is type",typeof(node));
+                    // console.log("question is type",typeof(node.question));
+                    console.log("q_str is of type",typeof(node.question.q_str));
+                    /* TODO: If node.addon, make a tbody */
+                    if(!("addon" in node)){
+                        console.log("addon not in row",node)
+                        question_row=createQuestionRow(node);
+                        tbody.appendChild(question_row);
+                    }else{
+                        /* Append the current tbody and any singular questions in it to the table */
+                        table.appendChild(tbody);
+                        /* Make a new tbody with only the base and addon questions */
+                        new_tbody=document.createElement("tbody");
+                        new_tbody.classList.add("grouped");
+                        question_row=createQuestionRow(node);
+                        addon_row=createAddonRow(node);
+                        new_tbody.appendChild(question_row);
+                        new_tbody.appendChild(addon_row);
+                        
+                        table.appendChild(new_tbody);
+                        tbody=document.createElement("tbody");
+                    }
+                });
+                table.appendChild(tbody);
+            }
+            window.addEventListener("load", (event) => {
+                console.log("page is fully loaded");
+                get_JSON().then((result)=>{
+                    appendToTable(result);
+                });
+            });
+        </script>
     </body>
 </html>

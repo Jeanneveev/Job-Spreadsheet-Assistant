@@ -27,7 +27,7 @@
                     },
                 }).then(response=>response.json()).then((data)=>{
                     //put the result inside the result p
-                    // document.getElementById("test").innerText = data.result;     //data.result should have the result from python script
+                    document.getElementById("test").innerText = data.result;     //data.result should have the result from python script
                 })
             }
             testConnection();

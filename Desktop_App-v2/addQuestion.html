@@ -20,6 +20,7 @@
     </head>
     <body>
         <h1>Add Question</h1>
+        <p id="message"></p>
         <form id="form">
             <label>* Question:<input type="text" name="question" id="question" placeholder="Please enter the JOB NAME" required /></label>
             <label>* Detail:<input type="text" name="detail" id="detail" placeholder="Job Name" required /></label>
@@ -48,6 +49,7 @@
         <script>
             const SERVER_URL = "http://127.0.0.1:5000";
             const form=document.getElementById("form");
+
             /* If Two-Part is selected, enable base and add-on, and re-disable when it isn't */
             const twopart=document.getElementById("two_part_q");
             const base=document.getElementById("base_q");
@@ -60,9 +62,14 @@
                     if(twopart.checked) {
                         base.disabled = false;
                         addon.disabled = false;
+                        base.required=true;
+                        addon.required=true;
                     } else {
                         base.disabled = true;
                         addon.disabled = true;
+                        dropdown.disabled=true;
+                        base.required=false;
+                        addon.required=false;
                         /* If you selected one before disabling, this will uncheck it */
                         base.checked=false;
                         addon.checked=false;
@@ -74,19 +81,21 @@
             qType2Radios.forEach(radio => {
                 radio.addEventListener("change", () => {
                     if(addon.checked){
+                        getBaseNodes();         //fill the dropdown
                         dropdown.disabled=false;
+                        dropdown.required=true; //if a question is an add-on, it must be linked to a base
                     } else {
                         dropdown.disabled=true;
+                        dropdown.required=false;
                     }
                 });
             });
-
             /* Populate the addon_to dropdown with all the base questions' details
                 In other words, get all nodes.questions.detail where node.question.q_type=base
             */
-            async function getBaseNodes() {
+            async function getBaseNodes(){
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_all_base`,{
+                    const response=await fetch(`${SERVER_URL}/get_all_base_details`,{
                         method: "GET"
                     });
                     const baseNodesJSON=await response.json();
@@ -102,16 +111,62 @@
                 }
             }
 
-
-            
+            /* 
+                Check that the q_detail of the question being added doesn't already exist
+            */
+           /* On form submit, pass the detail to a list to be easily accessed by checkDetail */
+            async function sendDetail(detail) {
+                try{
+                    const response=await fetch(`${SERVER_URL}/add_detail/${detail}`,{
+                        method: "POST",
+                        headers: {
+                            Accept: "application/json",
+                            "Content-Type": "application/json",
+                        }
+                    });
+                }catch(e){
+                    console.error(e);
+                }
+            }
+            async function checkUniqueDetail(detail_to_add){
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_all_details`,{
+                        method: "GET",
+                        headers: {
+                            Accept: "application/json",
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    const data=await response.json();
+                    const existing_details=data.result;
+                    console.log("existing details:", existing_details,". Checking detail", detail_to_add);
+                    if(existing_details.includes(detail_to_add)){
+                        return false;
+                    }else{
+                        console.log("Is unique");
+                        return true;
+                    }
+                }catch(e){
+                    console.error(e);
+                    return false;
+                }
+            }
             /* 
                 On form submit, pass the data to the backend, but don't redirect to it.
                 Go to the View Questions page instead
             */
             async function sendForm() {
                 const formData=new FormData(form);
+                let link="";
+                //if the question is an add-on, go to add_question/addon instead
+                if(formData.get("q_type_2")=="add-on"){
+                    link=`${SERVER_URL}/add_question/addon`;
+                    console.log("adding addon question");
+                }else{
+                    link=`${SERVER_URL}/add_question`;
+                }
                 try{
-                    const response=await fetch(`${SERVER_URL}/add_question`,{
+                    const response=await fetch(`${link}`,{
                         method: "POST",
                         body: formData
                     });
@@ -119,14 +174,28 @@
                     console.error(e);
                 }
             }
-            form.addEventListener("submit", (event)=>{
+            const message=document.getElementById("message");
+            form.addEventListener("submit", async (event)=>{
                 event.preventDefault();
-                sendForm();
                 const fData = new FormData(form);
-                const radioButtonValue = fData.get('q_type');
-
-                console.log(radioButtonValue);
-                getBaseNodes();
+                console.log(fData.get('q_type'));
+                if (fData.get('q_type_2')){
+                    console.log("QType2 is",fData.get('q_type_2'));
+                }
+                const qd=fData.get("detail");
+                console.log("q_detail is",qd);
+                /* Recieve the promise from  */
+                checkUniqueDetail(qd).then(result=>{
+                    isUniqueDetail=result;
+                    console.log("unique:",isUniqueDetail);
+                    if(isUniqueDetail==true){
+                        sendForm();
+                        sendDetail(qd);
+                        message.innerText="Question added!"
+                    }else{
+                        message.innerText="A question with this detail already exists. Please try again"
+                    }
+                });
             });
         </script>
     </body>
