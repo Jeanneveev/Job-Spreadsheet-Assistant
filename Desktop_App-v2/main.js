@@ -7,7 +7,7 @@ const { exec } = require("child_process");
 const connectToFlask=function(){
     let python;
     //test version
-    python = require('child_process').spawn('py', ['./py/routes.py']);
+    python = require('child_process').spawn('py', ['./py/test_routes.py']);
     //executable version
     //python = require('child_process').execFile("routes.exe");
     python.stdout.on('data', function (data) {  

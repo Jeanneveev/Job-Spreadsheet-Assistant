@@ -9,6 +9,7 @@
         <h1>Job Spreadsheet Assistant</h1>
         <p id="test"></p>
         <div class="buttons-wrapper">
+            <button onclick="window.location.href='test_form.html'">Test Form</button>
             <button onclick="window.location.href='addQuestion.html'">Add Question</button>
             <button onclick="window.location.href='viewQuestion.html'">View All Questions</button>
             <button>Answer Question</button>
@@ -21,6 +22,7 @@
             function testConnection(){
                 fetch(`${SERVER_URL}/`,{
                     method: "GET",
+                    credentials: "include",
                     headers: {
                         Accept: "application/json",
                         "Content-Type": "application/json",

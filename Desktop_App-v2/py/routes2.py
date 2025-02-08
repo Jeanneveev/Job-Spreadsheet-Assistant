@@ -89,40 +89,44 @@ class LinkedList:
             curr=curr.next
         return res
 
+# Singleton metaclass
+# NOTE: Need to test in production, may cause errors
+class Singleton(type):
+    _instance=None
+    def __call__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance=super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instance
+class DetailList(metaclass=Singleton):
+    def __init__(self):
+        self.content:list[str]=[]
+    def __str__(self):
+        return f"{self.content}"
+    def add(self,value):
+        self.content.append(value)
+    def get(self):
+        return self.content
+
+
 
 # ROUTES
 from flask import Flask, request, session
 from flask_session import Session
 from flask_cors import CORS
-import redis, json
 #for clearing session files
 import os, sys, glob, atexit
 
 app = Flask(__name__)
 
-# Configurations
-app.config["SECRET_KEY"]="change_later"
-app.config["SESSION_TYPE"] = "redis"
-app.config["SESSION_PERMANENT"] = False
-r = redis.from_url('redis://127.0.0.1:6379')
-app.config['SESSION_REDIS'] = r
-def test_redis_connection(redis_session):
-    """Check that Redis is connected to"""
-    try:
-        redis_session.ping()  # Check if Redis is alive
-        print("Redis connection successful!")
-    except redis.exceptions.ConnectionError as e:
-        print(f"Redis connection error: {e}")
-        exit()  # Or handle the error appropriately
-test_redis_connection(r)
-app.config["CORS_HEADERS"] = "Content-Type"
-
+app.config['SECRET_KEY'] = "YourSecretKey@123"
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT']= False
 # Initialize Plugins
-sess=Session()
-sess.init_app(app)
-CORS(app,resources={r"/*": {"origins": "http://localhost*"}},)
+Session(app)
+CORS(app)
 
 
+# Session(app)
 ll=LinkedList() #initialize linked list to be used later
 
 #check that the server's running and connected
@@ -175,29 +179,22 @@ def add_detail_to_list(detail):
     # Initialize the list if it doesn't exist
     if 'lst' not in session:
         print("Session variable not found. Initializing...")
-        session['lst'] = json.dumps([])
+        session['lst'] = []
         session.modified = True
 
     # Append to the list
-    lst:list[str]=json.loads(session['lst'])
+    lst:list[str]=session['lst']
     print("Before appending:",lst)
     lst.append(detail)
     print("After appending:",lst)
-    session['lst'] = json.dumps(lst)
+    session['lst'] = lst
     session.modified = True
     
-    return {"response":f"{lst}"}
+    return {"response":f"existing details are {lst}"}
 @app.route("/get_all_details",methods=["GET"])
 def get_all_details():
     details:list[str]=session.get("lst",[])
     return {"result":details}
-@app.route("/check_detail/<detail>")
-def check_detail(detail):
-    details:list[str]=session.get("lst",[])
-    if detail in details:
-        return {"result":"True","detail_list":details}
-    else:
-        return {"result":"False","detail_list":details}
 
 
 @app.route("/print_all", methods=["GET"])
@@ -254,29 +251,22 @@ def test_add_addon():
     base_node.addon=new_question
     print(f"Addon \"{new_question.q_str}\" added to base node \"{base_node.question.q_detail}\"")
     return "addon works"
-@app.route("/test_post_question",methods=["POST"])
-def test_post_question():
-    result=request.form
-    q=QTypeOptions("singular")
-    a=ATypeOptions("multiple-choice")
-    new_question=Question(result["question"],result["detail"],q,a)
-    print("Created question:",new_question)
-    new_node=Node(new_question)
-    ll.append(new_node)
-    ll.printLL()
-    return {"response":"added question"}
 
-## NOTE: Make sure this works in production
-def clear_redis_sessions(redis_session):
-    """Clears all session data from Redis."""
-    try:
-        for key in redis_session.keys("session:*"): # Important: Use a pattern to only delete session keys
-            redis_session.delete(key)
-        print("Redis sessions cleared.")
-    except Exception as e:
-        print(f"Error clearing Redis sessions: {e}")
-atexit.register(clear_redis_sessions,redis_session=r)  # Register the cleanup function
-
+# # NOTE: Make sure this works in production
+# def clear_session(dir,pattern):
+#     """Deletes files matching the given pattern."""
+#     cache_files = glob.glob(os.path.join(dir,pattern))
+#     for file_path in cache_files:
+#         try:
+#             os.remove(file_path)
+#             print(f"Deleted: {file_path}")
+#         except FileNotFoundError:
+#             print(f"File not found: {file_path}")
+#         except Exception as e:
+#             print(f"Error deleting {file_path}: {e}")
+# current_dirctory=os.path.dirname(os.path.abspath(sys.argv[0]))
+# full_path=os.path.join(current_dirctory,"flask_session")
+# atexit.register(clear_session,dir=full_path,pattern="*")
 
 # print(app.url_map)
 
