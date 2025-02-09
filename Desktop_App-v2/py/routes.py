@@ -96,7 +96,7 @@ from flask_session import Session
 from flask_cors import CORS
 import redis, json
 #for clearing session files
-import os, sys, glob, atexit
+import os, sys, atexit
 
 app = Flask(__name__)
 
@@ -104,6 +104,9 @@ app = Flask(__name__)
 app.config["SECRET_KEY"]="change_later"
 app.config["SESSION_TYPE"] = "redis"
 app.config["SESSION_PERMANENT"] = False
+#configure settings so Flask can recognize the frontend session ID cookie
+app.config["SESSION_COOKIE_SAMESITE"]="None"
+app.config["SESSION_COOKIE_SECURE"]=True
 r = redis.from_url('redis://127.0.0.1:6379')
 app.config['SESSION_REDIS'] = r
 def test_redis_connection(redis_session):
@@ -120,7 +123,7 @@ app.config["CORS_HEADERS"] = "Content-Type"
 # Initialize Plugins
 sess=Session()
 sess.init_app(app)
-CORS(app,resources={r"/*": {"origins": "http://localhost*"}},)
+CORS(app,supports_credentials=True)
 
 
 ll=LinkedList() #initialize linked list to be used later
@@ -128,7 +131,7 @@ ll=LinkedList() #initialize linked list to be used later
 #check that the server's running and connected
 @app.route("/", methods=["GET","POST"])
 def check():
-    print("Working directory path is",os.getcwd(),". Current directory path is",os.path.dirname(os.path.abspath(sys.argv[0])))
+    # print("Working directory path is",os.getcwd(),". Current directory path is",os.path.dirname(os.path.abspath(sys.argv[0])))
     return {"result":"Server active!"}
 
 @app.route("/add_question", methods=["POST"])
@@ -167,8 +170,6 @@ def add_addon():
     print(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
     return {"response":"added addon question"}
 
-## ERROR!!!: This only works as a Flask app
-##  It seems like every time this is run, it makes a new session variable, rather than getting the old one
 @app.route("/add_detail/<detail>",methods=["GET","POST"])
 def add_detail_to_list(detail):
     """Add a q_detail to a list of q_details"""

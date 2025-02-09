@@ -137,6 +137,7 @@
                 try{
                     const response=await fetch(`${SERVER_URL}/get_all_details`,{
                         method: "GET",
+                        credentials: 'include',
                         headers: {
                             Accept: "application/json",
                             "Content-Type": "application/json",
