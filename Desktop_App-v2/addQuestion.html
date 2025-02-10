@@ -23,7 +23,7 @@
         <p id="message"></p>
         <form id="form">
             <label>* Question:<input type="text" name="question" id="question" placeholder="Please enter the JOB NAME" required /></label>
-            <label>* Detail:<input type="text" name="detail" id="detail" placeholder="Job Name" required /></label>
+            <label>** Detail:<input type="text" name="detail" id="detail" placeholder="Job Name" required /></label>
             
             <!-- NOTE: To label a group of fields, use <fieldset> and <legend> -->
             <fieldset>
@@ -46,6 +46,7 @@
             <button type="submit" id="submit">Continue</button>
         </form>
         <p>*: Required</p>
+        <p>**: Must be unique</p>
         <script>
             const SERVER_URL = "http://127.0.0.1:5000";
             const form=document.getElementById("form");

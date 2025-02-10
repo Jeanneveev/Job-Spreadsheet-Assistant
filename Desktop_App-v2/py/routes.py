@@ -96,19 +96,11 @@ from flask_session import Session
 from flask_cors import CORS
 import redis, json
 #for clearing session files
-import os, sys, atexit
+import atexit
 
 app = Flask(__name__)
-
-# Configurations
-app.config["SECRET_KEY"]="change_later"
-app.config["SESSION_TYPE"] = "redis"
-app.config["SESSION_PERMANENT"] = False
-#configure settings so Flask can recognize the frontend session ID cookie
-app.config["SESSION_COOKIE_SAMESITE"]="None"
-app.config["SESSION_COOKIE_SECURE"]=True
-r = redis.from_url('redis://127.0.0.1:6379')
-app.config['SESSION_REDIS'] = r
+app.config.from_object("config.Config")
+redis_url = app.config.get("SESSION_REDIS") #getting SESSION_REDIS to check connection
 def test_redis_connection(redis_session):
     """Check that Redis is connected to"""
     try:
@@ -117,8 +109,7 @@ def test_redis_connection(redis_session):
     except redis.exceptions.ConnectionError as e:
         print(f"Redis connection error: {e}")
         exit()  # Or handle the error appropriately
-test_redis_connection(r)
-app.config["CORS_HEADERS"] = "Content-Type"
+test_redis_connection(redis_url)
 
 # Initialize Plugins
 sess=Session()
@@ -267,19 +258,33 @@ def test_post_question():
     ll.printLL()
     return {"response":"added question"}
 
-## NOTE: Make sure this works in production
-def clear_redis_sessions(redis_session):
-    """Clears all session data from Redis."""
-    try:
-        for key in redis_session.keys("session:*"): # Important: Use a pattern to only delete session keys
-            redis_session.delete(key)
-        print("Redis sessions cleared.")
-    except Exception as e:
-        print(f"Error clearing Redis sessions: {e}")
-atexit.register(clear_redis_sessions,redis_session=r)  # Register the cleanup function
+# ## NOTE: Make sure this works in production
+# def clear_redis_sessions(redis_session):
+#     """Clears all session data from Redis."""
+#     try:
+#         for key in redis_session.keys("session:*"): # Important: Use a pattern to only delete session keys
+#             redis_session.delete(key)
+#         res="Redis sessions cleared."
+#         print(res)
+#     except Exception as e:
+#         res=f"Error clearing Redis sessions: {e}"
+#         print(res)
+#     return res
+# atexit.register(clear_redis_sessions,redis_session=redis_url)  # Register the cleanup function
 
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    try:
+        for key in redis_url.keys("session:*"): # Important: Use a pattern to only delete session keys
+            redis_url.delete(key)
+        res="Redis sessions cleared."
+        print(res)
+    except Exception as e:
+        res=f"Error clearing Redis sessions: {e}"
+        print(res)
+    return res
 
 # print(app.url_map)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

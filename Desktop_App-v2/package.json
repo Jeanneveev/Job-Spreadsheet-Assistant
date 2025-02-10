@@ -19,5 +19,8 @@
   "homepage": "https://github.com/Jeanneveev/Private-Job-Spreadsheet-Assistant#readme",
   "devDependencies": {
     "electron": "^34.0.1"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
   }
 }
