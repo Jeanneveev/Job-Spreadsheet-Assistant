@@ -23,7 +23,7 @@
         <p id="message"></p>
         <form id="form">
             <label>* Question:<input type="text" name="question" id="question" placeholder="Please enter the JOB NAME" required /></label>
-            <label>* Detail:<input type="text" name="detail" id="detail" placeholder="Job Name" required /></label>
+            <label>** Detail:<input type="text" name="detail" id="detail" placeholder="Job Name" required /></label>
             
             <!-- NOTE: To label a group of fields, use <fieldset> and <legend> -->
             <fieldset>
@@ -46,6 +46,7 @@
             <button type="submit" id="submit">Continue</button>
         </form>
         <p>*: Required</p>
+        <p>**: Must be unique</p>
         <script>
             const SERVER_URL = "http://127.0.0.1:5000";
             const form=document.getElementById("form");
@@ -111,19 +112,24 @@
                 }
             }
 
+
             /* 
                 Check that the q_detail of the question being added doesn't already exist
             */
-           /* On form submit, pass the detail to a list to be easily accessed by checkDetail */
+            /* On form submit, pass the detail to a list to be easily accessed by checkDetail */
             async function sendDetail(detail) {
                 try{
                     const response=await fetch(`${SERVER_URL}/add_detail/${detail}`,{
                         method: "POST",
+                        credentials: 'include',
                         headers: {
                             Accept: "application/json",
                             "Content-Type": "application/json",
                         }
                     });
+                    const data=await response.json();
+                    const details=data.response;
+                    console.log("Added detail. Details are now:", details);
                 }catch(e){
                     console.error(e);
                 }
@@ -132,6 +138,7 @@
                 try{
                     const response=await fetch(`${SERVER_URL}/get_all_details`,{
                         method: "GET",
+                        credentials: 'include',
                         headers: {
                             Accept: "application/json",
                             "Content-Type": "application/json",
@@ -139,7 +146,8 @@
                     });
                     const data=await response.json();
                     const existing_details=data.result;
-                    console.log("existing details:", existing_details,". Checking detail", detail_to_add);
+                    console.log("Existing details:", existing_details);
+                    console.log("Checking detail", detail_to_add);
                     if(existing_details.includes(detail_to_add)){
                         return false;
                     }else{
@@ -174,28 +182,39 @@
                     console.error(e);
                 }
             }
+            /* 
+                Confirm user wants to submit form. If so, run form checking and submission functions
+            */
+            function confirmFormSubmit(formData){
+                if(confirm("Are you sure you want to submit?")){
+                    const qd=formData.get("detail");
+                    console.log("q_detail is",qd);
+                    /* Form validation */
+                    checkUniqueDetail(qd).then(result=>{
+                        isUniqueDetail=result;
+                        console.log("unique:",isUniqueDetail);
+                        /* If validated, send info */
+                        if(isUniqueDetail==true){
+                            sendForm();
+                            sendDetail(qd);
+                            message.innerText="Question added!"
+                        }else{
+                            message.innerText="A question with this detail already exists. Please try again"
+                        }
+                    });
+                }
+            }
             const message=document.getElementById("message");
             form.addEventListener("submit", async (event)=>{
                 event.preventDefault();
+                
                 const fData = new FormData(form);
                 console.log(fData.get('q_type'));
                 if (fData.get('q_type_2')){
                     console.log("QType2 is",fData.get('q_type_2'));
                 }
-                const qd=fData.get("detail");
-                console.log("q_detail is",qd);
-                /* Recieve the promise from  */
-                checkUniqueDetail(qd).then(result=>{
-                    isUniqueDetail=result;
-                    console.log("unique:",isUniqueDetail);
-                    if(isUniqueDetail==true){
-                        sendForm();
-                        sendDetail(qd);
-                        message.innerText="Question added!"
-                    }else{
-                        message.innerText="A question with this detail already exists. Please try again"
-                    }
-                });
+                
+                confirmFormSubmit(fData);
             });
         </script>
     </body>

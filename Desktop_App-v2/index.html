@@ -21,6 +21,7 @@
             function testConnection(){
                 fetch(`${SERVER_URL}/`,{
                     method: "GET",
+                    credentials: "include",
                     headers: {
                         Accept: "application/json",
                         "Content-Type": "application/json",

@@ -89,42 +89,40 @@ class LinkedList:
             curr=curr.next
         return res
 
-# Singleton metaclass
-# NOTE: Need to test in production, may cause errors
-class Singleton(type):
-    _instance=None
-    def __call__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance=super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instance
-class DetailList(metaclass=Singleton):
-    def __init__(self):
-        self.content:list[str]=[]
-    def __str__(self):
-        return f"{self.content}"
-    def add(self,value):
-        self.content.append(value)
-    def get(self):
-        return self.content
-
-
 
 # ROUTES
 from flask import Flask, request, session
-# from flask_session import Session
+from flask_session import Session
+from flask_cors import CORS
+import redis, json
+#for clearing session files
+import atexit
 
 app = Flask(__name__)
+app.config.from_object("config.Config")
+redis_url = app.config.get("SESSION_REDIS") #getting SESSION_REDIS to check connection
+def test_redis_connection(redis_session):
+    """Check that Redis is connected to"""
+    try:
+        redis_session.ping()  # Check if Redis is alive
+        print("Redis connection successful!")
+    except redis.exceptions.ConnectionError as e:
+        print(f"Redis connection error: {e}")
+        exit()  # Or handle the error appropriately
+test_redis_connection(redis_url)
 
-app.config['SECRET_KEY'] = "YourSecretKey@123"
-app.config['SESSION_TYPE'] = 'filesystem'
-# app.config['SESSION_PERMANENT']= False
+# Initialize Plugins
+sess=Session()
+sess.init_app(app)
+CORS(app,supports_credentials=True)
 
-# Session(app)
+
 ll=LinkedList() #initialize linked list to be used later
 
 #check that the server's running and connected
 @app.route("/", methods=["GET","POST"])
 def check():
+    # print("Working directory path is",os.getcwd(),". Current directory path is",os.path.dirname(os.path.abspath(sys.argv[0])))
     return {"result":"Server active!"}
 
 @app.route("/add_question", methods=["POST"])
@@ -163,23 +161,35 @@ def add_addon():
     print(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
     return {"response":"added addon question"}
 
-@app.route("/add_detail/<detail>",methods=["POST"])
+@app.route("/add_detail/<detail>",methods=["GET","POST"])
 def add_detail_to_list(detail):
     """Add a q_detail to a list of q_details"""
-    # if "detail_list" not in session:
-    #     session["detail_list"]=[]
-    # detail_list:list[str]=session["detail_list"]
-    # detail_list.append(detail)
-    # session["detail_list"]=detail_list
-    # return {"response":f"existing details are {session["detail_list"]}"}
-    detail_list=DetailList()
-    detail_list.add(detail)
-    return {"response":f"existing details are {detail_list}"}
+    # Initialize the list if it doesn't exist
+    if 'lst' not in session:
+        print("Session variable not found. Initializing...")
+        session['lst'] = json.dumps([])
+        session.modified = True
+
+    # Append to the list
+    lst:list[str]=json.loads(session['lst'])
+    print("Before appending:",lst)
+    lst.append(detail)
+    print("After appending:",lst)
+    session['lst'] = json.dumps(lst)
+    session.modified = True
+    
+    return {"response":f"{lst}"}
 @app.route("/get_all_details",methods=["GET"])
 def get_all_details():
-    detail_list=DetailList()
-    details=detail_list.get()
+    details:list[str]=session.get("lst",[])
     return {"result":details}
+@app.route("/check_detail/<detail>")
+def check_detail(detail):
+    details:list[str]=session.get("lst",[])
+    if detail in details:
+        return {"result":"True","detail_list":details}
+    else:
+        return {"result":"False","detail_list":details}
 
 
 @app.route("/print_all", methods=["GET"])
@@ -236,9 +246,45 @@ def test_add_addon():
     base_node.addon=new_question
     print(f"Addon \"{new_question.q_str}\" added to base node \"{base_node.question.q_detail}\"")
     return "addon works"
+@app.route("/test_post_question",methods=["POST"])
+def test_post_question():
+    result=request.form
+    q=QTypeOptions("singular")
+    a=ATypeOptions("multiple-choice")
+    new_question=Question(result["question"],result["detail"],q,a)
+    print("Created question:",new_question)
+    new_node=Node(new_question)
+    ll.append(new_node)
+    ll.printLL()
+    return {"response":"added question"}
 
+# ## NOTE: Make sure this works in production
+# def clear_redis_sessions(redis_session):
+#     """Clears all session data from Redis."""
+#     try:
+#         for key in redis_session.keys("session:*"): # Important: Use a pattern to only delete session keys
+#             redis_session.delete(key)
+#         res="Redis sessions cleared."
+#         print(res)
+#     except Exception as e:
+#         res=f"Error clearing Redis sessions: {e}"
+#         print(res)
+#     return res
+# atexit.register(clear_redis_sessions,redis_session=redis_url)  # Register the cleanup function
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    try:
+        for key in redis_url.keys("session:*"): # Important: Use a pattern to only delete session keys
+            redis_url.delete(key)
+        res="Redis sessions cleared."
+        print(res)
+    except Exception as e:
+        res=f"Error clearing Redis sessions: {e}"
+        print(res)
+    return res
 
 # print(app.url_map)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
