@@ -91,7 +91,7 @@ class LinkedList:
 
 
 # ROUTES
-from flask import Flask, request, session
+from flask import Flask, request, session, jsonify
 from flask_session import Session
 from flask_cors import CORS
 import redis, json
@@ -125,14 +125,12 @@ def check():
     # print("Working directory path is",os.getcwd(),". Current directory path is",os.path.dirname(os.path.abspath(sys.argv[0])))
     return {"result":"Server active!"}
 
+## ADD QUESTIONS
 @app.route("/add_question", methods=["POST"])
 def add_question():
     """Make a new Question with the info passed"""
     result=request.form
     print(result)
-    # print(type(result["q_type"]))
-    # print(ATypeOptions("multiple-choice"))
-    # print(ATypeOptions(result["a_type"]))
     #all of the form sections are required, so we don't need to check for NULLs
     # however, we do need to check if base or add-on was selected because they're in their own group
     if "q_type_2" in result:
@@ -160,7 +158,7 @@ def add_addon():
     base_node.addon=new_question
     print(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
     return {"response":"added addon question"}
-
+## DETAILS
 @app.route("/add_detail/<detail>",methods=["GET","POST"])
 def add_detail_to_list(detail):
     """Add a q_detail to a list of q_details"""
@@ -169,7 +167,6 @@ def add_detail_to_list(detail):
         print("Session variable not found. Initializing...")
         session['lst'] = json.dumps([])
         session.modified = True
-
     # Append to the list
     lst:list[str]=json.loads(session['lst'])
     print("Before appending:",lst)
@@ -177,7 +174,7 @@ def add_detail_to_list(detail):
     print("After appending:",lst)
     session['lst'] = json.dumps(lst)
     session.modified = True
-    
+
     return {"response":f"{lst}"}
 @app.route("/get_all_details",methods=["GET"])
 def get_all_details():
@@ -192,26 +189,127 @@ def check_detail(detail):
         return {"result":"False","detail_list":details}
 
 
-@app.route("/print_all", methods=["GET"])
-def print_all():
-    ll.printLL()
-    return {"result":ll.returnLL()}
-
 @app.route("/get_all_base_details", methods=["GET"])
 def get_all_base_details():
     """Get the details of all nodes with the q_type 'base'"""
     base_list=ll.getByQType("base")
     return {"result":base_list}
-
+## VIEW
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():
     """Get every node in the linked list and return them as json"""
     print(ll.getAll())
     return {"result":ll.getAll()}
+## SAVE
+import time
+import os
+@app.route("/save_file", methods=["GET"])
+def write_ll_to_file():
+    """Write all nodes of the linked list to a file"""
+    ll_json:list[dict]=ll.getAll()
+    #using the current time to make each save unique
+    curr_time = time.strftime("%m%d%Y_%H%M%S", time.localtime())
+    curr_dir=os.path.dirname(__file__)
+    path=f"Saves/questions_{curr_time}.json"
+    save_path=os.path.join(curr_dir, os.pardir, path)
+    with open(save_path,"w+", encoding="utf-8") as file:
+        json.dump(ll_json,file,ensure_ascii=False,indent=4)
+
+    return {"result":f"Questions saved to {save_path}"}
+
+## LOAD
+#double-checking extensions since the "accepts" attribute can be bypassed
+from jsonschema import validate
+from werkzeug.utils import secure_filename
+
+ALLOWED_EXTENSIONS=[".json"]
+def check_allowed_extension(filename):
+    extension=os.path.splitext(filename)[1]
+    # print(f"Extension is: {extension}")
+    if extension in ALLOWED_EXTENSIONS:
+        print("File's extension allowed")
+        return True
+    else:
+        print("Incorrect file extension")
+        return False
+    
+def validate_upload(file_json):
+    """Given a JSON file, confirm that it's in the right format to be turned into a LinkedList object"""
+    schema={
+        "type":"object",
+        "properties":{
+            "question": {
+                "type":"object",
+                "properties": {
+                    "q_str": {"type":"string"},
+                    "q_detail": {"type":"string"},
+                    "q_type": {"type":"string"},
+                    "a_type": {"type":"string"}
+                },
+                "required":["q_str","q_detail","q_type","a_type"]
+            },
+            "addon":{
+                "type":"object",
+                "properties": {
+                    "q_str": {"type":"string"},
+                    "q_detail": {"type":"string"},
+                    "q_type": {"type":"string"},
+                    "a_type": {"type":"string"}
+                },
+                "required":["q_str","q_detail","q_type","a_type"]
+            },
+            "answer":{
+                "type":"string"
+            },
+            "required":["question"]
+        }
+    }
+    try:
+        validate(instance=file_json, schema=schema)
+    except:
+        return False
+    return True
+    
+
+@app.route("/upload_file", methods=["GET","POST"])
+def upload_file():
+    """Upload a file given by the user to the Saves folder"""
+    if request.method=="POST":
+        if "file" not in request.files:
+            return "ERROR: No file in request", 404
+        file=request.files["file"]
+        if file.filename=="":
+            return "ERROR: No selected file", 400
+        print(f"File is: {file}. Filename is: {file.filename}")
+        # # if the file exists and it's of the right extension in the right format
+        if file and check_allowed_extension(file.filename):
+            filename = secure_filename(file.filename)
+            upload_folder=app.config.get("UPLOAD_FOLDER")
+            #make upload_folder if it doesn't exist
+            # if not os.path.isdir(upload_folder):
+            #     os.makedirs(upload_folder)
+
+            file_path=os.path.join(upload_folder,filename)
+            file.save(file_path)
+            return "file saved"
+        else:
+            return "File exists but wasn't uploaded"
+
+
+# @app.route("/load_file")
+# def load_ll_from_file():
+#     """Load new linked list from a save file"""
+#     with open('strings.json') as f:
+#         d = json.load(f)
+#         print(d)
+#     #if the linked list already has nodes in it, throw an overwrite warning
+#     if ll.returnLL()!="null":
+
+
     
 
 ## TEST FUNCTIONS
-@app.route("/test_add_singular",methods=["GET","POST"])
+@app.route("/test/add_singular",methods=["GET","POST"])
 def test_add_singular():
     q=QTypeOptions("singular")
     a=ATypeOptions("open-ended")
@@ -223,7 +321,7 @@ def test_add_singular():
     ll.append(new_node)
     ll.printLL()
     return "singular works"
-@app.route("/test_add_base",methods=["GET","POST"])
+@app.route("/test/add_base",methods=["GET","POST"])
 def test_add_base():
     q=QTypeOptions("base")
     a=ATypeOptions("open-ended")
@@ -235,7 +333,7 @@ def test_add_base():
     ll.append(new_node)
     ll.printLL()
     return "base works"
-@app.route("/test_add_addon",methods=["GET","POST"])
+@app.route("/test/add_addon",methods=["GET","POST"])
 def test_add_addon():
     q=QTypeOptions("add-on")
     a=ATypeOptions("multiple-choice")
@@ -246,7 +344,7 @@ def test_add_addon():
     base_node.addon=new_question
     print(f"Addon \"{new_question.q_str}\" added to base node \"{base_node.question.q_detail}\"")
     return "addon works"
-@app.route("/test_post_question",methods=["POST"])
+@app.route("/test/post_question",methods=["POST"])
 def test_post_question():
     result=request.form
     q=QTypeOptions("singular")
@@ -257,34 +355,39 @@ def test_post_question():
     ll.append(new_node)
     ll.printLL()
     return {"response":"added question"}
+@app.route("/test/print_all", methods=["GET"])
+def print_all():
+    ll.printLL()
+    return {"result":ll.returnLL()}
 
-# ## NOTE: Make sure this works in production
-# def clear_redis_sessions(redis_session):
-#     """Clears all session data from Redis."""
-#     try:
-#         for key in redis_session.keys("session:*"): # Important: Use a pattern to only delete session keys
-#             redis_session.delete(key)
-#         res="Redis sessions cleared."
-#         print(res)
-#     except Exception as e:
-#         res=f"Error clearing Redis sessions: {e}"
-#         print(res)
-#     return res
-# atexit.register(clear_redis_sessions,redis_session=redis_url)  # Register the cleanup function
-
+import signal
+def shutdown_server()->str:
+    os.kill(os.getpid(), signal.SIGINT)
+    return " Flask server shutdown"
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
     try:
         for key in redis_url.keys("session:*"): # Important: Use a pattern to only delete session keys
             redis_url.delete(key)
         res="Redis sessions cleared."
-        print(res)
+        # print(res)
     except Exception as e:
         res=f"Error clearing Redis sessions: {e}"
-        print(res)
+        # print(res)
+    try:
+        res+=shutdown_server()
+    except Exception as e:
+        res+=" Shutdown error"
     return res
 
 # print(app.url_map)
+# import sys
+# print("Executing in",sys.executable)
+# if "jsonschema" in sys.modules:
+#     print("JSONSchema is in the modules")
+# else:
+#     print("jsonschema isn't in the modules")
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    # app.run(debug=True, use_reloader=False)
+    app.run(debug=True)
