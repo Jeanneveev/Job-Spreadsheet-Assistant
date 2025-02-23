@@ -198,7 +198,7 @@ def get_all_base_details():
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():
     """Get every node in the linked list and return them as json"""
-    print(ll.getAll())
+    print("Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
 ## SAVE
 import time
@@ -280,14 +280,16 @@ def upload_file():
         file=request.files["file"]
         if file.filename=="":
             return "ERROR: No selected file", 400
-        print(f"File is: {file}. Filename is: {file.filename}")
+        
+        file_json=json.load(file)   #this puts the file stream pointer at the end
+        file.seek(0)    #reset file pointer to the start
+        print(f"File is: {file_json}. Filename is: {file.filename}")
         # # if the file exists and it's of the right extension in the right format
         if file and check_allowed_extension(file.filename):
+            print("Validation is: ",validate_upload(file_json))
+            file.seek(0)    #reset file pointer to the start
             filename = secure_filename(file.filename)
             upload_folder=app.config.get("UPLOAD_FOLDER")
-            #make upload_folder if it doesn't exist
-            # if not os.path.isdir(upload_folder):
-            #     os.makedirs(upload_folder)
 
             file_path=os.path.join(upload_folder,filename)
             file.save(file_path)
