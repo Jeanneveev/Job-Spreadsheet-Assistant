@@ -20,6 +20,7 @@
         </style>
     </head>
     <body>
+        <p id="message"></p>
         <button onclick="window.location.href='addQuestion.html'">Add Questions</button>
         <table id="table">
             <thead>
@@ -35,7 +36,7 @@
         </table>
         <button id="save">Save Questions</button>
         <input type="file" id="load_q_file" style="display: none;" accept=".json" />
-        <input type="button" id="load_q_btn" value="Load Question" />
+        <input type="button" id="load_q_btn" value="Load Questions" />
         <button onclick="window.location.href='index.html'">Back to Home</button>
         <script>
             const SERVER_URL = "http://127.0.0.1:5000";
@@ -44,7 +45,7 @@
             /* Get the JSON of all the questions
                 NOTE: Format is: list[dict[Node]]
             */
-            async function get_JSON(){
+            async function getJSON(){
                 try{
                     const response=await fetch(`${SERVER_URL}/get_ll_json`,{
                         method: "GET"
@@ -137,7 +138,7 @@
             }
             window.addEventListener("load", (event) => {
                 console.log("page is fully loaded");
-                get_JSON().then((result)=>{
+                getJSON().then((result)=>{
                     appendToTable(result);
                 });
             });
@@ -151,8 +152,15 @@
                 .then(data=>console.log(data.result));
             });
             /* LOAD QUESTIONS */
-            loadBtn=document.getElementById("load_q_btn");
-            fileInput=document.getElementById("load_q_file");
+            /**
+             * Summary: Load questions from a file
+             * Description: When the user presses the "Load Questions" button, open the file input
+             *  Upon selection, pass that file to the backend to be uploaded
+             *  If the file was successfully uploaded, get the JSON from that file and append it to the table
+             */
+            const message=document.getElementById("message");
+            const loadBtn=document.getElementById("load_q_btn");
+            const fileInput=document.getElementById("load_q_file");
             loadBtn.addEventListener("click",()=>{
                 fileInput.click();
             });
@@ -171,15 +179,22 @@
                 fetch(`${SERVER_URL}/upload_file`,{
                     method: "POST",
                     body: fileFormData
-                }).then(response=>response.text())
-                .then(data=>console.log(data))
-                .catch(error=>console.error("An error was recieved: ",error));
+                }).then(response=>{
+                    //201 is the status we pass back if the file was saved
+                    //  and should, then, also be saved as a new linked list we can get the JSON of
+                    if(response.status===201){
+                        getJSON().then((result)=>{
+                            appendToTable(result);
+                        });
+                    }
+                    return response.text();
+                }).then(data=>{
+                    console.log(data);
+                    message.innerText=data;
+                }).catch(error=>console.error("An error was recieved: ",error));
             });
 
-            /* When a file is selected, push the form to the backend */
-            function sendFile(){
-
-            }
+            
         </script>
     </body>
 </html>

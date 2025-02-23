@@ -50,12 +50,14 @@ class LinkedList:
             tail=tail.next
         tail.next=node
     def printLL(self):
+        """Print all of the linked list's node's details"""
         curr=self.head
         while curr:
             print(curr.question,end="->")
             curr=curr.next
         print("null")
     def returnLL(self):
+        """Return a string of all the ll's node's details"""
         curr=self.head
         res=""
         while curr:
@@ -64,6 +66,7 @@ class LinkedList:
         res+="null"
         return res
     def getByQType(self,val:str)->list[str]:
+        """Search linked list for all nodes with a certain q_type"""
         found:list[str]=[]
         curr:Node=self.head
         while curr:
@@ -74,6 +77,7 @@ class LinkedList:
             curr=curr.next
         return found
     def getByDetail(self,val:str)->Node|None:
+        """Search linked list by detail"""
         curr:Node=self.head
         while curr:
             if curr.question.q_detail==val:
@@ -82,17 +86,23 @@ class LinkedList:
             curr=curr.next
         return None
     def getAll(self)->list[dict]:
+        """Return a list of the dictionary forms of all the nodes"""
         res=[]
         curr:Node=self.head
         while curr:
             res.append(curr.as_dict())
             curr=curr.next
         return res
+    def clear(self):
+        """Removes the linked list from memory"""
+        # With the head set to None, the old linked list is now no longer referenced,
+        # and will be cleared by Python's garbage collection
+        self.head=None
+
 
 
 # ROUTES
 from flask import Flask, request, session, jsonify
-from flask_session import Session
 from flask_cors import CORS
 import redis, json
 #for clearing session files
@@ -100,20 +110,8 @@ import atexit
 
 app = Flask(__name__)
 app.config.from_object("config.Config")
-redis_url = app.config.get("SESSION_REDIS") #getting SESSION_REDIS to check connection
-def test_redis_connection(redis_session):
-    """Check that Redis is connected to"""
-    try:
-        redis_session.ping()  # Check if Redis is alive
-        print("Redis connection successful!")
-    except redis.exceptions.ConnectionError as e:
-        print(f"Redis connection error: {e}")
-        exit()  # Or handle the error appropriately
-test_redis_connection(redis_url)
 
 # Initialize Plugins
-sess=Session()
-sess.init_app(app)
 CORS(app,supports_credentials=True)
 
 
@@ -195,9 +193,11 @@ def get_all_base_details():
     base_list=ll.getByQType("base")
     return {"result":base_list}
 ## VIEW
+## VIEW
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():
     """Get every node in the linked list and return them as json"""
+    print("Linked list JSON is: ",ll.getAll())
     print("Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
 ## SAVE
@@ -216,7 +216,6 @@ def write_ll_to_file():
         json.dump(ll_json,file,ensure_ascii=False,indent=4)
 
     return {"result":f"Questions saved to {save_path}"}
-
 ## LOAD
 #double-checking extensions since the "accepts" attribute can be bypassed
 from jsonschema import validate
@@ -234,32 +233,35 @@ def check_allowed_extension(filename):
         return False
     
 def validate_upload(file_json):
-    """Given a JSON file, confirm that it's in the right format to be turned into a LinkedList object"""
+    """Given JSON of a file, confirm that it's in the right format to be turned into a LinkedList object"""
     schema={
-        "type":"object",
-        "properties":{
-            "question": {
-                "type":"object",
-                "properties": {
-                    "q_str": {"type":"string"},
-                    "q_detail": {"type":"string"},
-                    "q_type": {"type":"string"},
-                    "a_type": {"type":"string"}
+        "type":"array",
+        "items": {
+            "type":"object",
+            "properties": {
+                "question": {
+                    "type":"object",
+                    "properties": {
+                        "q_str": {"type":"string"},
+                        "q_detail": {"type":"string"},
+                        "q_type": {"type":"string"},
+                        "a_type": {"type":"string"}
+                    },
+                    "required":["q_str","q_detail","q_type","a_type"]
                 },
-                "required":["q_str","q_detail","q_type","a_type"]
-            },
-            "addon":{
-                "type":"object",
-                "properties": {
-                    "q_str": {"type":"string"},
-                    "q_detail": {"type":"string"},
-                    "q_type": {"type":"string"},
-                    "a_type": {"type":"string"}
+                "addon": {
+                    "type":"object",
+                    "properties": {
+                        "q_str": {"type":"string"},
+                        "q_detail": {"type":"string"},
+                        "q_type": {"type":"string"},
+                        "a_type": {"type":"string"}
+                    },
+                    "required":["q_str","q_detail","q_type","a_type"]
                 },
-                "required":["q_str","q_detail","q_type","a_type"]
-            },
-            "answer":{
-                "type":"string"
+                "answer": {
+                    "type":"string"
+                },
             },
             "required":["question"]
         }
@@ -268,8 +270,8 @@ def validate_upload(file_json):
         validate(instance=file_json, schema=schema)
     except:
         return False
+    print("file validated")
     return True
-    
 
 @app.route("/upload_file", methods=["GET","POST"])
 def upload_file():
@@ -279,36 +281,51 @@ def upload_file():
             return "ERROR: No file in request", 404
         file=request.files["file"]
         if file.filename=="":
-            return "ERROR: No selected file", 400
+            return "ERROR: No selected file", 404
         
         file_json=json.load(file)   #this puts the file stream pointer at the end
         file.seek(0)    #reset file pointer to the start
         print(f"File is: {file_json}. Filename is: {file.filename}")
-        # # if the file exists and it's of the right extension in the right format
+        # if the file exists and it's of the right extension in the right format
         if file and check_allowed_extension(file.filename):
-            print("Validation is: ",validate_upload(file_json))
-            file.seek(0)    #reset file pointer to the start
-            filename = secure_filename(file.filename)
-            upload_folder=app.config.get("UPLOAD_FOLDER")
+            if validate_upload(file_json):
+                file.seek(0)    #reset file pointer to the start (validate should have put it at the end again)
+                filename = secure_filename(file.filename)
+                upload_folder=app.config.get("UPLOAD_FOLDER")
 
-            file_path=os.path.join(upload_folder,filename)
-            file.save(file_path)
-            return "file saved"
+                file_path=os.path.join(upload_folder,filename)
+                file.save(file_path)    #save as a local file
+                load_ll_from_file(file_json)    #save in the linked list
+                return "File saved", 201
+            else:
+                return "Wrong file format", 400
         else:
-            return "File exists but wasn't uploaded"
+            return "File exists but wasn't uploaded", 409
 
-
-# @app.route("/load_file")
-# def load_ll_from_file():
-#     """Load new linked list from a save file"""
-#     with open('strings.json') as f:
-#         d = json.load(f)
-#         print(d)
-#     #if the linked list already has nodes in it, throw an overwrite warning
-#     if ll.returnLL()!="null":
-
-
+def load_ll_from_file(file_json):
+    """Load new linked list from a saved file's JSON"""
+    # clear old linked list
+    ll.clear()
+    # parse JSON into new linked list
+    for node in file_json:
+        question=node["question"]
+        q_type=QTypeOptions(question["q_type"])
+        a_type=ATypeOptions(question["a_type"])
+        new_question=Question(question["q_str"],question["q_detail"],q_type,a_type)
+        new_node=Node(new_question)
+        #if there's an addon, make a Question out of it and add it to the new node
+        if "addon" in node:
+            addon=node["addon"]
+            addon_q_type=QTypeOptions(addon["q_type"])
+            addon_a_type=ATypeOptions(addon["a_type"])
+            new_addon=Question(addon["q_str"],addon["q_detail"],addon_q_type,addon_a_type)
+            new_node.addon=new_addon
+        ll.append(new_node)
     
+
+## ANSWER
+def get_question_from_node(node:Node):
+    pass
 
 ## TEST FUNCTIONS
 @app.route("/test/add_singular",methods=["GET","POST"])
@@ -366,16 +383,18 @@ import signal
 def shutdown_server()->str:
     os.kill(os.getpid(), signal.SIGINT)
     return " Flask server shutdown"
+@app.route("/test/print_all", methods=["GET"])
+def print_all():
+    ll.printLL()
+    return {"result":ll.returnLL()}
+
+import signal
+def shutdown_server()->str:
+    os.kill(os.getpid(), signal.SIGINT)
+    return " Flask server shutdown"
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
-    try:
-        for key in redis_url.keys("session:*"): # Important: Use a pattern to only delete session keys
-            redis_url.delete(key)
-        res="Redis sessions cleared."
-        # print(res)
-    except Exception as e:
-        res=f"Error clearing Redis sessions: {e}"
-        # print(res)
+    res=""
     try:
         res+=shutdown_server()
     except Exception as e:
