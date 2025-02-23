@@ -1,6 +1,7 @@
 const { app, BrowserWindow } = require('electron');
 const { exec } = require("child_process");
 const fetch=require("node-fetch");
+const path=require("path");
 
 /**
  * Connects to the Flask app
@@ -8,11 +9,14 @@ const fetch=require("node-fetch");
 let flaskProc=null;
 const connectToFlask=function(){
     //test version
-    flaskProc = require('child_process').spawn('py', ['./py/routes.py']);
+    const venvPath="./py/.venv/bin/python3"
+    const scriptPath='./py/routes.py'
+    flaskProc = require('child_process').spawn("wsl", [venvPath,scriptPath]);
     //executable version
     //flaskProc = require('child_process').execFile("routes.exe");
+    /* For some reason, this part runs during shutdown */
     flaskProc.stdout.on('data', function (data) {  
-        console.log("FLASK RUNNING! data:", data.toString('utf8'));  
+        console.log("FLASK RUNNING! data:", data.toString('utf8'));
     });
     // if can't connect
     flaskProc.on('error', (err) => {
@@ -20,10 +24,15 @@ const connectToFlask=function(){
         flaskProc = null;
     });
     // when Flask errors
+    //  also prints request info for some reason
     flaskProc.stderr.on('data', (data) => {
         console.error(`stderr: ${data}`);
-        console.log(`stderr: ${data}`);
+        // console.log(`stderr: ${data}`);
     });
+    // //logging data
+    // flaskProc.stdout.on('data', (data) => {
+    //     console.log(`stdout: ${data}`);
+    // });
     // on Flask close
     flaskProc.on("close", (code)=>{
         console.log(`child process exited with code ${code}`);
@@ -32,13 +41,16 @@ const connectToFlask=function(){
 }
 
 /**
- * Create a new BrowserWindow that's connected to Flask with index.html as its UI
+ * Setting up quitting flag for on close event
  */
 isAppQuitting=false;
 app.on("before-quit",(evt)=>{
     isAppQuitting=true;
 });
 
+/**
+ * Create a new BrowserWindow that's connected to Flask with index.html as its UI
+ */
 const createWindow = () => {
     const win = new BrowserWindow({
         width: 800,
@@ -48,14 +60,6 @@ const createWindow = () => {
     connectToFlask();
 
     win.loadFile('index.html');
-    // On window close (when the Electron app is exited), gracefully shut down Flask
-    // win.on('closed', () => {
-    //     if (flaskProc) {
-    //         console.log("Closing: Sending SIGINT to Flask process...");
-    //         flaskProc.kill('SIGINT'); // Send SIGINT (Ctrl+C) to Flask
-    //         flaskProc=null; //setting flaskProc to null to prevent quit event from killing it twice
-    //     }
-    // });
     win.on('close', (evt) => {
         if(!isAppQuitting){
             evt.preventDefault();   //pause shutdown to run one last request
@@ -72,18 +76,13 @@ const createWindow = () => {
                         flaskProc=null;
                         return;
                     }
-                    /* Otherwise, return the return and continue the chain */
-                    return response.text();
-                })
-                .then((data) => {
+                    /* Otherwise, Flask was shutdown */
                     console.log("Flask shutdown request successful.");
-                    console.log(data);
-                    flaskProc.kill('SIGINT');   //kill Flask
                     flaskProc=null;
                 })
                 .catch((error) => {
                     console.error("Error with shutdown request:", error);
-                    flaskProc.kill('SIGINT'); // Kill even if there is an issue with the request
+                    flaskProc.kill('SIGINT');
                     flaskProc = null;
                 });
             }

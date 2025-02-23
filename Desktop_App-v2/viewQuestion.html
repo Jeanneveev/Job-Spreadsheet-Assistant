@@ -33,8 +33,9 @@
             </thead>
             <!-- Table details get inserted here -->
         </table>
-        <button>Save Questions</button>
-        <button>Load Questions</button>
+        <button id="save">Save Questions</button>
+        <input type="file" id="load_q_file" style="display: none;" accept=".json" />
+        <input type="button" id="load_q_btn" value="Load Question" />
         <button onclick="window.location.href='index.html'">Back to Home</button>
         <script>
             const SERVER_URL = "http://127.0.0.1:5000";
@@ -140,6 +141,45 @@
                     appendToTable(result);
                 });
             });
+
+
+            /* SAVE QUESTIONS */
+            const saveBtn=document.getElementById("save");
+            saveBtn.addEventListener("click", (event)=>{
+                fetch(`${SERVER_URL}/save_file`,{method: "GET"})
+                .then(response=>response.json())
+                .then(data=>console.log(data.result));
+            });
+            /* LOAD QUESTIONS */
+            loadBtn=document.getElementById("load_q_btn");
+            fileInput=document.getElementById("load_q_file");
+            loadBtn.addEventListener("click",()=>{
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', (event) => {
+                /* Get the file and append it to a new FormData to be POSTed */
+                const selectedFile = event.target.files[0];
+                if (selectedFile) {
+                    console.log(`Selected file: ${selectedFile.name}`)
+                } else {
+                    console.log('No file selected');
+                }
+                const fileFormData=new FormData();
+                fileFormData.append("file",selectedFile, selectedFile.name);
+                console.log(Array.from(fileFormData.entries()));
+
+                fetch(`${SERVER_URL}/upload_file`,{
+                    method: "POST",
+                    body: fileFormData
+                }).then(response=>response.text())
+                .then(data=>console.log(data))
+                .catch(error=>console.error("An error was recieved: ",error));
+            });
+
+            /* When a file is selected, push the form to the backend */
+            function sendFile(){
+
+            }
         </script>
     </body>
 </html>

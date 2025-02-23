@@ -19,3 +19,5 @@ class Config:
     SESSION_TYPE="redis"
     SESSION_PERMANENT=False
     SESSION_REDIS=redis.from_url('redis://127.0.0.1:6379')
+    saves="../Saves"
+    UPLOAD_FOLDER=os.path.normpath(os.path.join(basedir,saves))
