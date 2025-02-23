@@ -193,9 +193,11 @@ def get_all_base_details():
     base_list=ll.getByQType("base")
     return {"result":base_list}
 ## VIEW
+## VIEW
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():
     """Get every node in the linked list and return them as json"""
+    print("Linked list JSON is: ",ll.getAll())
     print("Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
 ## SAVE
@@ -372,6 +374,15 @@ def test_post_question():
     ll.append(new_node)
     ll.printLL()
     return {"response":"added question"}
+@app.route("/test/print_all", methods=["GET"])
+def print_all():
+    ll.printLL()
+    return {"result":ll.returnLL()}
+
+import signal
+def shutdown_server()->str:
+    os.kill(os.getpid(), signal.SIGINT)
+    return " Flask server shutdown"
 @app.route("/test/print_all", methods=["GET"])
 def print_all():
     ll.printLL()
