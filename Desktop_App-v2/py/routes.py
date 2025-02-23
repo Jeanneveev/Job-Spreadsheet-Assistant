@@ -24,6 +24,7 @@ class Node:
         self.addon:Question=None
         self.answer:str=None
         self.next:Node=None
+        self.prev:Node=None
     def __str__(self)->str:
         s=f"The Node is for the question \"{self.question.q_str}\""
         if self.addon:
@@ -39,16 +40,21 @@ class Node:
 class LinkedList:
     def __init__(self):
         self.head:Node=None
+        self.tail:Node=None
 
     def append(self,node:Node)->None:
+        """Append node to end of linked list"""
         if self.head is None:
             self.head=node
+            self.tail=node
             return
-        #traverse until the end of the linked list
-        tail:Node=self.head
-        while tail.next:
-            tail=tail.next
-        tail.next=node
+        #add node to the end of the linked list
+        self.tail.next=node
+        #set the prev of the Node
+        node.prev=self.tail
+        #update linked list tail
+        self.tail=node
+
     def printLL(self):
         """Print all of the linked list's node's details"""
         curr=self.head
@@ -85,6 +91,18 @@ class LinkedList:
                 return curr
             curr=curr.next
         return None
+    def getByIdx(self,idx)->Node:
+        """Search linked list by index"""
+        curr:Node=self.head
+        i=0
+        while curr:
+            if i==idx:
+                return curr
+            i+=1
+            curr=curr.next
+        raise IndexError("Index out of range")
+            
+
     def getAll(self)->list[dict]:
         """Return a list of the dictionary forms of all the nodes"""
         res=[]
@@ -324,7 +342,33 @@ def load_ll_from_file(file_json):
     
 
 ## ANSWER
-def get_question_from_node(node:Node):
+def get_initial_node():
+    return ll.head
+# def get_next_node(node:Node):
+#     return node.next
+def get_prev_node(node:Node):
+    pass
+@app.route("/get_first_question")
+def get_first_question():
+    curr_node:Node=get_initial_node()
+    session["curr_node"]=curr_node
+    return curr_node.question.q_str
+@app.route("/get_next_question")
+def get_next_question():
+    curr_node:Node=session["curr_node"]
+    next_node=curr_node.next
+    session["curr_node"]=next_node
+    return next_node.question.q_str
+@app.route("/get_prev_question")
+def get_prev_question():
+    curr_node:Node=session["curr_node"]
+    #NOTE: COME BACK AND CHANGE AFTER DLL DONE
+    next_node=curr_node.next
+    session["curr_node"]=next_node
+    return next_node.question.q_str
+
+
+def add_answer():
     pass
 
 ## TEST FUNCTIONS
