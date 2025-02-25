@@ -136,6 +136,12 @@
                 });
                 table.appendChild(tbody);
             }
+            function clearTable(){
+                const tbodies=Array.from(table.querySelectorAll("tbody"));
+                tbodies.forEach(tbody => {
+                    table.removeChild(tbody);
+                });
+            }
             window.addEventListener("load", (event) => {
                 console.log("page is fully loaded");
                 getJSON().then((result)=>{
@@ -184,6 +190,10 @@
                     //  and should, then, also be saved as a new linked list we can get the JSON of
                     if(response.status===201){
                         getJSON().then((result)=>{
+                            //clear table if there's anything in it
+                            if(table.querySelector("tbody")){
+                                clearTable();
+                            }
                             appendToTable(result);
                         });
                     }

@@ -9,10 +9,9 @@
         <h1>Job Spreadsheet Assistant</h1>
         <p id="test"></p>
         <div class="buttons-wrapper">
-            <button onclick="window.location.href='testing/test-file_input.html'">Test Link</button>
-            <button onclick="window.location.href='addQuestion.html'">Add Question</button>
-            <button onclick="window.location.href='viewQuestion.html'">View All Questions</button>
-            <button>Answer Question</button>
+            <button id="add_q_btn" onclick="window.location.href='addQuestion.html'">Add Question</button>
+            <button id="view_q_btn" onclick="window.location.href='viewQuestion.html'">View All Questions</button>
+            <button id="answ_q_btn" onclick="window.location.href='answerQuestion-open_ended.html'">Answer Questions</button>
             <button>Link Google Sheet</button>
         </div>
         <script>
@@ -32,7 +31,39 @@
                     document.getElementById("test").innerText = data.result;     //data.result should have the result from python script
                 })
             }
-            testConnection();
+            
+            const answerQBtn=document.getElementById("answ_q_btn");
+            /* if no questions set yet, grey out Answer Questions */
+            async function getJSON(){
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_ll_json`,{
+                        method: "GET"
+                    });
+                    const ll_json=await response.json();
+                    return ll_json.result;
+                }catch(error){
+                    console.error(error);
+                }
+            }
+            window.addEventListener("load", (event) => {
+                testConnection();
+                getJSON().then((result)=>{
+                    console.log("result is",result);
+                    //NOTE: if(result==[]) doesn't work, possibly because of type differences,
+                    // so this is a better way to check for it being empty
+                    if(result.length==0){
+                        console.log("Result: no questions yet");
+                        answerQBtn.disabled=true;
+                    }else{
+                        console.log("Result: questions exist")
+                        answerQBtn.disabled=false;
+                    }
+                });
+            });
+            /* Initialize question flags */
+            answerQBtn.addEventListener("click",()=>{
+                sessionStorage.setItem("first_q","true");
+            });
         </script>
     </body>
 </html>

@@ -84,6 +84,7 @@ class LinkedList:
         return found
     def getByDetail(self,val:str)->Node|None:
         """Search linked list by detail"""
+        ## NOTE: I feel like I could add some caching to this function
         curr:Node=self.head
         while curr:
             if curr.question.q_detail==val:
@@ -101,8 +102,6 @@ class LinkedList:
             i+=1
             curr=curr.next
         raise IndexError("Index out of range")
-            
-
     def getAll(self)->list[dict]:
         """Return a list of the dictionary forms of all the nodes"""
         res=[]
@@ -211,11 +210,9 @@ def get_all_base_details():
     base_list=ll.getByQType("base")
     return {"result":base_list}
 ## VIEW
-## VIEW
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():
     """Get every node in the linked list and return them as json"""
-    print("Linked list JSON is: ",ll.getAll())
     print("Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
 ## SAVE
@@ -342,30 +339,39 @@ def load_ll_from_file(file_json):
     
 
 ## ANSWER
-def get_initial_node():
-    return ll.head
-# def get_next_node(node:Node):
-#     return node.next
-def get_prev_node(node:Node):
-    pass
 @app.route("/get_first_question")
 def get_first_question():
-    curr_node:Node=get_initial_node()
-    session["curr_node"]=curr_node
-    return curr_node.question.q_str
+    curr_node:Node=ll.head
+    if curr_node is not None:   #if there is a node
+        session["curr_node"]=curr_node.as_dict()
+        if curr_node.next is not None:  #if there is a next node
+            return {"q_str":curr_node.question.q_str, "has_next":"true",
+                    "next_a_type":curr_node.next.question.a_type.value}
+        else:   #if this is the last node in the ll
+            return {"q_str":curr_node.question.q_str, "has_next":"false"}
+    else:   #if there are no nodes
+        return "No questions have been set yet", 404
 @app.route("/get_next_question")
 def get_next_question():
-    curr_node:Node=session["curr_node"]
-    next_node=curr_node.next
-    session["curr_node"]=next_node
-    return next_node.question.q_str
+    curr_node_dict:dict=session["curr_node"]
+    #get the node from the detail
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+    next_node:Node=curr_node.next
+    if next_node is not None:   #if there is a next node
+        session["curr_node"]=next_node.as_dict()
+        if next_node.next is not None:  #if there is a node after that
+            return {"q_str":next_node.question.q_str, "has_next":"true",
+                    "next_a_type":next_node.next.question.a_type.value}
+        else:   #if the current node is the second to last node
+            return{"q_str":next_node.question.q_str, "has_next":"false", "next_a_type":"None"}
+    else:   #if the current node is the last node (this shouldn't be reachable but handled jic)
+        return "There is no next node", 404
 @app.route("/get_prev_question")
 def get_prev_question():
     curr_node:Node=session["curr_node"]
-    #NOTE: COME BACK AND CHANGE AFTER DLL DONE
-    next_node=curr_node.next
-    session["curr_node"]=next_node
-    return next_node.question.q_str
+    prev_node=curr_node.prev
+    session["curr_node"]=prev_node
+    return prev_node.question.q_str
 
 
 def add_answer():
@@ -427,15 +433,6 @@ import signal
 def shutdown_server()->str:
     os.kill(os.getpid(), signal.SIGINT)
     return " Flask server shutdown"
-@app.route("/test/print_all", methods=["GET"])
-def print_all():
-    ll.printLL()
-    return {"result":ll.returnLL()}
-
-import signal
-def shutdown_server()->str:
-    os.kill(os.getpid(), signal.SIGINT)
-    return " Flask server shutdown"
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
     res=""
@@ -455,4 +452,5 @@ def shutdown():
 
 if __name__ == "__main__":
     # app.run(debug=True, use_reloader=False)
+    print("Flask server running") # Flask ready flag for main.js
     app.run(debug=True)
