@@ -24,6 +24,7 @@ class Node:
         self.addon:Question=None
         self.answer:str=None
         self.next:Node=None
+        self.prev:Node=None
     def __str__(self)->str:
         s=f"The Node is for the question \"{self.question.q_str}\""
         if self.addon:
@@ -39,16 +40,21 @@ class Node:
 class LinkedList:
     def __init__(self):
         self.head:Node=None
+        self.tail:Node=None
 
     def append(self,node:Node)->None:
+        """Append node to end of linked list"""
         if self.head is None:
             self.head=node
+            self.tail=node
             return
-        #traverse until the end of the linked list
-        tail:Node=self.head
-        while tail.next:
-            tail=tail.next
-        tail.next=node
+        #add node to the end of the linked list
+        self.tail.next=node
+        #set the prev of the Node
+        node.prev=self.tail
+        #update linked list tail
+        self.tail=node
+
     def printLL(self):
         """Print all of the linked list's node's details"""
         curr=self.head
@@ -78,6 +84,7 @@ class LinkedList:
         return found
     def getByDetail(self,val:str)->Node|None:
         """Search linked list by detail"""
+        ## NOTE: I feel like I could add some caching to this function
         curr:Node=self.head
         while curr:
             if curr.question.q_detail==val:
@@ -85,6 +92,16 @@ class LinkedList:
                 return curr
             curr=curr.next
         return None
+    def getByIdx(self,idx)->Node:
+        """Search linked list by index"""
+        curr:Node=self.head
+        i=0
+        while curr:
+            if i==idx:
+                return curr
+            i+=1
+            curr=curr.next
+        raise IndexError("Index out of range")
     def getAll(self)->list[dict]:
         """Return a list of the dictionary forms of all the nodes"""
         res=[]
@@ -99,6 +116,23 @@ class LinkedList:
         # and will be cleared by Python's garbage collection
         self.head=None
 
+class ExportData:
+    """
+    A class that holds the info and methods for data exportation
+
+    Attributes
+    ----------
+    data : list[str]
+        a list of all the answers given
+    method : str
+        the type of what is being exported to ( e.g. CSV, Google Sheets )
+    source : str
+        the location of the export ( currently only planned to be used for the pathstring of the export csv )
+    """
+    def __init__(self):
+        self.data:list[str]=None
+        self.method:str=None
+        self.source=None
 
 
 # ROUTES
@@ -116,6 +150,7 @@ CORS(app,supports_credentials=True)
 
 
 ll=LinkedList() #initialize linked list to be used later
+exportData=ExportData() #initialize the method of exporting the data, to be set later
 
 #check that the server's running and connected
 @app.route("/", methods=["GET","POST"])
@@ -193,11 +228,9 @@ def get_all_base_details():
     base_list=ll.getByQType("base")
     return {"result":base_list}
 ## VIEW
-## VIEW
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():
     """Get every node in the linked list and return them as json"""
-    print("Linked list JSON is: ",ll.getAll())
     print("Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
 ## SAVE
@@ -324,8 +357,89 @@ def load_ll_from_file(file_json):
     
 
 ## ANSWER
-def get_question_from_node(node:Node):
-    pass
+@app.route("/get_first_question")
+def get_first_question():
+    curr_node:Node=ll.head
+    if curr_node is not None:   #if there is a node
+        session["curr_node"]=curr_node.as_dict()
+        if curr_node.next is not None:  #if there is a next node
+            return {"q_str":curr_node.question.q_str, "has_next":"true",
+                    "next_a_type":curr_node.next.question.a_type.value}
+        else:   #if this is the last node in the ll
+            return {"q_str":curr_node.question.q_str, "has_next":"false"}
+    else:   #if there are no nodes
+        return "No questions have been set yet", 404
+@app.route("/get_next_question")
+def get_next_question():
+    curr_node_dict:dict=session["curr_node"]
+    #get the node from the detail
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+    next_node:Node=curr_node.next
+    if next_node is not None:   #if there is a next node
+        session["curr_node"]=next_node.as_dict()
+        if next_node.next is not None:  #if there is a node after that
+            return {"q_str":next_node.question.q_str, "has_next":"true",
+                    "next_a_type":next_node.next.question.a_type.value}
+        else:   #if the current node is the second to last node
+            return{"q_str":next_node.question.q_str, "has_next":"false", "next_a_type":"None"}
+    else:   #if the current node is the last node (this shouldn't be reachable but handled jic)
+        return "There is no next node", 404
+@app.route("/get_prev_question")
+def get_prev_question():
+    curr_node:Node=session["curr_node"]
+    prev_node=curr_node.prev
+    session["curr_node"]=prev_node
+    return prev_node.question.q_str
+
+@app.route("/add_answer/<answ>",methods=["POST"])
+def add_answer(answ):
+    curr_node_dict:dict=session["curr_node"]
+    #get the node from the detail
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+    curr_node.answer=answ
+    print(f"Answer {answ} set")
+    return f"Answer {answ} set"
+
+
+def get_all_answers_handler(by_route:bool):
+    """
+    A handler function for get_all_answers
+
+    Description: This function gets and returns all of the answers set in
+    the linked list and returns it as a list.
+    Depending on the value of the by_route parameter, it will return a
+    jsonified response or a regular list, to be used by routes and Python
+    functions respectively.
+    """
+    all_nodes_dict=ll.getAll()
+    res=[]
+    for node_dict in all_nodes_dict:
+        if "answer" in node_dict:
+            res.append(node_dict["answer"])
+    
+    if by_route==True:
+        return jsonify(res)
+    else:
+        return res
+
+@app.route("/get_all_answers",methods=["GET"])
+def get_all_answers():
+    return get_all_answers_handler(by_route=True)
+
+## EXPORT
+@app.route("/set_export_method/<method>",methods=["POST"])
+def set_export_method(method):
+    exportData.method=method
+    return f"Method {exportData.method} set"
+@app.route("/get_export_method",methods=["GET"])
+def get_export_method():
+    return f"{exportData.method}"
+@app.route("/add_all_answers",methods=["POST"])
+def add_all_answers():
+    answs=get_all_answers_handler(by_route=False)
+    exportData.data=answs
+    return f"Answers {exportData.data} added"
+
 
 ## TEST FUNCTIONS
 @app.route("/test/add_singular",methods=["GET","POST"])
@@ -383,15 +497,6 @@ import signal
 def shutdown_server()->str:
     os.kill(os.getpid(), signal.SIGINT)
     return " Flask server shutdown"
-@app.route("/test/print_all", methods=["GET"])
-def print_all():
-    ll.printLL()
-    return {"result":ll.returnLL()}
-
-import signal
-def shutdown_server()->str:
-    os.kill(os.getpid(), signal.SIGINT)
-    return " Flask server shutdown"
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
     res=""
@@ -410,5 +515,6 @@ def shutdown():
 #     print("jsonschema isn't in the modules")
 
 if __name__ == "__main__":
-    # app.run(debug=True, use_reloader=False)
-    app.run(debug=True)
+    print("Flask server running") # Flask ready flag for main.js
+    app.run(debug=True, use_reloader=False)
+    # app.run(debug=True)

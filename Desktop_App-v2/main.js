@@ -4,7 +4,7 @@ const fetch=require("node-fetch");
 const path=require("path");
 
 /**
- * Connects to the Flask app
+ * Connects to the Flask app, then creates the window
  */
 let flaskProc=null;
 const connectToFlask=function(){
@@ -14,9 +14,14 @@ const connectToFlask=function(){
     flaskProc = require('child_process').spawn("wsl", [venvPath,scriptPath]);
     //executable version
     //flaskProc = require('child_process').execFile("routes.exe");
-    /* For some reason, this part runs during shutdown */
+    /* For some reason, this part runs during shutdown too */
     flaskProc.stdout.on('data', function (data) {  
-        console.log("FLASK RUNNING! data:", data.toString('utf8'));
+        const output = data.toString('utf8');
+        console.log("FLASK RUNNING! data:", output);
+        /* Wait until Flask server is running to create the window */
+        if(output.includes("Flask server running")){
+            createWindow();
+        }
     });
     // if can't connect
     flaskProc.on('error', (err) => {
@@ -56,8 +61,6 @@ const createWindow = () => {
         width: 800,
         height: 600
     });
-
-    connectToFlask();
 
     win.loadFile('index.html');
     win.on('close', (evt) => {
@@ -115,5 +118,6 @@ app.on('quit', () => {
  * Wait for the app to be ready, then create a new window
  */
 app.whenReady().then(() => {
-    createWindow();
+    connectToFlask();
+    // createWindow();
 });
