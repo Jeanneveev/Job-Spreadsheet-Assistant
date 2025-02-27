@@ -116,6 +116,23 @@ class LinkedList:
         # and will be cleared by Python's garbage collection
         self.head=None
 
+class ExportData:
+    """
+    A class that holds the info and methods for data exportation
+
+    Attributes
+    ----------
+    data : list[str]
+        a list of all the answers given
+    method : str
+        the type of what is being exported to ( e.g. CSV, Google Sheets )
+    source : str
+        the location of the export ( currently only planned to be used for the pathstring of the export csv )
+    """
+    def __init__(self):
+        self.data:list[str]=None
+        self.method:str=None
+        self.source=None
 
 
 # ROUTES
@@ -133,6 +150,7 @@ CORS(app,supports_credentials=True)
 
 
 ll=LinkedList() #initialize linked list to be used later
+exportData=ExportData() #initialize the method of exporting the data, to be set later
 
 #check that the server's running and connected
 @app.route("/", methods=["GET","POST"])
@@ -373,9 +391,55 @@ def get_prev_question():
     session["curr_node"]=prev_node
     return prev_node.question.q_str
 
+@app.route("/add_answer/<answ>",methods=["POST"])
+def add_answer(answ):
+    curr_node_dict:dict=session["curr_node"]
+    #get the node from the detail
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+    curr_node.answer=answ
+    print(f"Answer {answ} set")
+    return f"Answer {answ} set"
 
-def add_answer():
-    pass
+
+def get_all_answers_handler(by_route:bool):
+    """
+    A handler function for get_all_answers
+
+    Description: This function gets and returns all of the answers set in
+    the linked list and returns it as a list.
+    Depending on the value of the by_route parameter, it will return a
+    jsonified response or a regular list, to be used by routes and Python
+    functions respectively.
+    """
+    all_nodes_dict=ll.getAll()
+    res=[]
+    for node_dict in all_nodes_dict:
+        if "answer" in node_dict:
+            res.append(node_dict["answer"])
+    
+    if by_route==True:
+        return jsonify(res)
+    else:
+        return res
+
+@app.route("/get_all_answers",methods=["GET"])
+def get_all_answers():
+    return get_all_answers_handler(by_route=True)
+
+## EXPORT
+@app.route("/set_export_method/<method>",methods=["POST"])
+def set_export_method(method):
+    exportData.method=method
+    return f"Method {exportData.method} set"
+@app.route("/get_export_method",methods=["GET"])
+def get_export_method():
+    return f"{exportData.method}"
+@app.route("/add_all_answers",methods=["POST"])
+def add_all_answers():
+    answs=get_all_answers_handler(by_route=False)
+    exportData.data=answs
+    return f"Answers {exportData.data} added"
+
 
 ## TEST FUNCTIONS
 @app.route("/test/add_singular",methods=["GET","POST"])
@@ -451,6 +515,6 @@ def shutdown():
 #     print("jsonschema isn't in the modules")
 
 if __name__ == "__main__":
-    # app.run(debug=True, use_reloader=False)
     print("Flask server running") # Flask ready flag for main.js
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
+    # app.run(debug=True)

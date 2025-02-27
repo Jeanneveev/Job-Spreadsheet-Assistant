@@ -29,68 +29,89 @@
             let first_q=sessionStorage.getItem("first_q");
             let has_next="";
             let next_a_type="";
-            if(first_q=="true"){
-                fetch(`${SERVER_URL}/get_first_question`,{ method: "GET" })
-                .then(response=>response.json())
-                .then(data=>{
-                    questionHeader.innerText=data.q_str;
-                    has_next=data.has_next;
-                    console.log("has_next is:",has_next);
-                    if(has_next=="true"){
-                        next_a_type=data.next_a_type;
-                        console.log("next_a_type is",next_a_type)
-                    }
-                })
-                .catch(error=>console.error("An error was recieved: ",error));
-                sessionStorage.setItem("first_q","false");  //change flag
-            }else{
-                /* Get all the session variables from sessionStorage */
-                /* ERROR!!! Console says q is null, even though it recognizes "next_q_str" on line 78 */
-                q=sessionStorage.getItem("next_q_str");
-                console.log("q is",q);
-                questionHeader.innerText=q;
-                has_next=sessionStorage.getItem("has_next");
-                if(has_next=="true"){
-                    next_a_type=sessionStorage.getItem("next_a_type");
-                    console.log("next_a_type is",next_a_type)
+            function loadQuestion(){
+                if(first_q=="true"){
+                    console.log("This is the first question");
+                    fetch(`${SERVER_URL}/get_first_question`,{ method: "GET" })
+                    .then(response=>response.json())
+                    .then(data=>{
+                        questionHeader.innerText=data.q_str;
+                        has_next=data.has_next;
+                        console.log("has_next is:",has_next);
+                        if(has_next=="true"){
+                            next_a_type=data.next_a_type;
+                            console.log("next_a_type is",next_a_type)
+                        }
+                    })
+                    .catch(error=>console.error("An error was recieved: ",error));
+                    sessionStorage.setItem("first_q","false");  //change flag
                 }else{
-                    console.log("This is the last question");
+                    /* Get all the session variables from sessionStorage */
+                    q=sessionStorage.getItem("next_q_str");
+                    console.log("q is",q);
+                    questionHeader.innerText=q;
+                    has_next=sessionStorage.getItem("has_next");
+                    if(has_next=="true"){
+                        next_a_type=sessionStorage.getItem("next_a_type");
+                        console.log("next_a_type is",next_a_type)
+                    }else{
+                        console.log("This is the last question");
+                    }
                 }
             }
+            loadQuestion();
             
             /* When an input is entered, change button text */
             input.addEventListener('input', e => {
                 submitBtn.innerHTML="Submit";
             });
+
             /* FORM SUBMISSION */
+            function submitAnswer(answer){
+                answer=answer.trim();
+                fetch(`${SERVER_URL}/add_answer/${answer}`,{method:"POST"})
+                .then(response=>response.text())
+                .then(data=>console.log("data"));
+            }
 
             /* NEXT QUESTION */
+            function loadNextQuestion(){
+                //set the text of the next question
+                fetch(`${SERVER_URL}/get_next_question`,{ method: "GET" })
+                .then(response=>response.json())
+                .then((data)=>{
+                    /* Set all the session variables */
+                    sessionStorage.setItem("next_q_str",data.q_str);
+                    console.log("The next question is",sessionStorage.getItem("next_q_str"));
+                    sessionStorage.setItem("has_next",data.has_next);
+                    sessionStorage.setItem("next_a_type",data.next_a_type);
+                    //change what page we go to depending on the a_type of the next question
+                    if(next_a_type=="multiple-choice"){
+                        console.log("The next question is multiple choice");
+                        form.action="answerQuestion-multiple_choice.html";
+                    }else if(next_a_type=="open-ended"){
+                        console.log("The next question is open-ended");
+                        form.action="answerQuestion-open_ended.html";
+                    }
+                    window.location.href=form.action;   //load page of next question
+                });
+            }
             form.addEventListener("submit",(event)=>{
                 event.preventDefault();
+                submitAnswer(input.value);  //pass the answer to the backend
                 //if there is a next question
                 if(has_next=="true"){
-                    //set the text of the next question
-                    fetch(`${SERVER_URL}/get_next_question`,{ method: "GET" })
-                    .then(response=>response.json())
-                    .then((data)=>{
-                        /* Set all the session variables */
-                        sessionStorage.setItem("next_q_str",data.q_str);
-                        console.log("The next question is",sessionStorage.getItem("next_q_str"));
-                        sessionStorage.setItem("has_next",data.has_next);
-                        sessionStorage.setItem("next_a_type",data.next_a_type);
-                        //change what page we go to depending on the a_type of the next question
-                        if(next_a_type=="multiple-choice"){
-                            console.log("The next question is multiple choice");
-                            form.action="answerQuestion-multiple_choice.html";
-                        }else if(next_a_type=="open-ended"){
-                            console.log("The next question is open-ended");
-                            form.action="answerQuestion-open_ended.html";
-                        }
-                        window.location.href=form.action;   //load page of next question
-                    });
+                    loadNextQuestion();
                 }else{  //this is the last question
                     if(confirm("This is the last question. Do you wish to submit all your answers?")){
                         console.log("Answer submission confirmed");
+                        fetch(`${SERVER_URL}/get_all_answers`,{ method: "GET" })
+                        .then(response=>response.json())
+                        .then(data=>console.log(data));
+
+                        fetch(`${SERVER_URL}/add_all_answers`,{ method:"POST" })
+                        .then(response=>response.text())
+                        .then(data=>console.log(data));
                         /* TODO: Send request to connect to Google Sheets and upload data */
                     }
                 }
