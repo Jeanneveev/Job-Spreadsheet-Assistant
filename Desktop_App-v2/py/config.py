@@ -19,3 +19,5 @@ class Config:
     #Session
     SESSION_PERMANENT=False
     
+class sheetsConfig:
+    SPREADSHEET_ID=os.environ.get("SPREADSHEET_ID")

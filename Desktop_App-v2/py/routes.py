@@ -1,4 +1,14 @@
 from enum import Enum
+from typing import Any
+## Google Sheets Stuff
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from config import sheetsConfig, basedir
+## NOTE: If modifying this scope, delete the file token.json.
+SPREADSHEET_ID=sheetsConfig.SPREADSHEET_ID
 
 class QTypeOptions(Enum):
     SINGULAR="singular"
@@ -126,13 +136,120 @@ class ExportData:
         a list of all the answers given
     method : str
         the type of what is being exported to ( e.g. CSV, Google Sheets )
-    source : str
+    loc : str
         the location of the export ( currently only planned to be used for the pathstring of the export csv )
     """
     def __init__(self):
         self.data:list[str]=None
         self.method:str=None
-        self.source=None
+        self.loc=None
+    # CSV
+    def export_to_CSV(self):
+        if self.loc==None:
+            raise FileNotFoundError
+        pass
+    # GOOGLE SHEETS
+    def get_auth_url(self)->str|None:
+        """A function to send the URL of the log-in page for the frontend to open,
+            allow for user certification, and send back that certification via another route
+        """
+        SCOPES=["https://www.googleapis.com/auth/spreadsheets"]
+        creds=None
+        token_path=os.path.join(basedir,"token.json")
+        if os.path.exists(token_path):
+            creds=Credentials.from_authorized_user_file(token_path, SCOPES)
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    "py/sheets_credentials.json", SCOPES, redirect_uri="http://127.0.0.1:5000"
+                )
+                #get and return the auth url
+                auth_url, _= flow.authorization_url()
+                return auth_url
+        return None
+
+    def getService(self)->Any|HttpError:
+        """Connects to the Google Sheets API
+        Returns:
+            service (Any): the connection to the API
+            error (HttError): an HttpError
+        """
+        ## NOTE: If modifying this scope, delete token.json file
+        SCOPES=["https://www.googleapis.com/auth/spreadsheets"]
+        creds=None
+        # If there are no (valid) credentials available, let the user log in.
+        token_path=os.path.join(basedir,"token.json")
+        if os.path.exists(token_path):
+            creds=Credentials.from_authorized_user_file(token_path, SCOPES)
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                creds_path=os.path.join(basedir,"sheets_credentials.json")
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    creds_path, SCOPES
+                )
+                creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open(token_path, "w") as token:
+                token.write(creds.to_json())
+            #try and return the build
+            try:
+                service = build("sheets", "v4", credentials=creds)
+                return service
+            except HttpError as error:
+                print(f"An error occurred: {error}")
+                return error
+    def length_to_col_letter(self,length:int):
+        num2char={1:"A",2:"B",3:"C",4:"D",5:"E",
+                  6:"F",7:"G",8:"H",9:"I",10:"J",
+                  11:"K",12:"L",13:"M",14:"N",15:"O",
+                  16:"P",17:"Q",18:"R",19:"S",20:"T",
+                  21:"U",22:"V",23:"W",24:"X",25:"Y",26:"Z"}
+        col=""
+        if length>26:
+            len1=length//26
+            len2=length%26
+            col=num2char[len1]+num2char[len2]
+        else:
+            col=num2char[length]
+        return col
+    def export_to_sheets(self)->Any|HttpError:
+        """Appends the list of details as a new row of a Google Sheets spreadsheet
+        Args:
+            self: The current instance of ExportData
+        Returns:
+            result (Any): The confirmation that the cells were appended
+            error (HttpError): An HttpError
+        """
+        service=self.getService()
+        data=self.data
+        end_col=self.length_to_col_letter(len(data))
+        rnge=f"A2:{end_col}2"
+
+        try:
+            values=[data]
+            body={"values": values}
+            result=(
+                service.spreadsheets()
+                .values()
+                .append(
+                    spreadsheetId=SPREADSHEET_ID,
+                    range=rnge,
+                    valueInputOption="USER_ENTERED",
+                    body=body,
+                )
+                .execute()
+            )
+            # print(f"{(result.get('updates').get('updatedCells'))} cells appended.")
+            return result
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            return error
+
 
 
 # ROUTES
@@ -424,6 +541,9 @@ def get_all_answers_handler(by_route:bool):
 
 @app.route("/get_all_answers",methods=["GET"])
 def get_all_answers():
+    """A route to get the jsonified list of all the answers
+        NOTE: Only used for printing to console currently
+    """
     return get_all_answers_handler(by_route=True)
 
 ## EXPORT
@@ -431,6 +551,14 @@ def get_all_answers():
 def set_export_method(method):
     exportData.method=method
     return f"Method {exportData.method} set"
+@app.route("/set_export_loc",methods=["POST"])
+def set_export_loc():
+    upload_folder=app.config.get("UPLOAD_FOLDER")
+    file_path=os.path.join(upload_folder,"CSV")
+    ### TODO: Replace with the passed filename later
+    full_file_path=os.path.join(file_path,"example.csv")
+    exportData.loc=full_file_path
+    return f"Filepath set as {full_file_path}"
 @app.route("/get_export_method",methods=["GET"])
 def get_export_method():
     return f"{exportData.method}"
@@ -439,6 +567,24 @@ def add_all_answers():
     answs=get_all_answers_handler(by_route=False)
     exportData.data=answs
     return f"Answers {exportData.data} added"
+
+@app.route("/get_auth_url",methods=["GET"])
+def get_auth_url():
+    url=exportData.get_auth_url()
+    if url:
+        return jsonify({"auth_url":url})
+    else:
+        return jsonify({"message": "Credentials are already validated"}), 200
+    
+@app.route("/export_data/sheets",methods=["POST"])
+def export_data_sheets():
+    # export_result=exportData.export_to_sheets()
+    # res_msg:str=f"{(export_result.get('updates').get('updatedCells'))} cells appended."
+    # return res_msg
+    pass
+
+
+
 
 
 ## TEST FUNCTIONS

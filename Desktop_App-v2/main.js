@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const { exec } = require("child_process");
 const fetch=require("node-fetch");
 const path=require("path");
@@ -59,7 +59,11 @@ app.on("before-quit",(evt)=>{
 const createWindow = () => {
     const win = new BrowserWindow({
         width: 800,
-        height: 600
+        height: 600,
+        webPreferences:{
+            nodeIntegration: true,
+            contextIsolation: false
+        }
     });
 
     win.loadFile('index.html');
@@ -120,4 +124,11 @@ app.on('quit', () => {
 app.whenReady().then(() => {
     connectToFlask();
     // createWindow();
+});
+
+/**
+ * Listen for the redirect from the Google log-in popup
+ */
+ipcMain.on('auth-url-opened', (event) => {
+    console.log("Recieved redirect");
 });
