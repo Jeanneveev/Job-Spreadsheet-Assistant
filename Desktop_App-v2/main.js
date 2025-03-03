@@ -56,8 +56,9 @@ app.on("before-quit",(evt)=>{
 /**
  * Create a new BrowserWindow that's connected to Flask with index.html as its UI
  */
+let win=null;
 const createWindow = () => {
-    const win = new BrowserWindow({
+    win = new BrowserWindow({
         width: 800,
         height: 600,
         webPreferences:{
@@ -127,8 +128,42 @@ app.whenReady().then(() => {
 });
 
 /**
- * Listen for the redirect from the Google log-in popup
+ * Create a popup browser window, listen for the auth landing page,
+ * and send the code back when/if it is reached.
  */
-ipcMain.on('auth-url-opened', (event) => {
-    console.log("Recieved redirect");
+let authWindow=null;
+ipcMain.on("open-auth-window", (event,authURL)=>{
+    authWindow=new BrowserWindow({
+        width: 400,
+        height: 500,
+        webPreferences: {
+            nodeIntegration: false, //for security
+        },
+    });
+    authWindow.loadURL(authURL);
+
+    /* If the landing page is reached, pass the code and close the popup */
+    authWindow.webContents.on("did-navigate", (ev,url)=>{
+        // console.log("URL is:", url);
+        if(url.includes("/auth_landing_page/?")){
+            const urlParams=new URLSearchParams(new URL(url).search);
+            const codeParam=urlParams.get("code");
+
+            if(codeParam!=null){
+                console.log("Code is:", codeParam);
+                event.sender.send("auth-code-recieved",codeParam);
+                authWindow.close();
+                authWindow=null;
+            }
+        }
+    });
+
+    authWindow.on("closed",()=>{
+        authWindow=null;
+    })
+})
+
+ipcMain.on("auth-verified",(event)=>{
+    console.log("Auth verified");
+    // win.loadURL(url).then(()=>win.show());   //show within current window
 });

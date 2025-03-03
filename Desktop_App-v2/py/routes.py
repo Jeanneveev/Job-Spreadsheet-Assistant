@@ -98,7 +98,7 @@ class LinkedList:
         curr:Node=self.head
         while curr:
             if curr.question.q_detail==val:
-                print("matched")
+                # print("matched")
                 return curr
             curr=curr.next
         return None
@@ -163,46 +163,60 @@ class ExportData:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
+                #redirect_uri is the page Google redirects to after sign-in is complete
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    "py/sheets_credentials.json", SCOPES, redirect_uri="http://127.0.0.1:5000"
+                    "py/sheets_credentials.json", SCOPES, redirect_uri="http://127.0.0.1:5000/auth_landing_page/"
                 )
                 #get and return the auth url
                 auth_url, _= flow.authorization_url()
                 return auth_url
         return None
 
-    def getService(self)->Any|HttpError:
+    def get_service(self,code=None)->Any|dict|HttpError:
         """Connects to the Google Sheets API
+        Args:
+            code: The authentification code gotten from the user login
         Returns:
             service (Any): the connection to the API
+            error (dict): a error message
             error (HttError): an HttpError
         """
         ## NOTE: If modifying this scope, delete token.json file
         SCOPES=["https://www.googleapis.com/auth/spreadsheets"]
-        creds=None
-        # If there are no (valid) credentials available, let the user log in.
+        creds=None  #initialize creds
+        # If there is already a token.json, just get the credentials from it
         token_path=os.path.join(basedir,"token.json")
         if os.path.exists(token_path):
             creds=Credentials.from_authorized_user_file(token_path, SCOPES)
+        #if there isn't or the credentials aren't valid
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
-            else:
+            elif code:
                 creds_path=os.path.join(basedir,"sheets_credentials.json")
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    creds_path, SCOPES
+                    creds_path, SCOPES, redirect_uri="http://127.0.0.1:5000/auth_landing_page/"
                 )
-                creds = flow.run_local_server(port=0)
-            # Save the credentials for the next run
-            with open(token_path, "w") as token:
-                token.write(creds.to_json())
+                #try getting the token of the credentials from the auth code
+                try:
+                    flow.fetch_token(code=code)
+                    creds=flow.credentials
+                    with open(token_path, "w") as token:
+                        token.write(creds.to_json())
+                except Exception as e:
+                    print(f"ERROR!! Error fetching token: {e}")
+                    return {"error":"Error authenticating via code"}, 400
+            else:   #no creds or code
+               return {"error":"User could not be authenticated"}, 404
+            
             #try and return the build
             try:
                 service = build("sheets", "v4", credentials=creds)
                 return service
             except HttpError as error:
                 print(f"An error occurred: {error}")
-                return error
+                return {"error":f"Some error occured with Google Sheets' API: {error}"}, 500
+    
     def length_to_col_letter(self,length:int):
         num2char={1:"A",2:"B",3:"C",4:"D",5:"E",
                   6:"F",7:"G",8:"H",9:"I",10:"J",
@@ -225,7 +239,7 @@ class ExportData:
             result (Any): The confirmation that the cells were appended
             error (HttpError): An HttpError
         """
-        service=self.getService()
+        service=self.get_service()  # gets service from the by now created token.json
         data=self.data
         end_col=self.length_to_col_letter(len(data))
         rnge=f"A2:{end_col}2"
@@ -348,7 +362,7 @@ def get_all_base_details():
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():
     """Get every node in the linked list and return them as json"""
-    print("Linked list JSON is: ",ll.getAll())
+    # print("Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
 ## SAVE
 import time
@@ -572,15 +586,34 @@ def add_all_answers():
 def get_auth_url():
     url=exportData.get_auth_url()
     if url:
-        return jsonify({"auth_url":url})
+        return {"auth_url":url}
     else:
-        return jsonify({"message": "Credentials are already validated"}), 200
-    
+        return {"message": "Credentials are already validated"}, 200
+
+@app.route("/auth_landing_page/",methods=["GET"])
+def auth_landing_page():
+    """The page the Google Sheets authorization process lands on after
+        a successful login. Includes the auth_code in its parameters
+    """
+    return "You reached the landing page! You can close this window now."
+
+@app.route("/receive_auth_code",methods=["POST"])
+def receive_auth_code():
+    code=request.get_json()["code"]
+    service=exportData.get_service(code)
+    if type(service)==dict: #it's an error
+        return service  #return that error message
+    else:
+        return {"success_message":"Authentification successful and connection built"}
+
+
+
+
 @app.route("/export_data/sheets",methods=["POST"])
 def export_data_sheets():
-    # export_result=exportData.export_to_sheets()
-    # res_msg:str=f"{(export_result.get('updates').get('updatedCells'))} cells appended."
-    # return res_msg
+    export_result=exportData.export_to_sheets()
+    res_msg:str=f"{(export_result.get('updates').get('updatedCells'))} cells appended."
+    return res_msg
     pass
 
 
