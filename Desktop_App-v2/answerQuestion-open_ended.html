@@ -15,6 +15,7 @@
         </form>
         <button onclick="window.location.href='index.html'">Back to Home</button>
         <script>
+            const { ipcRenderer, shell } = require('electron');
             const SERVER_URL = "http://127.0.0.1:5000";
             const questionHeader=document.getElementById("question");
             const form=document.getElementById("form");
@@ -74,7 +75,7 @@
                 .then(data=>console.log("data"));
             }
 
-            /* NEXT QUESTION */
+            /* NEXT QUESTION & EXPORTS */
             function loadNextQuestion(){
                 //set the text of the next question
                 fetch(`${SERVER_URL}/get_next_question`,{ method: "GET" })
@@ -105,18 +106,68 @@
                 }else{  //this is the last question
                     if(confirm("This is the last question. Do you wish to submit all your answers?")){
                         console.log("Answer submission confirmed");
-                        fetch(`${SERVER_URL}/get_all_answers`,{ method: "GET" })
-                        .then(response=>response.json())
-                        .then(data=>console.log(data));
-
+                        /* Get and add all the answers to be exported */
+                        // fetch(`${SERVER_URL}/get_all_answers`,{ method: "GET" })
+                        // .then(response=>response.json())
+                        // .then(data=>console.log(data));
                         fetch(`${SERVER_URL}/add_all_answers`,{ method:"POST" })
                         .then(response=>response.text())
                         .then(data=>console.log(data));
-                        /* TODO: Send request to connect to Google Sheets and upload data */
+
+                        /* Send request to connect to export method and upload data */
+                        fetch(`${SERVER_URL}/get_export_method`,{method: "GET"})
+                        .then(response=>response.text()).then(data=>{
+                            console.log("Export method is: ",data);
+                            if(data=="sheets"){
+                                return fetch(`${SERVER_URL}/get_auth_url`,{method: "GET"});
+                            }
+                        })  //end of get_export_method chain, start of get_auth_url chain
+                        .then(response=>response.json()).then(data=>{
+                            /* Sheets */
+                            if(data.auth_url){
+                                //send message to ipcMain to open popup and get code
+                                ipcRenderer.send("open-auth-window", data.auth_url);
+                            }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
+                                console.log(data.message);
+                                fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
+                                .then(response=>response.text()).then(data=>alert(data));
+                            }
+                            /* CSV */
+                        })
+                        .catch(err=>console.error("Export request failed",err));
                     }
                 }
             });
-
+            
+            /* Listen for the trigger from ipcMain in main.js
+             * Activated on the authorization code successfully being gotten
+             * Once it is, just pass it to the backend
+             */
+            ipcRenderer.on("auth-code-recieved", (event, code)=>{
+                console.log("renderer trigger recieved");
+                fetch(`${SERVER_URL}/receive_auth_code`,{
+                    method: "POST",
+                    headers:{
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({code:code}),
+                })
+                .then(response=>{
+                    console.log("Authentification complete");
+                    return response.json();
+                }).then(data=>{
+                    if(data.success_message){
+                        console.log(data.success_message);
+                        /* TODO: Add fetch request to finally export the data */
+                        fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
+                        .then(response=>response.text()).then(data=>alert(data));
+                    }else{
+                        //there was an error
+                        console.error(data.error);
+                    }
+                })
+                .catch(err=>console.error("Authentification failed: ",err));
+            })
         </script>
     </body>
 </html>
