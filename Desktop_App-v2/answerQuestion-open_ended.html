@@ -10,7 +10,8 @@
         <p id="test"></p>
         <form id="form">
             <input type="text" id="user_input" placeholder="" />
-            <button type="submit" id="submit">Skip</button>
+            <button type="submit" id="next">Skip</button>
+            <button type="submit" id="previous">Previous</button>
             <button type="reset" id="reset">Reset</button>
         </form>
         <button onclick="window.location.href='index.html'">Back to Home</button>
@@ -20,7 +21,8 @@
             const questionHeader=document.getElementById("question");
             const form=document.getElementById("form");
             const input=document.getElementById("user_input");
-            const submitBtn=document.getElementById("submit");
+            const nextBtn=document.getElementById("next");
+            const prevBtn=document.getElementById("previous");
             /* GET QUESTION */
             /**
              * For the first question, get the question's text and the info on the next question from the request response
@@ -45,6 +47,7 @@
                         }
                     })
                     .catch(error=>console.error("An error was recieved: ",error));
+                    prevBtn.disabled=true;  //disable prevBtn
                     sessionStorage.setItem("first_q","false");  //change flag
                 }else{
                     /* Get all the session variables from sessionStorage */
@@ -58,13 +61,14 @@
                     }else{
                         console.log("This is the last question");
                     }
+                    prevBtn.disabled=false; //enable prevBtn
                 }
             }
             loadQuestion();
             
             /* When an input is entered, change button text */
             input.addEventListener('input', e => {
-                submitBtn.innerHTML="Submit";
+                nextBtn.innerHTML="Next";
             });
 
             /* FORM SUBMISSION */
@@ -75,7 +79,31 @@
                 .then(data=>console.log("data"));
             }
 
-            /* NEXT QUESTION & EXPORTS */
+            /* PREVIOUS QUESTION */
+            function loadPreviousQuestion(){
+                fetch(`${SERVER_URL}/get_prev_question`,{ method: "GET" })
+                .then(response=>response.json())
+                .then((data)=>{
+                    if(data.is_first){ //the previous question is the first question
+                        sessionStorage.setItem("first_q", "true");  //reset flag
+                    }else{
+                        /* Set session variables */
+                        sessionStorage.setItem("next_q_str",data.q_str);
+                        sessionStorage.setItem("has_next","true");
+                    }
+                    //change what page we go to depending on the a_type of the previous question
+                    if(data.prev_a_type=="multiple-choice"){
+                        console.log("The previous question is multiple choice");
+                        form.action="answerQuestion-multiple_choice.html";
+                    }else if(data.prev_a_type=="open-ended"){
+                        console.log("The previous question is open-ended");
+                        form.action="answerQuestion-open_ended.html";
+                    }
+                    window.location.href=form.action;   //load page of next question
+                });
+            }
+
+            /* NEXT QUESTION */
             function loadNextQuestion(){
                 //set the text of the next question
                 fetch(`${SERVER_URL}/get_next_question`,{ method: "GET" })
@@ -97,45 +125,52 @@
                     window.location.href=form.action;   //load page of next question
                 });
             }
+
+            /* EXPORTING ANSWERS */
+            function submitLastQuestion(){
+                console.log("Answer submission confirmed");
+                /* Add all the answers to be exported */
+                fetch(`${SERVER_URL}/add_all_answers`,{ method:"POST" })
+                .then(response=>response.text())
+                .then(data=>console.log(data));
+
+                /* Send request to connect to export method and upload data */
+                fetch(`${SERVER_URL}/get_export_method`,{method: "GET"})
+                .then(response=>response.text()).then(data=>{
+                    console.log("Export method is: ",data);
+                    if(data=="sheets"){
+                        return fetch(`${SERVER_URL}/get_auth_url`,{method: "GET"});
+                    }
+                })  //end of get_export_method chain, start of get_auth_url chain
+                .then(response=>response.json()).then(data=>{
+                    /* Sheets */
+                    if(data.auth_url){
+                        //send message to ipcMain to open popup and get code
+                        ipcRenderer.send("open-auth-window", data.auth_url);
+                    }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
+                        console.log(data.message);
+                        fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
+                        .then(response=>response.text()).then(data=>alert(data));
+                    }
+                    /* CSV */
+                })
+                .catch(err=>console.error("Export request failed",err));
+            }
+
             form.addEventListener("submit",(event)=>{
                 event.preventDefault();
-                submitAnswer(input.value);  //pass the answer to the backend
-                //if there is a next question
-                if(has_next=="true"){
-                    loadNextQuestion();
-                }else{  //this is the last question
-                    if(confirm("This is the last question. Do you wish to submit all your answers?")){
-                        console.log("Answer submission confirmed");
-                        /* Get and add all the answers to be exported */
-                        // fetch(`${SERVER_URL}/get_all_answers`,{ method: "GET" })
-                        // .then(response=>response.json())
-                        // .then(data=>console.log(data));
-                        fetch(`${SERVER_URL}/add_all_answers`,{ method:"POST" })
-                        .then(response=>response.text())
-                        .then(data=>console.log(data));
-
-                        /* Send request to connect to export method and upload data */
-                        fetch(`${SERVER_URL}/get_export_method`,{method: "GET"})
-                        .then(response=>response.text()).then(data=>{
-                            console.log("Export method is: ",data);
-                            if(data=="sheets"){
-                                return fetch(`${SERVER_URL}/get_auth_url`,{method: "GET"});
-                            }
-                        })  //end of get_export_method chain, start of get_auth_url chain
-                        .then(response=>response.json()).then(data=>{
-                            /* Sheets */
-                            if(data.auth_url){
-                                //send message to ipcMain to open popup and get code
-                                ipcRenderer.send("open-auth-window", data.auth_url);
-                            }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
-                                console.log(data.message);
-                                fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
-                                .then(response=>response.text()).then(data=>alert(data));
-                            }
-                            /* CSV */
-                        })
-                        .catch(err=>console.error("Export request failed",err));
+                submitterId=event.submitter.id;
+                if(submitterId=="next"){
+                    submitAnswer(input.value);  //pass the answer to the backend
+                    if(has_next=="true"){   //if there is a next question
+                        loadNextQuestion();
+                    }else{                  //this is the last question
+                        if(confirm("This is the last question. Do you wish to submit all your answers?")){
+                            submitLastQuestion();
+                        }
                     }
+                }else if(submitterId=="previous"){
+                    loadPreviousQuestion();
                 }
             });
             
