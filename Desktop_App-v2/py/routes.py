@@ -506,6 +506,7 @@ def get_next_question():
     #get the node from the detail
     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
     next_node:Node=curr_node.next
+
     if next_node is not None:   #if there is a next node
         session["curr_node"]=next_node.as_dict()
         if next_node.next is not None:  #if there is a node after that
@@ -517,10 +518,23 @@ def get_next_question():
         return "There is no next node", 404
 @app.route("/get_prev_question")
 def get_prev_question():
-    curr_node:Node=session["curr_node"]
+    curr_node_dict:dict=session["curr_node"]
+    #get the node from the detail
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
     prev_node=curr_node.prev
-    session["curr_node"]=prev_node
-    return prev_node.question.q_str
+
+    if prev_node is not None:   #if there is a prev node
+        session["curr_node"]=prev_node.as_dict()
+        if prev_node==ll.head:  #if the previous node is the first node
+            return {"q_str":prev_node.question.q_str, "is_first":"true",
+                    "has_next":"true", "next_a_type":curr_node.question.a_type.value,
+                    "prev_a_type":prev_node.question.a_type.value}
+        else:
+            return {"q_str":prev_node.question.q_str, "has_next":"true",
+                    "next_a_type":curr_node.question.a_type.value,
+                    "prev_a_type":prev_node.question.a_type.value}
+    else:                       #this node is the first node (this shouldn't be reachable but handled jic)
+        return "There is no previous node", 400
 
 @app.route("/add_answer/<answ>",methods=["POST"])
 def add_answer(answ):
