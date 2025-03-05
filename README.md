@@ -8,7 +8,7 @@ You'll need:
 - Python 3.10.7 or later
 - A Google account
 - [A Google Cloud project](https://developers.google.com/workspace/guides/create-project)
-## Installation
+## Installation - Terminal Program
 1. Create a credentials JSON file for your Google Cloud project ([steps found here](https://developers.google.com/sheets/api/quickstart/python#authorize_credentials_for_a_desktop_application))
 2. Copy its contents into "empty_sheets_credentials.json" file and rename it to "sheets_credentials.json"
 3. Download the Google client library for Python
