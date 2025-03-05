@@ -43,7 +43,7 @@
                 const datalist=document.createElement("datalist");
                 datalist.id="preexistingOptList";
                 datalistID=datalist.id;
-                fetch(`${SERVER_URL}/get_all_options`,{ method: "GET" })
+                fetch(`${SERVER_URL}/get_all_choices`,{ method: "GET" })
                 .then(response=>response.json()).then((data)=>{
                     const previous_choices=data.result;
                     console.log("Previous choices are", previous_choices);
@@ -92,7 +92,7 @@
              * before submitting the question
             */
             function loadChoices(){
-                fetch(`${SERVER_URL}/get_current_options`,{ method: "GET" })
+                fetch(`${SERVER_URL}/get_current_choices`,{ method: "GET" })
                 .then(response=>response.json()).then((data)=>{
                     const existing_choices=data.result;
                     console.log("Existing choices are",existing_choices);
@@ -109,7 +109,7 @@
 
             form.addEventListener("submit",(event)=>{
                 event.preventDefault();
-                /* TODO: POST "/add_options" with the body being a list of all the input values */
+                /* TODO: POST "/add_choices" with the body being a list of all the input values */
                 const formData=new FormData(form);
                 const formDict=Object.fromEntries(formData);
                 console.log(formDict);
@@ -121,7 +121,7 @@
                 });
                 console.log(choicesLst);
 
-                fetch(`${SERVER_URL}/set_curr_options`,{
+                fetch(`${SERVER_URL}/set_curr_choices`,{
                     method: "POST",
                     headers:{
                         "Content-Type": "application/json",
@@ -130,7 +130,7 @@
                 }).then((response)=>{
                     if(response.ok){
                         message.innerText="Choices added!";
-                        return fetch(`${SERVER_URL}/add_options`,{
+                        return fetch(`${SERVER_URL}/add_choices`,{
                             method: "POST",
                             headers:{
                                 "Content-Type": "application/json",

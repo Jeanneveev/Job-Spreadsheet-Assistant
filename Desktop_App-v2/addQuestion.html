@@ -41,7 +41,7 @@
                 <legend>* Answer Type:</legend>
                 <label><input type="radio" name="a_type" id="open" value="open-ended" required />Open-Ended</label>
                 <label><input type="radio" name="a_type" class="inline" id="mult" value="multiple-choice" required />Multiple-Choice</label>
-                <button class="inline" id="choices" onclick="window.location.href='addChoices.html'">Add Choice Options</button>
+                <button type="button" class="inline" id="choices" onclick="openChoices();" disabled>Add Choice Options</button>
             </fieldset>
             <button type="button" onclick="window.location.href='viewQuestion.html'">Cancel</button>
             <button type="submit" id="submit">Continue</button>
@@ -49,9 +49,11 @@
         <p>*: Required</p>
         <p>**: Must be unique</p>
         <script>
+            const { ipcRenderer, shell } = require('electron');
             const SERVER_URL = "http://127.0.0.1:5000";
             const form=document.getElementById("form");
 
+            /* FORM CONTROLS */
             /* If Two-Part is selected, enable base and add-on, and re-disable when it isn't */
             const twopart=document.getElementById("two_part_q");
             const base=document.getElementById("base_q");
@@ -94,10 +96,11 @@
             });
             /* If multiple-choice is selected, enable the choices button */
             const aTypeRadios=document.querySelectorAll('input[name="a_type"]');
+            const mult=document.getElementById("mult");
             const choicesBtn=document.getElementById("choices");
             aTypeRadios.forEach(radio => {
                 radio.addEventListener("change", () => {
-                    if(addon.checked){
+                    if(mult.checked){
                         choices.disabled=false;
                     }else{
                         choices.disabled=true;
@@ -125,8 +128,12 @@
                     console.error(e);
                 }
             }
+            function openChoices(){
+                /* Send the message to open the choices popup */
+                ipcRenderer.send("open-choices-window");
+            }
 
-
+            /* FORM VERIFICATION */
             /* 
                 Check that the q_detail of the question being added doesn't already exist
             */
@@ -173,6 +180,8 @@
                     return false;
                 }
             }
+
+            /* FORM SUBMISSION */
             /* 
                 On form submit, pass the data to the backend, but don't redirect to it.
                 Go to the View Questions page instead
@@ -189,6 +198,12 @@
                 }
                 if(fData.get("a_type")=="multiple-choice"){
                     /* TODO: Figure out how to add choices to the formData */
+                    fetch(`${SERVER_URL}/get_current_choices`, { method: "GET" })
+                    .then(response=>response.json()).then((data)=>{
+                        choices=data.result;
+                        console.log("choices are:",choices);
+                        formData.append("choices",JSON.stringify(choices));
+                    });
                 }
                 try{
                     const response=await fetch(`${link}`,{
@@ -199,9 +214,7 @@
                     console.error(e);
                 }
             }
-            /* 
-                Confirm user wants to submit form. If so, run form checking and submission functions
-            */
+            /* Confirm user wants to submit form. If so, run form checking and submission functions */
             function confirmFormSubmit(formData){
                 if(confirm("Are you sure you want to submit?")){
                     const qd=formData.get("detail");
@@ -235,7 +248,8 @@
                     /* TODO: Validate that choices were added, else, error */
 
                     confirmFormSubmit(fData);
-                    fetch("/clear_current_options",{method: "GET"})
+                    fetch(`${SERVER_URL}/clear_current_choices`,{method: "GET"})
+                    .then(response=>console.log("current_choices cleared"))
                     .catch(err=>console.error(err));
                 }else{
                     confirmFormSubmit(fData);

@@ -160,10 +160,23 @@ ipcMain.on("open-auth-window", (event,authURL)=>{
 
     authWindow.on("closed",()=>{
         authWindow=null;
-    })
-})
+    });
+});
 
-ipcMain.on("auth-verified",(event)=>{
-    console.log("Auth verified");
-    // win.loadURL(url).then(()=>win.show());   //show within current window
+let choiceWindow=null;
+ipcMain.on("open-choices-window",(event)=>{
+    choiceWindow=new BrowserWindow({
+        width: 400,
+        height: 500,
+        webPreferences: {
+            nodeIntegration: false, //for security
+        },
+    });
+    choiceWindow.loadFile('addChoices.html');
+
+    /* TODO: If choices set, clear requirement */
+
+    choiceWindow.on("closed",()=>{
+        choiceWindow=null;
+    });
 });

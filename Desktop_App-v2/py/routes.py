@@ -17,13 +17,13 @@ class QTypeOptions(Enum):
 class ATypeOptions(Enum):
     MULT="multiple-choice"
     TEXT="open-ended"
-### TODO: Figure out how to add choices to a Question
 class Question:
-    def __init__(self,q_str:str,q_detail:str,q_type:QTypeOptions,a_type:ATypeOptions)->None:
+    def __init__(self,q_str:str,q_detail:str,q_type:QTypeOptions,a_type:ATypeOptions,choices:list[str]=None)->None:
         self.q_str=q_str
         self.q_detail=q_detail
         self.q_type=q_type
         self.a_type=a_type
+        self.choices=choices
     def __str__(self)->str:
         return f"{self.q_detail}"
     def as_dict(self)->dict:
@@ -303,7 +303,12 @@ def add_question():
     else:
         q_type=QTypeOptions(result["q_type"])
     a_type=ATypeOptions(result["a_type"])
-    new_question=Question(result["question"],result["detail"],q_type,a_type)
+    #if it's a multiple-choice question, get the choices
+    if a_type.value=="multiple-choice":
+        choices=json.loads(result["choices"])
+        new_question=Question(result["question"],result["detail"],q_type,a_type,choices)
+    else:
+        new_question=Question(result["question"],result["detail"],q_type,a_type)
     print("Created question:",new_question)
     new_node=Node(new_question)
     ll.append(new_node)
@@ -323,6 +328,7 @@ def add_addon():
     base_node.addon=new_question
     print(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
     return {"response":"added addon question"}
+
 ## DETAILS
 @app.route("/add_detail/<detail>",methods=["GET","POST"])
 def add_detail_to_list(detail):
@@ -361,8 +367,8 @@ def get_all_base_details():
     return {"result":base_list}
 
 ## OPTIONS
-@app.route("/set_curr_options", methods=["POST"])
-def set_curr_options():
+@app.route("/set_curr_choices", methods=["POST"])
+def set_curr_choices():
     """Set the past list of options as the value of curr_opt_list"""
     options=request.get_json()["choices"]
     # Remove duplicates NOTE: Can't use set because it's unordered
@@ -371,8 +377,8 @@ def set_curr_options():
     session.modified = True
     return "Current options set",200
 
-@app.route("/add_options", methods=["POST"])
-def add_options_to_list():
+@app.route("/add_choices", methods=["POST"])
+def add_choices_to_list():
     """Add any number of passed options to the overall list of options"""
     options=request.get_json()["choices"]
     # print("Options are", options)
@@ -396,17 +402,17 @@ def add_options_to_list():
     session.modified = True
     return "Options added to all list"
 
-@app.route("/get_all_options",methods=["GET"])
-def get_all_options():
+@app.route("/get_all_choices",methods=["GET"])
+def get_all_choices():
     options:list[str]=session.get("all_opt_lst",[])
     return {"result":options}
-@app.route("/get_current_options",methods=["GET"])
+@app.route("/get_current_choices",methods=["GET"])
 def get_curr_options():
     options:list[str]=session.get("curr_opt_list",[])
     return {"result":options}
 
-@app.route("/clear_current_options",methods=["GET"])
-def clear_current_options():
+@app.route("/clear_current_choices",methods=["GET"])
+def clear_current_choices():
     """Clear the curr_options session variable"""
     if 'curr_opt_lst' in session:
         session['curr_opt_lst'] = json.dumps([])
