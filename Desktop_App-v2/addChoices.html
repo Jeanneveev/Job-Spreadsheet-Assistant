@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <style>
+            .navBtn{
+                display: block;
+            }
+            a{
+                text-decoration: underline;
+            }
+            .input-container{
+                padding-block: .0625rem;
+            }
+            input{
+                padding-inline: .125rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Add Choices</h1>
+        <p id="message"></p>
+        <form id="form">
+            <div class="choices-container" id="choices">
+
+            </div>
+            <a href="javascript:;" onclick="addChoice();">+ Add Another Choice</a>
+            <button type="submit">Submit</button>
+        </form>
+        <button type="button" class="navBtn" onclick="window.location.href='addQuestion.html'">Back</button>
+        <script>
+            const SERVER_URL = "http://127.0.0.1:5000";
+            const message=document.getElementById("message");
+            const form=document.getElementById("form");
+            const choiceContainer=document.getElementById("choices");
+            let datalistID="";
+
+            /**
+             * Get all the already submitted choices as autofill options for the textbox
+             */
+             function fillAutofill(){
+                const datalist=document.createElement("datalist");
+                datalist.id="preexistingOptList";
+                datalistID=datalist.id;
+                fetch(`${SERVER_URL}/get_all_options`,{ method: "GET" })
+                .then(response=>response.json()).then((data)=>{
+                    const previous_choices=data.result;
+                    console.log("Previous choices are", previous_choices);
+                    previous_choices.forEach(optVal => {
+                        const opt=document.createElement("option");
+                        opt.setAttribute("value",optVal);
+                    });
+                });
+                form.appendChild(datalist);
+            }
+
+            let i=0;
+            function addChoice(presetVal=null){
+                const div=document.createElement("div");
+                div.className="input-container";
+                div.id=`input_container_${i}`
+                const lbl=document.createElement("label");
+                lbl.htmlFor=`txtbox${i}`;
+                lbl.innerText="•";
+                const txtbox=document.createElement("input");
+                txtbox.type="text";
+                txtbox.id=`txtbox${i}`;
+                txtbox.setAttribute("name",`txtbox${i}`);
+                txtbox.setAttribute("list",datalistID);
+                if(presetVal){
+                    txtbox.value=presetVal;
+                }
+
+                const minusBtn=document.createElement("button");
+                minusBtn.addEventListener("click",()=>{
+                    removeChoice(div);
+                });
+                minusBtn.innerText="-";
+                div.appendChild(lbl);
+                div.appendChild(txtbox);
+                div.appendChild(minusBtn);
+                choiceContainer.appendChild(div);
+                i+=1;
+            }
+            function removeChoice(div){
+                choiceContainer.removeChild(div);
+            }
+            /**
+             * Load currently selected choices for this question
+             * To allow for the user to go back and add more choices
+             * before submitting the question
+            */
+            function loadChoices(){
+                fetch(`${SERVER_URL}/get_current_options`,{ method: "GET" })
+                .then(response=>response.json()).then((data)=>{
+                    const existing_choices=data.result;
+                    console.log("Existing choices are",existing_choices);
+                    existing_choices.forEach(choice=>{
+                        addChoice(choice);
+                    });
+                    addChoice();    //add a blank choice regardless at the end for onwindowload
+                }).catch((err)=>console.error(err));
+            }
+            window.addEventListener("load", (event)=>{
+                fillAutofill();
+                loadChoices();
+            });
+
+            form.addEventListener("submit",(event)=>{
+                event.preventDefault();
+                /* TODO: POST "/add_options" with the body being a list of all the input values */
+                const formData=new FormData(form);
+                const formDict=Object.fromEntries(formData);
+                console.log(formDict);
+                let choicesLst=[]
+                Object.entries(formDict).forEach(([key,value])=>{
+                    if(value!=""){
+                        choicesLst.push(value);
+                    }
+                });
+                console.log(choicesLst);
+
+                fetch(`${SERVER_URL}/set_curr_options`,{
+                    method: "POST",
+                    headers:{
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({choices:choicesLst}),
+                }).then((response)=>{
+                    if(response.ok){
+                        message.innerText="Choices added!";
+                        return fetch(`${SERVER_URL}/add_options`,{
+                            method: "POST",
+                            headers:{
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({choices:choicesLst}),
+                        });
+                    }
+                }).then(response=>response.text()).then(data=>console.log(data))
+                .catch((err)=>console.error(err));
+            });
+        </script>
+    </body>
+</html>

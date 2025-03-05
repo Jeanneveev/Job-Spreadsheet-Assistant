@@ -39,8 +39,9 @@
             </fieldset>
             <fieldset>
                 <legend>* Answer Type:</legend>
-                <label><input type="radio" name="a_type" id="mult" value="multiple-choice" required />Multiple-Choice</label>
                 <label><input type="radio" name="a_type" id="open" value="open-ended" required />Open-Ended</label>
+                <label><input type="radio" name="a_type" class="inline" id="mult" value="multiple-choice" required />Multiple-Choice</label>
+                <button class="inline" id="choices" onclick="window.location.href='addChoices.html'">Add Choice Options</button>
             </fieldset>
             <button type="button" onclick="window.location.href='viewQuestion.html'">Cancel</button>
             <button type="submit" id="submit">Continue</button>
@@ -91,6 +92,19 @@
                     }
                 });
             });
+            /* If multiple-choice is selected, enable the choices button */
+            const aTypeRadios=document.querySelectorAll('input[name="a_type"]');
+            const choicesBtn=document.getElementById("choices");
+            aTypeRadios.forEach(radio => {
+                radio.addEventListener("change", () => {
+                    if(addon.checked){
+                        choices.disabled=false;
+                    }else{
+                        choices.disabled=true;
+                    }
+                })
+            });
+
             /* Populate the addon_to dropdown with all the base questions' details
                 In other words, get all nodes.questions.detail where node.question.q_type=base
             */
@@ -173,6 +187,9 @@
                 }else{
                     link=`${SERVER_URL}/add_question`;
                 }
+                if(fData.get("a_type")=="multiple-choice"){
+                    /* TODO: Figure out how to add choices to the formData */
+                }
                 try{
                     const response=await fetch(`${link}`,{
                         method: "POST",
@@ -213,8 +230,16 @@
                 if (fData.get('q_type_2')){
                     console.log("QType2 is",fData.get('q_type_2'));
                 }
-                
-                confirmFormSubmit(fData);
+                                
+                if(fData.get("a_type")=="multiple-choice"){
+                    /* TODO: Validate that choices were added, else, error */
+
+                    confirmFormSubmit(fData);
+                    fetch("/clear_current_options",{method: "GET"})
+                    .catch(err=>console.error(err));
+                }else{
+                    confirmFormSubmit(fData);
+                }
             });
         </script>
     </body>
