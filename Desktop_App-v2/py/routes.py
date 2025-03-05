@@ -17,6 +17,7 @@ class QTypeOptions(Enum):
 class ATypeOptions(Enum):
     MULT="multiple-choice"
     TEXT="open-ended"
+### TODO: Figure out how to add choices to a Question
 class Question:
     def __init__(self,q_str:str,q_detail:str,q_type:QTypeOptions,a_type:ATypeOptions)->None:
         self.q_str=q_str
@@ -327,26 +328,26 @@ def add_addon():
 def add_detail_to_list(detail):
     """Add a q_detail to a list of q_details"""
     # Initialize the list if it doesn't exist
-    if 'lst' not in session:
+    if 'detail_lst' not in session:
         print("Session variable not found. Initializing...")
-        session['lst'] = json.dumps([])
+        session['detail_lst'] = json.dumps([])
         session.modified = True
     # Append to the list
-    lst:list[str]=json.loads(session['lst'])
-    print("Before appending:",lst)
-    lst.append(detail)
-    print("After appending:",lst)
-    session['lst'] = json.dumps(lst)
+    detail_lst:list[str]=json.loads(session['detail_lst'])
+    print("Before appending:",detail_lst)
+    detail_lst.append(detail)
+    print("After appending:",detail_lst)
+    session['detail_lst'] = json.dumps(detail_lst)
     session.modified = True
 
-    return {"response":f"{lst}"}
+    return {"response":f"{detail_lst}"}
 @app.route("/get_all_details",methods=["GET"])
 def get_all_details():
-    details:list[str]=session.get("lst",[])
+    details:list[str]=session.get("detail_lst",[])
     return {"result":details}
 @app.route("/check_detail/<detail>")
 def check_detail(detail):
-    details:list[str]=session.get("lst",[])
+    details:list[str]=session.get("detail_lst",[])
     if detail in details:
         return {"result":"True","detail_list":details}
     else:
@@ -358,6 +359,60 @@ def get_all_base_details():
     """Get the details of all nodes with the q_type 'base'"""
     base_list=ll.getByQType("base")
     return {"result":base_list}
+
+## OPTIONS
+@app.route("/set_curr_options", methods=["POST"])
+def set_curr_options():
+    """Set the past list of options as the value of curr_opt_list"""
+    options=request.get_json()["choices"]
+    # Remove duplicates NOTE: Can't use set because it's unordered
+    options=list(dict.fromkeys(options))
+    session['curr_opt_list']=options
+    session.modified = True
+    return "Current options set",200
+
+@app.route("/add_options", methods=["POST"])
+def add_options_to_list():
+    """Add any number of passed options to the overall list of options"""
+    options=request.get_json()["choices"]
+    # print("Options are", options)
+    # Initialize the lists if they don't exist
+    if 'all_opt_lst' not in session:
+        # print("Session variable not found. Initializing...")
+        session['all_opt_lst'] = []
+        session.modified = True
+    # Append to the list
+    all_opt_lst:list[str]=session['all_opt_lst']
+    # print("Before appending:",all_opt_lst,curr_opt_list)
+    all_opt_lst.extend(options)
+    # print("Before setting:",all_opt_lst,curr_opt_list)
+    # Remove duplicates NOTE: Can't use set because it's unordered
+    all_opts=list(dict.fromkeys(all_opt_lst))
+    # print("After setting:",all_opts,curr_opts)
+    # Turn back into lists in order to be serializable
+    all_opt_lst=list(all_opts)
+    # print("After appending:",all_opt_lst,curr_opt_list)
+    session['all_opt_lst'] = all_opt_lst
+    session.modified = True
+    return "Options added to all list"
+
+@app.route("/get_all_options",methods=["GET"])
+def get_all_options():
+    options:list[str]=session.get("all_opt_lst",[])
+    return {"result":options}
+@app.route("/get_current_options",methods=["GET"])
+def get_curr_options():
+    options:list[str]=session.get("curr_opt_list",[])
+    return {"result":options}
+
+@app.route("/clear_current_options",methods=["GET"])
+def clear_current_options():
+    """Clear the curr_options session variable"""
+    if 'curr_opt_lst' in session:
+        session['curr_opt_lst'] = json.dumps([])
+        session.modified = True
+    return "Current options cleared"
+
 ## VIEW
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():
