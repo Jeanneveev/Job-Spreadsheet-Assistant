@@ -37,7 +37,7 @@ To export to a Google Sheets spreadsheet, do the following:
    SPREADSHEET_ID="<your_spreadsheet_id>"
    ```
 
-9. In the terminal, navigate to the folder you downloaded Desktop_App-v2 into and run the program with:
+In the terminal, navigate to the folder you downloaded Desktop_App-v2 into and run the program with:
    ```sh
    npm start
    ```
