@@ -16,7 +16,6 @@
         </form>
         <button onclick="window.location.href='index.html'">Back to Home</button>
         <script>
-            const { ipcRenderer, shell } = require('electron');
             const SERVER_URL = "http://127.0.0.1:5000";
             const questionHeader=document.getElementById("question");
             const form=document.getElementById("form");
@@ -146,7 +145,7 @@
                     /* Sheets */
                     if(data.auth_url){
                         //send message to ipcMain to open popup and get code
-                        ipcRenderer.send("open-auth-window", data.auth_url);
+                        window.electron.send("open-auth-window", data.auth_url);
                     }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
                         console.log(data.message);
                         fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
@@ -178,7 +177,7 @@
              * Activated on the authorization code successfully being gotten
              * Once it is, just pass it to the backend
              */
-            ipcRenderer.on("auth-code-recieved", (event, code)=>{
+            window.electron.on("auth-code-recieved", (event, code)=>{
                 console.log("renderer trigger recieved");
                 fetch(`${SERVER_URL}/receive_auth_code`,{
                     method: "POST",
