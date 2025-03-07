@@ -28,7 +28,7 @@
             <a href="javascript:;" onclick="addChoice();">+ Add Another Choice</a>
             <button type="submit">Submit</button>
         </form>
-        <button type="button" class="navBtn" onclick="window.location.href='addQuestion.html'">Back</button>
+        <button type="button" class="navBtn" onclick="closePopup();">Finish</button>
         <script>
             const SERVER_URL = "http://127.0.0.1:5000";
             const message=document.getElementById("message");
@@ -109,7 +109,6 @@
 
             form.addEventListener("submit",(event)=>{
                 event.preventDefault();
-                /* TODO: POST "/add_choices" with the body being a list of all the input values */
                 const formData=new FormData(form);
                 const formDict=Object.fromEntries(formData);
                 console.log(formDict);
@@ -141,6 +140,10 @@
                 }).then(response=>response.text()).then(data=>console.log(data))
                 .catch((err)=>console.error(err));
             });
+
+            function closePopup(){
+                window.electron.send("close-choices");
+            }
         </script>
     </body>
 </html>

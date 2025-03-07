@@ -49,7 +49,6 @@
         <p>*: Required</p>
         <p>**: Must be unique</p>
         <script>
-            const { ipcRenderer, shell } = require('electron');
             const SERVER_URL = "http://127.0.0.1:5000";
             const form=document.getElementById("form");
 
@@ -130,7 +129,7 @@
             }
             function openChoices(){
                 /* Send the message to open the choices popup */
-                ipcRenderer.send("open-choices-window");
+                window.electron.send("open-choices-window");
             }
 
             /* FORM VERIFICATION */
@@ -180,11 +179,26 @@
                     return false;
                 }
             }
+            async function validateChoices(){
+                let validated=false;
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_current_choices`, { method: "GET" })
+                    const data=await response.json()
+                    const res=data.result
+                    // console.log("Current choices are:",res,". Length is",res.length)
+                    if(res.length!=0){
+                        // console.log("Reached if statement")
+                        validated=true;
+                    }
+                }catch(e){console.error(e)}
+                console.log("Validated is:",validated)
+                return validated;
+            }
 
             /* FORM SUBMISSION */
             /* 
-                On form submit, pass the data to the backend, but don't redirect to it.
-                Go to the View Questions page instead
+                On form submit, pass the data to the backend, but don't redirect to it,
+                just give a success notification
             */
             async function sendForm() {
                 const formData=new FormData(form);
@@ -196,44 +210,53 @@
                 }else{
                     link=`${SERVER_URL}/add_question`;
                 }
-                if(fData.get("a_type")=="multiple-choice"){
-                    /* TODO: Figure out how to add choices to the formData */
-                    fetch(`${SERVER_URL}/get_current_choices`, { method: "GET" })
-                    .then(response=>response.json()).then((data)=>{
+                if(formData.get("a_type")=="multiple-choice"){
+                    /* using await here so the code outside the if statement only runs after the Promise is fulfilled */
+                    try{
+                        const response=await fetch(`${SERVER_URL}/get_current_choices`, { method: "GET" });
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data=await response.json();
                         choices=data.result;
                         console.log("choices are:",choices);
                         formData.append("choices",JSON.stringify(choices));
-                    });
+                    }catch(e){
+                        console.error(e);
+                    }
                 }
-                try{
-                    const response=await fetch(`${link}`,{
-                        method: "POST",
-                        body: formData
-                    });
-                }catch(e){
-                    console.error(e);
-                }
+                console.log("FormData is",Array.from(formData));
+                fetch(`${link}`,{
+                    method: "POST",
+                    body: formData
+                }).then(response=>response.json()).then((data)=>{
+                    if(data.mult_response){
+                        fetch(`${SERVER_URL}/clear_current_choices`,{method: "GET"})
+                        .then(response=>response.text()).then(data=>console.log(data))
+                        .catch(err=>console.error(err));
+                    }
+                })
+                .catch(e=>console.error(e));
             }
             /* Confirm user wants to submit form. If so, run form checking and submission functions */
-            function confirmFormSubmit(formData){
-                if(confirm("Are you sure you want to submit?")){
-                    const qd=formData.get("detail");
-                    console.log("q_detail is",qd);
-                    /* Form validation */
-                    checkUniqueDetail(qd).then(result=>{
-                        isUniqueDetail=result;
-                        console.log("unique:",isUniqueDetail);
-                        /* If validated, send info */
-                        if(isUniqueDetail==true){
-                            sendForm();
-                            sendDetail(qd);
-                            message.innerText="Question added!"
-                        }else{
-                            message.innerText="A question with this detail already exists. Please try again"
-                        }
-                    });
-                }
-            }
+            window.electron.on("confirm-box-confirmed",()=>{
+                const formData = new FormData(form);
+                const qd=formData.get("detail");
+                console.log("q_detail is",qd);
+                /* Form validation */
+                checkUniqueDetail(qd).then(result=>{
+                    isUniqueDetail=result;
+                    console.log("unique:",isUniqueDetail);
+                    /* If validated, send info */
+                    if(isUniqueDetail==true){
+                        sendForm();
+                        sendDetail(qd);
+                        message.innerText="Question added!"
+                    }else{
+                        message.innerText="A question with this detail already exists. Please try again"
+                    }
+                });
+            });
             const message=document.getElementById("message");
             form.addEventListener("submit", async (event)=>{
                 event.preventDefault();
@@ -246,13 +269,17 @@
                                 
                 if(fData.get("a_type")=="multiple-choice"){
                     /* TODO: Validate that choices were added, else, error */
-
-                    confirmFormSubmit(fData);
-                    fetch(`${SERVER_URL}/clear_current_choices`,{method: "GET"})
-                    .then(response=>console.log("current_choices cleared"))
-                    .catch(err=>console.error(err));
+                    validateChoices().then((validated)=>{
+                        if(validated){
+                            //send message to main.js to create confirm popup box
+                        window.electron.send("open-confirm-box","Are you sure you want to submit?");
+                        }else{
+                            window.electron.send("open-alert","Multiple-choice questions must have choices set. Please add choices");
+                        }
+                    })
                 }else{
-                    confirmFormSubmit(fData);
+                    //send message to main.js to create confirm popup box
+                    window.electron.send("open-confirm-box","Are you sure you want to submit?");
                 }
             });
         </script>

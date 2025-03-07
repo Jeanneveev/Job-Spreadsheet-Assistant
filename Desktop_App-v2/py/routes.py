@@ -295,7 +295,7 @@ def check():
 def add_question():
     """Make a new Question with the info passed"""
     result=request.form
-    print(result)
+    print("Form is", result)
     #all of the form sections are required, so we don't need to check for NULLs
     # however, we do need to check if base or add-on was selected because they're in their own group
     if "q_type_2" in result:
@@ -305,7 +305,9 @@ def add_question():
     a_type=ATypeOptions(result["a_type"])
     #if it's a multiple-choice question, get the choices
     if a_type.value=="multiple-choice":
-        choices=json.loads(result["choices"])
+        print("Creating new multiple-choice question")
+        choices:list[str]=json.loads(result["choices"])
+        print("Choices are:",choices)
         new_question=Question(result["question"],result["detail"],q_type,a_type,choices)
     else:
         new_question=Question(result["question"],result["detail"],q_type,a_type)
@@ -313,7 +315,10 @@ def add_question():
     new_node=Node(new_question)
     ll.append(new_node)
     ll.printLL()
-    return {"response":"added question"}
+    if a_type.value=="multiple-choice":
+        return {"mult_response": "added question"}
+    else:
+        return {"response":"added question"}
 @app.route("/add_question/addon", methods=["POST"])
 def add_addon():
     result=request.form
@@ -369,11 +374,11 @@ def get_all_base_details():
 ## OPTIONS
 @app.route("/set_curr_choices", methods=["POST"])
 def set_curr_choices():
-    """Set the past list of options as the value of curr_opt_list"""
+    """Set the past list of options as the value of curr_opt_lst"""
     options=request.get_json()["choices"]
     # Remove duplicates NOTE: Can't use set because it's unordered
     options=list(dict.fromkeys(options))
-    session['curr_opt_list']=options
+    session['curr_opt_lst']=options
     session.modified = True
     return "Current options set",200
 
@@ -389,15 +394,15 @@ def add_choices_to_list():
         session.modified = True
     # Append to the list
     all_opt_lst:list[str]=session['all_opt_lst']
-    # print("Before appending:",all_opt_lst,curr_opt_list)
+    # print("Before appending:",all_opt_lst,curr_opt_lst)
     all_opt_lst.extend(options)
-    # print("Before setting:",all_opt_lst,curr_opt_list)
+    # print("Before setting:",all_opt_lst,curr_opt_lst)
     # Remove duplicates NOTE: Can't use set because it's unordered
     all_opts=list(dict.fromkeys(all_opt_lst))
     # print("After setting:",all_opts,curr_opts)
     # Turn back into lists in order to be serializable
     all_opt_lst=list(all_opts)
-    # print("After appending:",all_opt_lst,curr_opt_list)
+    # print("After appending:",all_opt_lst,curr_opt_lst)
     session['all_opt_lst'] = all_opt_lst
     session.modified = True
     return "Options added to all list"
@@ -405,20 +410,21 @@ def add_choices_to_list():
 @app.route("/get_all_choices",methods=["GET"])
 def get_all_choices():
     options:list[str]=session.get("all_opt_lst",[])
-    return {"result":options}
+    return jsonify({"result":options})
 @app.route("/get_current_choices",methods=["GET"])
 def get_curr_options():
-    options:list[str]=session.get("curr_opt_list",[])
-    return {"result":options}
+    options:list[str]=session.get("curr_opt_lst",[])
+    return jsonify({"result":options})
 
 @app.route("/clear_current_choices",methods=["GET"])
 def clear_current_choices():
     """Clear the curr_options session variable"""
     if 'curr_opt_lst' in session:
-        session['curr_opt_lst'] = json.dumps([])
+        print("Now clearing curr_opt_lst")
+        session['curr_opt_lst'] = []
         session.modified = True
-    return "Current options cleared"
-
+    options:list[str]=session.get("curr_opt_lst")
+    return f"Current options cleared. curr_opt_lst is now {options}"
 ## VIEW
 @app.route("/get_ll_json", methods=["GET"])
 def all_to_json():

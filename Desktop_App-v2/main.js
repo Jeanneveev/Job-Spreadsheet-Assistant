@@ -1,7 +1,8 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const { exec } = require("child_process");
 const fetch=require("node-fetch");
 const path=require("path");
+const { electron } = require('process');
 
 /**
  * Connects to the Flask app, then creates the window
@@ -63,7 +64,8 @@ const createWindow = () => {
         height: 600,
         webPreferences:{
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: true,
+            preload: path.resolve(app.getAppPath(), 'preload.js')
         }
     });
 
@@ -163,6 +165,39 @@ ipcMain.on("open-auth-window", (event,authURL)=>{
     });
 });
 
+/**
+ * Create a confirmation message box
+ *  This is done because just using confirm() in the renderer proc causes a bug with text inputs
+  */
+ipcMain.on("open-confirm-box", (event,message)=>{
+    dialog.showMessageBox(win, {
+        "type": "question",
+        "title": "Confirmation",
+        "message": message,
+        "buttons": ["Yes", "No"]
+    })
+    .then((result)=>{
+        if(result.response===0){
+            event.sender.send("confirm-box-confirmed");
+        }else{
+            return;
+        }
+    })
+});
+ipcMain.on("open-alert", (event,message)=>{
+    dialog.showMessageBox(win, {
+        "type": "warning",
+        "title": "Warning",
+        "message": message,
+        "buttons": ["OK"]
+    })
+    .then((result)=>{
+        console.log("Alert closed");
+        return;
+    })
+});
+
+
 let choiceWindow=null;
 ipcMain.on("open-choices-window",(event)=>{
     choiceWindow=new BrowserWindow({
@@ -170,6 +205,8 @@ ipcMain.on("open-choices-window",(event)=>{
         height: 500,
         webPreferences: {
             nodeIntegration: false, //for security
+            contextIsolation: true,
+            preload: path.resolve(app.getAppPath(), 'preload.js')   //add preload to be able to use ipcRenderer in popup
         },
     });
     choiceWindow.loadFile('addChoices.html');
@@ -180,3 +217,8 @@ ipcMain.on("open-choices-window",(event)=>{
         choiceWindow=null;
     });
 });
+ipcMain.on("close-choices",(event)=>{
+    if(choiceWindow){
+        choiceWindow.close();
+    }
+})
