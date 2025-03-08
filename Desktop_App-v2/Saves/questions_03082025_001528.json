@@ -1,0 +1,30 @@
+[
+    {
+        "question": {
+            "q_str": "example 1 ",
+            "q_detail": "ex1",
+            "q_type": "singular",
+            "a_type": "multiple-choice",
+            "choices": [
+                "a",
+                "b",
+                "c",
+                "d"
+            ]
+        }
+    },
+    {
+        "question": {
+            "q_str": "example 2",
+            "q_detail": "ex2",
+            "q_type": "singular",
+            "a_type": "multiple-choice",
+            "choices": [
+                "A",
+                "B",
+                "C",
+                "D"
+            ]
+        }
+    }
+]

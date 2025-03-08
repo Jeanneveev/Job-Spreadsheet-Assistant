@@ -141,8 +141,12 @@
                 .catch((err)=>console.error(err));
             });
 
-            function closePopup(){
-                window.electron.send("close-choices");
+            function closePopup() {
+                if (window.electron && window.electron.send) {
+                    window.electron.send("close-choices");
+                } else {
+                    console.error("window.electron or window.electron.send is not defined.");
+                }
             }
         </script>
     </body>

@@ -204,14 +204,13 @@ ipcMain.on("open-choices-window",(event)=>{
         width: 400,
         height: 500,
         webPreferences: {
-            nodeIntegration: false, //for security
+            nodeIntegration: false,
             contextIsolation: true,
-            preload: path.resolve(app.getAppPath(), 'preload.js')   //add preload to be able to use ipcRenderer in popup
+            preload: path.resolve(app.getAppPath(), 'preload.js'),   //add preload to be able to use ipcRenderer in popup
+            sandbox: false  //to allow path to be imported in the preload script
         },
     });
     choiceWindow.loadFile('addChoices.html');
-
-    /* TODO: If choices set, clear requirement */
 
     choiceWindow.on("closed",()=>{
         choiceWindow=null;

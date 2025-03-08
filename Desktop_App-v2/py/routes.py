@@ -27,8 +27,11 @@ class Question:
     def __str__(self)->str:
         return f"{self.q_detail}"
     def as_dict(self)->dict:
-        return {"q_str":self.q_str,"q_detail":self.q_detail,
+        res_d={"q_str":self.q_str,"q_detail":self.q_detail,
                 "q_type":self.q_type.value,"a_type":self.a_type.value}
+        if self.choices:
+            res_d["choices"]=self.choices
+        return res_d
 class Node:
     def __init__(self,question):
         self.question:Question=question
@@ -371,7 +374,7 @@ def get_all_base_details():
     base_list=ll.getByQType("base")
     return {"result":base_list}
 
-## OPTIONS
+## CHOICES
 @app.route("/set_curr_choices", methods=["POST"])
 def set_curr_choices():
     """Set the past list of options as the value of curr_opt_lst"""
@@ -476,7 +479,8 @@ def validate_upload(file_json):
                         "q_str": {"type":"string"},
                         "q_detail": {"type":"string"},
                         "q_type": {"type":"string"},
-                        "a_type": {"type":"string"}
+                        "a_type": {"type":"string"},
+                        "choices": {"type":"array"}
                     },
                     "required":["q_str","q_detail","q_type","a_type"]
                 },
@@ -486,7 +490,8 @@ def validate_upload(file_json):
                         "q_str": {"type":"string"},
                         "q_detail": {"type":"string"},
                         "q_type": {"type":"string"},
-                        "a_type": {"type":"string"}
+                        "a_type": {"type":"string"},
+                        "choices": {"type":"array"}
                     },
                     "required":["q_str","q_detail","q_type","a_type"]
                 },
@@ -542,7 +547,11 @@ def load_ll_from_file(file_json):
         question=node["question"]
         q_type=QTypeOptions(question["q_type"])
         a_type=ATypeOptions(question["a_type"])
-        new_question=Question(question["q_str"],question["q_detail"],q_type,a_type)
+        new_question=None
+        if "choices" in question:
+            new_question=Question(question["q_str"],question["q_detail"],q_type,a_type,question["choices"])
+        else:
+            new_question=Question(question["q_str"],question["q_detail"],q_type,a_type)
         new_node=Node(new_question)
         #if there's an addon, make a Question out of it and add it to the new node
         if "addon" in node:
@@ -555,6 +564,9 @@ def load_ll_from_file(file_json):
     
 
 ## ANSWER
+@app.route("/get_first_a_type")
+def get_first_a_type():
+    return f"{ll.head.question.a_type.value}"
 @app.route("/get_first_question")
 def get_first_question():
     curr_node:Node=ll.head
@@ -602,6 +614,19 @@ def get_prev_question():
                     "prev_a_type":prev_node.question.a_type.value}
     else:                       #this node is the first node (this shouldn't be reachable but handled jic)
         return "There is no previous node", 400
+    
+@app.route("/get_answer_options", methods=["GET"])
+def get_answer_options():
+    curr_node=None
+    if "curr_node" in session:
+        curr_node_dict:dict=session["curr_node"]
+        #get the node from the detail
+        curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+    else:
+        curr_node:Node=ll.head
+    if curr_node is not None:
+        return jsonify({"options":curr_node.question.choices})
+
 
 @app.route("/add_answer/<answ>",methods=["POST"])
 def add_answer(answ):
@@ -611,7 +636,6 @@ def add_answer(answ):
     curr_node.answer=answ
     print(f"Answer {answ} set")
     return f"Answer {answ} set"
-
 
 def get_all_answers_handler(by_route:bool):
     """
