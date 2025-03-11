@@ -4,6 +4,7 @@ from typing import Any
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from config import sheetsConfig, basedir
@@ -130,6 +131,15 @@ class LinkedList:
         # and will be cleared by Python's garbage collection
         self.head=None
 
+class ExportDataError(Exception):
+    """ A base class for ExportData-related exceptions """
+class AuthenticationError(ExportDataError):
+    """Exception raised for errors relating to failed authentication attempts"""
+class TokenFetchError(ExportDataError):
+    """Exception raised for errors fetching a token"""
+class ServiceBuildError(ExportDataError):
+    """Exception raised for errors building the Google API service"""
+
 class ExportData:
     """
     A class that holds the info and methods for data exportation
@@ -165,7 +175,14 @@ class ExportData:
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+                try:
+                    creds.refresh(Request())
+                except RefreshError as e:   #creds.refresh_token is also expired
+                    print(f"Refresh error: {e}")
+                    #delete token.json and re-run function so the if statement fails
+                    if os.path.exists(token_path):
+                        os.remove(token_path)
+                    return self.get_auth_url()
             else:
                 #redirect_uri is the page Google redirects to after sign-in is complete
                 flow = InstalledAppFlow.from_client_secrets_file(
@@ -195,7 +212,14 @@ class ExportData:
         #if there isn't or the credentials aren't valid
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+                try:
+                    creds.refresh(Request())
+                except RefreshError as e:   #creds.refresh_token is also expired
+                    print(f"Refresh error: {e}")
+                    #delete token.json and re-run function so the if statement fails
+                    if os.path.exists(token_path):
+                        os.remove(token_path)
+                    return self.get_service()
             elif code:
                 creds_path=os.path.join(basedir,"sheets_credentials.json")
                 flow = InstalledAppFlow.from_client_secrets_file(
@@ -209,17 +233,19 @@ class ExportData:
                         token.write(creds.to_json())
                 except Exception as e:
                     print(f"ERROR!! Error fetching token: {e}")
-                    return {"error":"Error authenticating via code"}, 400
+                    raise TokenFetchError("Error authenticating via code") from e
             else:   #no creds or code
-               return {"error":"User could not be authenticated"}, 404
+               raise AuthenticationError("No valid credits or code. User could not be authenticated")
             
             #try and return the build
             try:
                 service = build("sheets", "v4", credentials=creds)
+                if service is None:
+                    return ServiceBuildError(f"Failed to obtain Google Sheets service")
                 return service
             except HttpError as error:
                 print(f"An error occurred: {error}")
-                return {"error":f"Some error occured with Google Sheets' API: {error}"}, 500
+                raise ServiceBuildError(f"Some error occured with Google Sheets' API: {error}")
     
     def length_to_col_letter(self,length:int):
         num2char={1:"A",2:"B",3:"C",4:"D",5:"E",
@@ -235,15 +261,28 @@ class ExportData:
         else:
             col=num2char[length]
         return col
-    def export_to_sheets(self)->Any|HttpError:
+    def export_to_sheets(self)->Any|dict:
         """Appends the list of details as a new row of a Google Sheets spreadsheet
         Args:
             self: The current instance of ExportData
         Returns:
             result (Any): The confirmation that the cells were appended
-            error (HttpError): An HttpError
+            dict: A dictionary with the key "error" and the error message
         """
-        service=self.get_service()  # gets service from the by now created token.json
+        try:
+            service=self.get_service()  # gets service from the by now created token.json
+        except AuthenticationError as e:
+            print(f"Authentication error: {e}")
+            return {"error": f"{e}"}, 400
+        except TokenFetchError as e:
+            print(f"TokenFetch error: {e}")
+            return {"error": f"{e}"}, 404
+        except ServiceBuildError as e:
+            print(f"ServiceBuild error: {e}")
+            return {"error": f"{e}"}, 501
+        except Exception as e:
+            print(f"An error has occured: {e}")
+            return {"error": f"{e}"}, 404
         data=self.data
         end_col=self.length_to_col_letter(len(data))
         rnge=f"A2:{end_col}2"
@@ -266,7 +305,7 @@ class ExportData:
             return result
         except HttpError as error:
             print(f"An error occurred: {error}")
-            return error
+            return {"error": f"{error}"}
 
 
 
@@ -558,7 +597,11 @@ def load_ll_from_file(file_json):
             addon=node["addon"]
             addon_q_type=QTypeOptions(addon["q_type"])
             addon_a_type=ATypeOptions(addon["a_type"])
-            new_addon=Question(addon["q_str"],addon["q_detail"],addon_q_type,addon_a_type)
+            new_addon=None
+            if "choices" in addon:
+                new_addon=Question(addon["q_str"],addon["q_detail"],addon_q_type,addon_a_type,addon["choices"])
+            else:
+                new_addon=Question(addon["q_str"],addon["q_detail"],addon_q_type,addon_a_type)
             new_node.addon=new_addon
         ll.append(new_node)
     
@@ -569,34 +612,75 @@ def get_first_a_type():
     return f"{ll.head.question.a_type.value}"
 @app.route("/get_first_question")
 def get_first_question():
+    """Returns the q_str of the first question, whether a next question exists, and what its a_type is, if it does
+
+    Return Keys:
+        "q_str": str: The q_str of the next question
+        "next_a_type": The a_type of the next question
+        "has_next": str: Whether or not the next question has a question after it
+    """
     curr_node:Node=ll.head
     if curr_node is not None:   #if there is a node
         session["curr_node"]=curr_node.as_dict()
-        if curr_node.next is not None:  #if there is a next node
-            return {"q_str":curr_node.question.q_str, "has_next":"true",
-                    "next_a_type":curr_node.next.question.a_type.value}
-        else:   #if this is the last node in the ll
+        session["curr_question"]=curr_node.question.as_dict()
+        if curr_node.addon is not None: #if there is an addon, the next question is the addon
+            return {"q_str":curr_node.question.q_str, "next_a_type":curr_node.addon.a_type.value,
+                    "has_next":"true"}
+        elif curr_node.next is not None:  #else-if there is a next node, the next question is its question
+            return {"q_str":curr_node.question.q_str, "next_a_type":curr_node.next.question.a_type.value,
+                    "has_next":"true"}
+        else:   #else, this is the last node in the ll
             return {"q_str":curr_node.question.q_str, "has_next":"false"}
     else:   #if there are no nodes
         return "No questions have been set yet", 404
 @app.route("/get_next_question")
 def get_next_question():
+    """Get the display details of the next question
+
+    Return Keys:
+    "q_str": str: The q_str of the next question
+    "next_a_type": The a_type of the next question
+    "next_is_addon": str: Whether or not the next question is an addon to the current question
+    "has_next": str: Whether or not the next question has a question after it
+    """
     curr_node_dict:dict=session["curr_node"]
-    #get the node from the detail
-    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+    curr_question_dict:dict=session["curr_question"]
+    curr_node_addon:dict|None=curr_node_dict.get("addon",None)
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the node by the detail
     next_node:Node=curr_node.next
 
-    if next_node is not None:   #if there is a next node
-        session["curr_node"]=next_node.as_dict()
-        if next_node.next is not None:  #if there is a node after that
-            return {"q_str":next_node.question.q_str, "has_next":"true",
-                    "next_a_type":next_node.next.question.a_type.value}
-        else:   #if the current node is the second to last node
-            return{"q_str":next_node.question.q_str, "has_next":"false", "next_a_type":"None"}
-    else:   #if the current node is the last node (this shouldn't be reachable but handled jic)
-        return "There is no next node", 404
+    if (curr_node_addon==None) or (curr_question_dict==curr_node_addon):    #if the current question is singular or an addon
+        #the next question is the question of the next node
+        if next_node is not None:   #if there is a next node
+            session["curr_node"]=next_node.as_dict()
+            session["curr_question"]=next_node.question.as_dict()
+            if (next_node.addon is not None) or (next_node.next is not None):  #if the next node has a question or a node after it
+                return {"q_str":next_node.question.q_str, "next_a_type":next_node.next.question.a_type.value,
+                        "has_next":"true"}
+            else:   #this is the second to last question
+                return{"q_str":next_node.question.q_str, "next_a_type":"None", "has_next":"false"}
+        else:   #if the current node is the last node (this shouldn't be reachable but handled jic)
+            return "There is no next node", 404
+    else:   #the current question is a base question and the next question is the addon
+        # session["curr_node"]=curr_node.as_dict()
+        session["curr_question"]=curr_node_addon
+        if next_node is not None:   #if there are >2 questions after this
+            return {"q_str":curr_node.addon.q_str, "next_a_type":curr_node.addon.a_type.value,
+                    "next_is_addon":"true", "has_next":"true"}
+        else:   #the current node is the last node and the current question is the second to last question
+            return {"q_str":curr_node.addon.q_str, "next_a_type":curr_node.addon.a_type.value,
+                    "next_is_addon":"true", "has_next":"false"}
+
 @app.route("/get_prev_question")
 def get_prev_question():
+    """Get the display details of the question of the previous node
+    
+    Return Keys:
+        "q_str": The q_str of the previous question
+        "prev_a_type": The value of the a_type of the previous question
+        "next_a_type": The value of the a_type of the current question
+        "is_first": Whether the previous question is the first question
+    """
     curr_node_dict:dict=session["curr_node"]
     #get the node from the detail
     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
@@ -604,14 +688,13 @@ def get_prev_question():
 
     if prev_node is not None:   #if there is a prev node
         session["curr_node"]=prev_node.as_dict()
+        session["curr_question"]=prev_node.question.as_dict()
         if prev_node==ll.head:  #if the previous node is the first node
-            return {"q_str":prev_node.question.q_str, "is_first":"true",
-                    "has_next":"true", "next_a_type":curr_node.question.a_type.value,
-                    "prev_a_type":prev_node.question.a_type.value}
+            return {"q_str":prev_node.question.q_str, "prev_a_type":prev_node.question.a_type.value,
+                    "next_a_type":curr_node.question.a_type.value, "is_first":"true"}
         else:
-            return {"q_str":prev_node.question.q_str, "has_next":"true",
-                    "next_a_type":curr_node.question.a_type.value,
-                    "prev_a_type":prev_node.question.a_type.value}
+            return {"q_str":prev_node.question.q_str, "prev_a_type":prev_node.question.a_type.value,
+                    "next_a_type":curr_node.question.a_type.value}
     else:                       #this node is the first node (this shouldn't be reachable but handled jic)
         return "There is no previous node", 400
     
@@ -636,6 +719,17 @@ def add_answer(answ):
     curr_node.answer=answ
     print(f"Answer {answ} set")
     return f"Answer {answ} set"
+@app.route("/add_addon_answer/<answ>",methods=["POST"])
+def add_addon_answer(answ:str):
+    answer=f" ({answ.lower()})"
+    curr_node_dict:dict=session["curr_node"]
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+    curr_node_answ=curr_node.answer
+    print(f"curr_node_anw is {curr_node_answ}")
+    curr_node_answ+=answer
+    curr_node.answer=curr_node_answ
+    print(f"Answer appended to. Answer is now {curr_node_answ}")
+    return f"Answer appended to. Answer is now {curr_node_answ}"
 
 def get_all_answers_handler(by_route:bool):
     """
@@ -717,10 +811,11 @@ def receive_auth_code():
 @app.route("/export_data/sheets",methods=["POST"])
 def export_data_sheets():
     export_result=exportData.export_to_sheets()
-    res_msg:str=f"{(export_result.get('updates').get('updatedCells'))} cells appended."
-    return res_msg
-    pass
-
+    if export_result.get("error",None) is None:
+        res_msg:str=f"{(export_result.get('updates').get('updatedCells'))} cells appended."
+        return res_msg
+    else:
+        return f"ERROR!!! {export_result.get('error')}"
 
 
 
