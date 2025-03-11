@@ -10,13 +10,14 @@ const prevBtn=document.getElementById("previous");
 
 /* GET QUESTION */
 /**
- * For the first question, get the question's text and the info on the next question from the request response
- * For subsequent questions, that info will have been passed into session variables from the question prior,
+ * For the first question, get the current question's text and next question's display details from the request response
+ * For subsequent questions, that info will have been passed into session variables from the previously run loadNextQuestion(),
  * so just get them from there.
 */
 let first_q=sessionStorage.getItem("first_q");
 let has_next="";
 let next_a_type="";
+let is_addon=false;
 
 function loadQuestion(){
     if(first_q=="true"){
@@ -41,6 +42,9 @@ function loadQuestion(){
         q=sessionStorage.getItem("next_q_str");
         console.log("q is",q);
         questionHeader.innerText=q;
+        /* ERROR: For the last test question, is_addon is set as true even though it should be false */
+        is_addon=sessionStorage.getItem("is_addon")==="true";
+        console.log("is_addon for this question is",is_addon)
         has_next=sessionStorage.getItem("has_next");
         if(has_next=="true"){
             next_a_type=sessionStorage.getItem("next_a_type");
@@ -55,9 +59,16 @@ function loadQuestion(){
 /* FORM SUBMISSION */
 function submitAnswer(answer){
     answer=answer.trim();
-    fetch(`${SERVER_URL}/add_answer/${answer}`,{method:"POST"})
-    .then(response=>response.text())
-    .then(data=>console.log("data"));
+    if(is_addon==false){  //if the question is a base or singular question
+        fetch(`${SERVER_URL}/add_answer/${answer}`,{method:"POST"})
+        .then(response=>response.text())
+        .then(data=>console.log("data"));
+    }else{          //if the question is an addon
+        // console.log("add_addon_answer called");
+        fetch(`${SERVER_URL}/add_addon_answer/${answer}`,{method:"POST"})
+        .then(response=>response.text())
+        .then(data=>console.log("data"));
+    }
 }
 
 /* PREVIOUS QUESTION */
@@ -70,7 +81,7 @@ function loadPreviousQuestion(){
         }else{
             /* Set session variables */
             sessionStorage.setItem("next_q_str",data.q_str);
-            sessionStorage.setItem("has_next","true");
+            sessionStorage.setItem("has_next","true");  //always true because the current question exists
         }
         //change what page we go to depending on the a_type of the previous question
         if(data.prev_a_type=="multiple-choice"){
@@ -93,8 +104,13 @@ function loadNextQuestion(){
         /* Set all the session variables */
         sessionStorage.setItem("next_q_str",data.q_str);
         console.log("The next question is",sessionStorage.getItem("next_q_str"));
-        sessionStorage.setItem("has_next",data.has_next);
         sessionStorage.setItem("next_a_type",data.next_a_type);
+        if(data.next_is_addon){
+            sessionStorage.setItem("is_addon","true");
+        }else{
+            sessionStorage.setItem("is_addon","false");
+        }
+        sessionStorage.setItem("has_next",data.has_next);
         //change what page we go to depending on the a_type of the next question
         if(next_a_type=="multiple-choice"){
             console.log("The next question is multiple choice");
@@ -181,7 +197,6 @@ window.electron.on("auth-code-recieved", (event, code)=>{
     }).then(data=>{
         if(data.success_message){
             console.log(data.success_message);
-            /* TODO: Add fetch request to finally export the data */
             fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
             .then(response=>response.text()).then(data=>alert(data));
         }else{
