@@ -43,13 +43,13 @@
                 <label><input type="radio" name="a_type" class="inline" id="mult" value="multiple-choice" required />Multiple-Choice</label>
                 <button type="button" class="inline" id="choices" onclick="openChoices();" disabled>Add Choice Options</button>
             </fieldset>
-            <button type="button" onclick="window.location.href='viewQuestion.html'">Cancel</button>
+            <button type="button" onclick="window.location.href='viewQuestion.html'">Finish</button>
             <button type="submit" id="submit">Continue</button>
         </form>
         <p>*: Required</p>
         <p>**: Must be unique</p>
         <script>
-            const SERVER_URL = "http://127.0.0.1:5000";
+            const SERVER_URL = window.electron.SERVER_URL;
             const form=document.getElementById("form");
 
             /* FORM CONTROLS */

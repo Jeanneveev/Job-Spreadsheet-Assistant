@@ -30,7 +30,7 @@
         </form>
         <button type="button" class="navBtn" onclick="closePopup();">Finish</button>
         <script>
-            const SERVER_URL = "http://127.0.0.1:5000";
+            const SERVER_URL = window.electron.SERVER_URL;
             const message=document.getElementById("message");
             const form=document.getElementById("form");
             const choiceContainer=document.getElementById("choices");

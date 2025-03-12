@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    </head>
+    <body>
+        <h1>Add Question</h1>
+        <p id="message"></p>
+        <form id="form">
+            <button type="submit" id="appDate">Get Application Date</button>
+        </form>
+        <button type="button" onclick="window.location.href='viewQuestion.html'">Back</button>
+    </body>
+    <script>
+        const SERVER_URL=window.electron.SERVER_URL;
+        const form=document.getElementById("form");
+
+        form.addEventListener("submit",(event)=>{
+            event.preventDefault();
+            const submitterBtn=event.submitter;
+            let value=""
+            switch(submitterBtn.id){
+                case "appDate":
+                    value="appDate"
+                    break;
+                default:
+                    break;
+            }
+            fetch(`${SERVER_URL}/add_question/preset`,{
+                method:"POST",
+                headers:{
+                    "Content-Type": "application/json",
+                },
+                body:JSON.stringify({preset:value})
+            }).then(response=>response.text()).then(data=>console.log(data));
+            submitterBtn.disabled=true;
+        });
+    </script>
+</html>
