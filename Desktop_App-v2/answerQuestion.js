@@ -2,7 +2,7 @@
  * The parent JS file for shared functions among the answerQuestions pages
  */
 
-const SERVER_URL = "http://127.0.0.1:5000";
+const SERVER_URL = window.electron.SERVER_URL;
 const questionHeader=document.getElementById("question");
 const form=document.getElementById("form");
 const nextBtn=document.getElementById("next");
@@ -96,6 +96,21 @@ function loadPreviousQuestion(){
 }
 
 /* NEXT QUESTION */
+async function fillPresetQuestion(preset) {
+    try{
+        const response=await fetch(`${SERVER_URL}/add_preset_answer`,{
+            method: "POST",
+            headers:{
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({preset:preset})
+        });
+        /* TODO: If response.ok, load the next question */
+        if(response.ok){
+
+        }
+    }catch(err){console.error(err)}
+}
 function loadNextQuestion(){
     //set the text of the next question
     fetch(`${SERVER_URL}/get_next_question`,{ method: "GET" })
@@ -118,6 +133,10 @@ function loadNextQuestion(){
         }else if(next_a_type=="open-ended"){
             console.log("The next question is open-ended");
             form.action="answerQuestion-open_ended.html";
+        }else if(next_a_type=="preset"){
+            const preset=data.q_str
+            fillPresetQuestion(preset);
+
         }
         window.location.href=form.action;   //load page of next question
     });

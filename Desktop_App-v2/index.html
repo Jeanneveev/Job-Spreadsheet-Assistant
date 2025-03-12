@@ -16,7 +16,7 @@
         </div>
         <script>
             /* FLASK STUFF */
-            const SERVER_URL = "http://127.0.0.1:5000";
+            const SERVER_URL = window.electron.SERVER_URL;
             /* test connection - WORKS */
             function testConnection(){
                 fetch(`${SERVER_URL}/`,{
@@ -91,6 +91,8 @@
                                 answerQBtn.addEventListener("click",()=>{
                                     window.location.href=window.electron.getPath("answerQuestion-multiple_choice.html");
                                 });
+                            }else if(result=="preset"){
+                                /* TODO: Load second question */
                             }
                         });
                     }

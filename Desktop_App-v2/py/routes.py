@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any
+from datetime import date
 ## Google Sheets Stuff
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -18,6 +19,7 @@ class QTypeOptions(Enum):
 class ATypeOptions(Enum):
     MULT="multiple-choice"
     TEXT="open-ended"
+    PRESET="preset"
 class Question:
     def __init__(self,q_str:str,q_detail:str,q_type:QTypeOptions,a_type:ATypeOptions,choices:list[str]=None)->None:
         self.q_str=q_str
@@ -312,9 +314,7 @@ class ExportData:
 # ROUTES
 from flask import Flask, request, session, jsonify
 from flask_cors import CORS
-import redis, json
-#for clearing session files
-import atexit
+import json
 
 app = Flask(__name__)
 app.config.from_object("config.Config")
@@ -375,6 +375,20 @@ def add_addon():
     base_node.addon=new_question
     print(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
     return {"response":"added addon question"}
+## ADD PRESET QUESTIONS
+def add_application_date():
+    # create a Question with an a_type of "preset" where the value is the current date
+    new_q=Question("appDate","Application Date",QTypeOptions("singular"),ATypeOptions("preset"))
+    new_node=Node(new_q)
+    ll.append(new_node)
+    print("New node preset node appended")
+@app.route("/add_question/preset", methods=["POST"])
+def add_preset():
+    value:str=request.get_json()["preset"]
+    match value:
+        case "appDate":
+            add_application_date()
+    return f"{value} Question added"
 
 ## DETAILS
 @app.route("/add_detail/<detail>",methods=["GET","POST"])
@@ -730,6 +744,22 @@ def add_addon_answer(answ:str):
     curr_node.answer=curr_node_answ
     print(f"Answer appended to. Answer is now {curr_node_answ}")
     return f"Answer appended to. Answer is now {curr_node_answ}"
+
+def answer_application_date():
+    return date.today().strftime("%m/%d/%Y")
+@app.route("/add_preset_answer",methods=["POST"])
+def add_preset_answer():
+    curr_node_dict:dict=session["curr_node"]
+    #get the node from the detail
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+    which_preset:str=request.get_json()["preset"]
+    match which_preset:
+        case "appDate":
+            answ=answer_application_date()
+    curr_node.answer=answ
+    return f"Answer {answ} set"
+
+
 
 def get_all_answers_handler(by_route:bool):
     """

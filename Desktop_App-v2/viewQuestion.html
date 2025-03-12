@@ -21,7 +21,8 @@
     </head>
     <body>
         <p id="message"></p>
-        <button onclick="window.location.href='addQuestion.html'">Add Questions</button>
+        <button onclick="window.location.href='addQuestion.html'">Add Manual Questions</button>
+        <button onclick="window.location.href='addPreset.html'">Add Preset Questions</button>
         <table id="table">
             <thead>
                 <tr>
@@ -39,7 +40,7 @@
         <input type="button" id="load_q_btn" value="Load Questions" />
         <button onclick="window.location.href='index.html'">Back to Home</button>
         <script>
-            const SERVER_URL = "http://127.0.0.1:5000";
+            const SERVER_URL = window.electron.SERVER_URL;
             const table=document.getElementById("table");
 
             /* Get the JSON of all the questions
