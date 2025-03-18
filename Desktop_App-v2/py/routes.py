@@ -623,7 +623,17 @@ def load_ll_from_file(file_json):
 ## ANSWER
 @app.route("/get_first_a_type")
 def get_first_a_type():
-    return f"{ll.head.question.a_type.value}"
+    head:Node=ll.head
+    result=f"{head.question.a_type.value}"
+    if result!="preset":
+        return result
+    else:   #if the first a_type is preset, find the first question's a_type that isn't a preset
+        while result=="preset" and head.next is not None:
+            result=f"{head.next.question.a_type.value}"
+            head=head.next
+        if result=="preset":    #if all questions are preset questions
+            return "Please add at least one non-preset question", 202
+        return result
 @app.route("/get_first_question")
 def get_first_question():
     """Returns the q_str of the first question, whether a next question exists, and what its a_type is, if it does
@@ -635,6 +645,8 @@ def get_first_question():
     """
     curr_node:Node=ll.head
     if curr_node is not None:   #if there is a node
+        ### TODO:if curr_node is a preset question
+        
         session["curr_node"]=curr_node.as_dict()
         session["curr_question"]=curr_node.question.as_dict()
         if curr_node.addon is not None: #if there is an addon, the next question is the addon
@@ -672,7 +684,7 @@ def get_next_question():
                 return {"q_str":next_node.question.q_str, "next_a_type":next_node.next.question.a_type.value,
                         "has_next":"true"}
             else:   #this is the second to last question
-                return{"q_str":next_node.question.q_str, "next_a_type":"None", "has_next":"false"}
+                return{"q_str":next_node.question.q_str, "next_a_type":next_node.question.a_type.value, "has_next":"false"}
         else:   #if the current node is the last node (this shouldn't be reachable but handled jic)
             return "There is no next node", 404
     else:   #the current question is a base question and the next question is the addon
@@ -753,11 +765,12 @@ def add_preset_answer():
     #get the node from the detail
     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
     which_preset:str=request.get_json()["preset"]
+    answ=""
     match which_preset:
         case "appDate":
             answ=answer_application_date()
     curr_node.answer=answ
-    return f"Answer {answ} set"
+    return f"Preset answer {answ} set"
 
 
 
@@ -834,9 +847,6 @@ def receive_auth_code():
         return service  #return that error message
     else:
         return {"success_message":"Authentification successful and connection built"}
-
-
-
 
 @app.route("/export_data/sheets",methods=["POST"])
 def export_data_sheets():
