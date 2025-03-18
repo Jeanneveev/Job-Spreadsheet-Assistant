@@ -374,20 +374,33 @@ def add_addon():
     #set the base's addon value to the addon Question
     base_node.addon=new_question
     print(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
-    return {"response":"added addon question"}
+    if a_type.value=="multiple-choice":
+        return {"mult_response": "added multiple-choice addon question"}
+    else:
+        return {"response":"added addon question"}
 ## ADD PRESET QUESTIONS
 def add_application_date():
     # create a Question with an a_type of "preset" where the value is the current date
     new_q=Question("appDate","Application Date",QTypeOptions("singular"),ATypeOptions("preset"))
     new_node=Node(new_q)
     ll.append(new_node)
-    print("New node preset node appended")
+    print("New preset node appended")
+def add_empty_question(i):
+    #create a preset Question with an empty value for empty columns
+    new_q=Question("empty",f"Empty-{i}",QTypeOptions("singular"),ATypeOptions("preset"))
+    new_node=Node(new_q)
+    ll.append(new_node)
+    print("New preset node appended")
 @app.route("/add_question/preset", methods=["POST"])
 def add_preset():
     value:str=request.get_json()["preset"]
     match value:
         case "appDate":
             add_application_date()
+        case "empty":
+            empty_cntr=session.get("empty_cntr",0)
+            add_empty_question(empty_cntr)
+            session["empty_cntr"]=empty_cntr+1
     return f"{value} Question added"
 
 ## DETAILS
@@ -621,22 +634,35 @@ def load_ll_from_file(file_json):
     
 
 ## ANSWER
+def get_first_non_preset_node()->Node|None:
+    """Returns the first Node whose question's a_type is not preset, if any"""
+    head:Node=ll.head
+    result_node:Node=head
+    a_type_val=head.question.a_type.value
+    if a_type_val!="preset":
+        return result_node
+    
+    while a_type_val=="preset" and head is not None:
+        # print(f"head is {head.question.q_detail}")
+        # print(f"a_type_val is {head.question.a_type.value}")
+        a_type_val=head.question.a_type.value
+        result_node=head
+        head=head.next
+    # print(f"escaped loop, a_type_val is: {a_type_val}")
+    if a_type_val=="preset":    #all questions are preset questions
+        return None
+    return result_node
 @app.route("/get_first_a_type")
 def get_first_a_type():
-    head:Node=ll.head
-    result=f"{head.question.a_type.value}"
-    if result!="preset":
-        return result
-    else:   #if the first a_type is preset, find the first question's a_type that isn't a preset
-        while result=="preset" and head.next is not None:
-            result=f"{head.next.question.a_type.value}"
-            head=head.next
-        if result=="preset":    #if all questions are preset questions
-            return "Please add at least one non-preset question", 202
-        return result
+    head:Node|None=get_first_non_preset_node()
+    if head is None:    #all questions are preset questions
+        return "Please add at least one non-preset question", 202
+    else:
+        a_type_val=head.question.a_type.value
+        return a_type_val
 @app.route("/get_first_question")
 def get_first_question():
-    """Returns the q_str of the first question, whether a next question exists, and what its a_type is, if it does
+    """Returns the q_str of the first question, whether a next question exists, and what its a_type is if it does
 
     Return Keys:
         "q_str": str: The q_str of the next question
@@ -645,8 +671,7 @@ def get_first_question():
     """
     curr_node:Node=ll.head
     if curr_node is not None:   #if there is a node
-        ### TODO:if curr_node is a preset question
-        
+        curr_node:Node=get_first_non_preset_node()
         session["curr_node"]=curr_node.as_dict()
         session["curr_question"]=curr_node.question.as_dict()
         if curr_node.addon is not None: #if there is an addon, the next question is the addon
@@ -759,6 +784,8 @@ def add_addon_answer(answ:str):
 
 def answer_application_date():
     return date.today().strftime("%m/%d/%Y")
+def answer_empty():
+    return " "
 @app.route("/add_preset_answer",methods=["POST"])
 def add_preset_answer():
     curr_node_dict:dict=session["curr_node"]
@@ -766,11 +793,15 @@ def add_preset_answer():
     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
     which_preset:str=request.get_json()["preset"]
     answ=""
+    code=200
     match which_preset:
         case "appDate":
             answ=answer_application_date()
+        case "empty":
+            answ=answer_empty()
+            code=201
     curr_node.answer=answ
-    return f"Preset answer {answ} set"
+    return f"Preset answer {answ} set", code
 
 
 
