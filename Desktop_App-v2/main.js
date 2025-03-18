@@ -180,6 +180,7 @@ ipcMain.on("open-confirm-box", (event,message)=>{
         if(result.response===0){
             event.sender.send("confirm-box-confirmed");
         }else{
+            event.sender.send("confirm-box-denied");
             return;
         }
     })

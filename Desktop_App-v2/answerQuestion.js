@@ -71,6 +71,33 @@ function submitAnswer(answer){
     }
 }
 
+function fillPresetQuestion(preset=null,forwards) {
+    console.log("fill preset reached")
+    if(forwards){   //if called be loadNext
+        fetch(`${SERVER_URL}/add_preset_answer`,{
+            method: "POST",
+            headers:{
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({preset:preset})
+        }).then(response=>response.text()).then(data=>{
+            console.log("Preset filled: ",data);
+            if(sessionStorage.getItem("has_next")=="true"){
+                console.log("There is a question after the preset question");
+                //since loadQuestion() isn't run, the variable needs to be set here for the if statement in loadNextQuestion to work
+                next_a_type=sessionStorage.getItem("next_a_type");
+                loadNextQuestion();
+            }else{
+                window.electron.send("open-confirm-box","This is the last question. Do you wish to submit all your answers?");
+            }
+        })
+        .catch(err=>console.error(err));
+    }else{          //if called by loadPrev
+        //just get the question before it instead
+        loadPreviousQuestion();
+    }
+}
+
 /* PREVIOUS QUESTION */
 function loadPreviousQuestion(){
     fetch(`${SERVER_URL}/get_prev_question`,{ method: "GET" })
@@ -90,27 +117,15 @@ function loadPreviousQuestion(){
         }else if(data.prev_a_type=="open-ended"){
             console.log("The previous question is open-ended");
             form.action="answerQuestion-open_ended.html";
+        }else if(data.prev_a_type=="preset"){
+            fillPresetQuestion(false);
+            return;
         }
         window.location.href=form.action;   //load page of next question
     });
 }
 
 /* NEXT QUESTION */
-async function fillPresetQuestion(preset) {
-    try{
-        const response=await fetch(`${SERVER_URL}/add_preset_answer`,{
-            method: "POST",
-            headers:{
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({preset:preset})
-        });
-        /* TODO: If response.ok, load the next question */
-        if(response.ok){
-
-        }
-    }catch(err){console.error(err)}
-}
 function loadNextQuestion(){
     //set the text of the next question
     fetch(`${SERVER_URL}/get_next_question`,{ method: "GET" })
@@ -135,8 +150,8 @@ function loadNextQuestion(){
             form.action="answerQuestion-open_ended.html";
         }else if(next_a_type=="preset"){
             const preset=data.q_str
-            fillPresetQuestion(preset);
-
+            fillPresetQuestion(preset,true);
+            return;
         }
         window.location.href=form.action;   //load page of next question
     });
@@ -156,15 +171,22 @@ function addFormListener(openEndedFlag){
             if(has_next=="true"){   //if there is a next question
                 loadNextQuestion();
             }else{                  //this is the last question
-                if(confirm("This is the last question. Do you wish to submit all your answers?")){
-                    submitLastQuestion();
-                }
+                window.electron.send("open-confirm-box","This is the last question. Do you wish to submit all your answers?");
             }
         }else if(submitterId=="previous"){
             loadPreviousQuestion();
         }
     });
 }
+window.electron.on("confirm-box-confirmed",()=>{
+    submitLastQuestion();
+});
+window.electron.on("confirm-box-denied",()=>{
+    /* If the last question is a preset question, go back to the second to last question if confirm is denied */
+    if(sessionStorage.getItem("next_a_type")=="preset"){
+        loadPreviousQuestion();
+    }
+})
 
 /* EXPORTING ANSWERS */
 function submitLastQuestion(){

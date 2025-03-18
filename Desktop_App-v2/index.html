@@ -91,8 +91,10 @@
                                 answerQBtn.addEventListener("click",()=>{
                                     window.location.href=window.electron.getPath("answerQuestion-multiple_choice.html");
                                 });
-                            }else if(result=="preset"){
-                                /* TODO: Load second question */
+                            }else{
+                                answerQBtn.addEventListener("click",()=>{
+                                    window.electron.send("open-alert",result);
+                                })
                             }
                         });
                     }
