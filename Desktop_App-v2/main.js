@@ -12,7 +12,7 @@ const connectToFlask=function(){
     //test version
     const venvPath="./py/.venv/bin/python3"
     const scriptPath='./py/routes.py'
-    flaskProc = require('child_process').spawn("wsl", [venvPath,scriptPath]);
+    flaskProc = require('child_process').spawn("wsl", [venvPath, "-u", scriptPath]);
     //executable version
     //flaskProc = require('child_process').execFile("routes.exe");
     /* For some reason, this part runs during shutdown too */
@@ -33,12 +33,7 @@ const connectToFlask=function(){
     //  also prints request info for some reason
     flaskProc.stderr.on('data', (data) => {
         console.error(`stderr: ${data}`);
-        // console.log(`stderr: ${data}`);
     });
-    // //logging data
-    // flaskProc.stdout.on('data', (data) => {
-    //     console.log(`stdout: ${data}`);
-    // });
     // on Flask close
     flaskProc.on("close", (code)=>{
         console.log(`child process exited with code ${code}`);
@@ -68,6 +63,7 @@ const createWindow = () => {
             preload: path.resolve(app.getAppPath(), 'preload.js')
         }
     });
+    win.setAlwaysOnTop("true",'screen-saver', 1);
 
     win.loadFile('index.html');
     win.on('close', (evt) => {
@@ -130,6 +126,13 @@ app.whenReady().then(() => {
 });
 
 /**
+ * Print a message to the VSCode Terminal, only for development
+ */
+ipcMain.on("print-to-main-terminal",(event,message)=>{
+    console.log(message);
+})
+
+/**
  * Create a popup browser window, listen for the auth landing page,
  * and send the code back when/if it is reached.
  */
@@ -142,6 +145,7 @@ ipcMain.on("open-auth-window", (event,authURL)=>{
             nodeIntegration: false, //for security
         },
     });
+    authWindow.setAlwaysOnTop("true",'pop-up-menu', 1)
     authWindow.loadURL(authURL);
 
     /* If the landing page is reached, pass the code and close the popup */
@@ -211,6 +215,7 @@ ipcMain.on("open-choices-window",(event)=>{
             sandbox: false  //to allow path to be imported in the preload script
         },
     });
+    choiceWindow.setAlwaysOnTop("true",'pop-up-menu', 1)
     choiceWindow.loadFile('addChoices.html');
 
     choiceWindow.on("closed",()=>{
