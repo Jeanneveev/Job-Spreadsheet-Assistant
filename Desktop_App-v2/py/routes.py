@@ -54,6 +54,40 @@ class Node:
         if self.answer:
             res_dict["answer"]=self.answer
         return res_dict
+    def display_info(self,requesting_addon:bool,requesting_last:bool)->dict:
+        """Return only the necessary information for displaying this Node's Question in the frontend
+        Parameters:
+            self: Node - The current instance of a Node
+            requesting_addon: bool - Whether or not the question of the Node that's being requested is its addon Question
+            requesting_last: bool - Whether or not the question that's being asked for is the last Question in the linked list
+        
+        Returns:
+            A dictionary with the following keys:
+                "q_str": str - The q_str of the requested question
+                "next_question_a_type": str - The value of the a_type of the next question
+                "is_last": str - Whether or not the requested question is the last question
+        """
+        if not requesting_last:
+            if requesting_addon:
+                requested_question:Question=self.addon
+                next_question:Question=self.next.question
+            else:
+                requested_question:Question=self.question
+                #if the current question is a base question with an addon, the next question is its addon,
+                # else its the question of the next Node
+                if self.addon is not None:
+                    next_question:Question=self.addon
+                else:
+                    next_question:Question=self.next.question
+            return {"q_str":requested_question.q_str,"next_question_a_type":next_question.a_type.value,"is_last":"false"}
+        else:
+            if requesting_addon:
+                requested_question:Question=self.addon
+            else:
+                requested_question:Question=self.question
+            return {"q_str":requested_question.q_str,"is_last":"true"}
+        
+        
 class LinkedList:
     def __init__(self):
         self.head:Node=None
@@ -158,6 +192,7 @@ class ExportData:
     def __init__(self):
         self.data:list[str]=None
         self.method:str=None
+        self.service=None
         self.loc=None
     # CSV
     def export_to_CSV(self):
@@ -211,6 +246,7 @@ class ExportData:
         token_path=os.path.join(basedir,"token.json")
         if os.path.exists(token_path):
             creds=Credentials.from_authorized_user_file(token_path, SCOPES)
+            print(f"Credentials from token.json: {creds}")
         #if there isn't or the credentials aren't valid
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -239,15 +275,22 @@ class ExportData:
             else:   #no creds or code
                raise AuthenticationError("No valid credits or code. User could not be authenticated")
             
-            #try and return the build
-            try:
-                service = build("sheets", "v4", credentials=creds)
-                if service is None:
-                    return ServiceBuildError(f"Failed to obtain Google Sheets service")
-                return service
-            except HttpError as error:
-                print(f"An error occurred: {error}")
-                raise ServiceBuildError(f"Some error occured with Google Sheets' API: {error}")
+        #try and return the build
+        try:
+            if creds is None:
+                raise AuthenticationError("Credentials are None")
+            if not creds.valid:
+                raise AuthenticationError("Credentials are invalid")
+            print(f"Credentials are: {creds}")
+            self.service = build("sheets", "v4", credentials=creds)
+            print("service gotten")
+            return self.service
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            raise ServiceBuildError(f"Some error occured with Google Sheets' API: {error}")
+        except AuthenticationError as error:
+            print(f"An Authentication error occurred: {error}")
+            raise ServiceBuildError(f"Authentication error: {error}")
     
     def length_to_col_letter(self,length:int):
         num2char={1:"A",2:"B",3:"C",4:"D",5:"E",
@@ -272,7 +315,12 @@ class ExportData:
             dict: A dictionary with the key "error" and the error message
         """
         try:
-            service=self.get_service()  # gets service from the by now created token.json
+            if self.service is None:
+                # print("Check 1, self.service is None")
+                self.get_service()  #ensure self.service is set
+            if self.service is None:    #check again
+                # print("Check 2: self.service is still None")
+                raise ServiceBuildError("Google Sheets service could not be obtained.")
         except AuthenticationError as e:
             print(f"Authentication error: {e}")
             return {"error": f"{e}"}, 400
@@ -293,7 +341,7 @@ class ExportData:
             values=[data]
             body={"values": values}
             result=(
-                service.spreadsheets()
+                self.service.spreadsheets()
                 .values()
                 .append(
                     spreadsheetId=SPREADSHEET_ID,
@@ -367,7 +415,13 @@ def add_addon():
     #make a question from the results
     q_type=QTypeOptions(result["q_type_2"])
     a_type=ATypeOptions(result["a_type"])
-    new_question=Question(result["question"],result["detail"],q_type,a_type)
+    if a_type.value=="multiple-choice":
+        print("Creating new multiple-choice question")
+        choices:list[str]=json.loads(result["choices"])
+        print("Choices are:",choices)
+        new_question=Question(result["question"],result["detail"],q_type,a_type,choices)
+    else:
+        new_question=Question(result["question"],result["detail"],q_type,a_type)
     #get the node of the question this one is adding onto
     base_detail=result["addon_to"]
     base_node=ll.getByDetail(base_detail)
@@ -643,15 +697,33 @@ def get_first_non_preset_node()->Node|None:
         return result_node
     
     while a_type_val=="preset" and head is not None:
-        # print(f"head is {head.question.q_detail}")
-        # print(f"a_type_val is {head.question.a_type.value}")
         a_type_val=head.question.a_type.value
         result_node=head
         head=head.next
-    # print(f"escaped loop, a_type_val is: {a_type_val}")
     if a_type_val=="preset":    #all questions are preset questions
         return None
     return result_node
+def get_next_non_preset_question(forwards:bool)->Node|None:
+    """Return the first question before or after the current question whose a_type is not preset, if any"""
+    #NOTE: It should be impossible for one to go back into a series of preset questions that start the ll
+    # because the button would be disabled on the frontend, however, it is possible to go forwards into a series of presets that end it
+    
+def answer_starter_presets():
+    """Loop backwards from the first non-preset node and answer all, if any, preset nodes before it"""
+    first_valid:Node=get_first_non_preset_node()
+    if first_valid!=ll.head:
+        while first_valid!=ll.head: 
+            first_valid=first_valid.prev
+            #TODO: Find what preset question the node contains and answer it
+    pass
+
+def get_last_question()->Question:
+    """Return the last Question in the linked list"""
+    if ll.tail.addon is not None:
+        return ll.tail.addon
+    else:
+        return ll.tail.question
+
 @app.route("/get_first_a_type")
 def get_first_a_type():
     head:Node|None=get_first_non_preset_node()
@@ -660,106 +732,160 @@ def get_first_a_type():
     else:
         a_type_val=head.question.a_type.value
         return a_type_val
+    
 @app.route("/get_first_question")
-def get_first_question():
-    """Returns the q_str of the first question, whether a next question exists, and what its a_type is if it does
-
-    Return Keys:
-        "q_str": str: The q_str of the next question
-        "next_a_type": The a_type of the next question
-        "has_next": str: Whether or not the next question has a question after it
+def get_first_question_display_info()->dict:
+    """Get the display info of the first non-preset Question in the LinkedList
+    
+    Returns:
+        A dictionary with the following keys:
+            "q_str": str - The q_str of the requested question
+            "next_question_a_type": str - The value of the a_type of the next question
+            "is_last": str - Whether or not the requested question is the last question
     """
-    curr_node:Node=ll.head
-    if curr_node is not None:   #if there is a node
-        curr_node:Node=get_first_non_preset_node()
-        session["curr_node"]=curr_node.as_dict()
-        session["curr_question"]=curr_node.question.as_dict()
-        if curr_node.addon is not None: #if there is an addon, the next question is the addon
-            return {"q_str":curr_node.question.q_str, "next_a_type":curr_node.addon.a_type.value,
-                    "has_next":"true"}
-        elif curr_node.next is not None:  #else-if there is a next node, the next question is its question
-            return {"q_str":curr_node.question.q_str, "next_a_type":curr_node.next.question.a_type.value,
-                    "has_next":"true"}
-        else:   #else, this is the last node in the ll
-            return {"q_str":curr_node.question.q_str, "has_next":"false"}
-    else:   #if there are no nodes
-        return "No questions have been set yet", 404
+    first_valid:Node=get_first_non_preset_node()
+    last_q:Question=get_last_question()
+    ## TODO: Uncomment below when the function is done
+    # answer_starter_presets()
+    # Set session variables
+    session["curr_node"]=first_valid.as_dict()
+    session["curr_question"]=first_valid.question.as_dict()
+
+    if first_valid.question==last_q:
+        fv_display_info:dict=first_valid.display_info(False,True)
+    else:
+        fv_display_info:dict=first_valid.display_info(False,False)
+    return fv_display_info
+
 @app.route("/get_next_question")
-def get_next_question():
-    """Get the display details of the next question
+def get_next_question_display_info()->dict:
+    """Get the display info of the next question
 
-    Return Keys:
-    "q_str": str: The q_str of the next question
-    "next_a_type": The a_type of the next question
-    "next_is_addon": str: Whether or not the next question is an addon to the current question
-    "has_next": str: Whether or not the next question has a question after it
+    Returns:
+        res: dict - A dictionary with the following keys:
+            "q_str": str - The q_str of the next question
+            "next_question_a_type": str - The value of the a_type of the question after the next question
+            "is_last": str - Whether or not the next question is the last question
+            "is_addon": str - Whether or not the next question is an addon question
     """
+    #Get the current node and question
     curr_node_dict:dict=session["curr_node"]
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the current node by the detail
     curr_question_dict:dict=session["curr_question"]
-    curr_node_addon:dict|None=curr_node_dict.get("addon",None)
-    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the node by the detail
-    next_node:Node=curr_node.next
+    on_addon=False
+    next_is_addon=False
+    if not curr_question_dict==curr_node.question.as_dict():    #the current question is the node's addon question
+        on_addon=True
 
-    if (curr_node_addon==None) or (curr_question_dict==curr_node_addon):    #if the current question is singular or an addon
-        #the next question is the question of the next node
-        if next_node is not None:   #if there is a next node
-            session["curr_node"]=next_node.as_dict()
-            session["curr_question"]=next_node.question.as_dict()
-            if (next_node.addon is not None) or (next_node.next is not None):  #if the next node has a question or a node after it
-                return {"q_str":next_node.question.q_str, "next_a_type":next_node.next.question.a_type.value,
-                        "has_next":"true"}
-            else:   #this is the second to last question
-                return{"q_str":next_node.question.q_str, "next_a_type":next_node.question.a_type.value, "has_next":"false"}
-        else:   #if the current node is the last node (this shouldn't be reachable but handled jic)
-            return "There is no next node", 404
-    else:   #the current question is a base question and the next question is the addon
-        # session["curr_node"]=curr_node.as_dict()
-        session["curr_question"]=curr_node_addon
-        if next_node is not None:   #if there are >2 questions after this
-            return {"q_str":curr_node.addon.q_str, "next_a_type":curr_node.addon.a_type.value,
-                    "next_is_addon":"true", "has_next":"true"}
-        else:   #the current node is the last node and the current question is the second to last question
-            return {"q_str":curr_node.addon.q_str, "next_a_type":curr_node.addon.a_type.value,
-                    "next_is_addon":"true", "has_next":"false"}
+    #Get the next question
+    if (on_addon==True) or (curr_node.addon is None):   #the current question is an addon or doesn't have an addon
+        #the next question is the next node's question
+        next_question:Question=curr_node.next.question
+        next_node:Node=curr_node.next
+    else:   #the current question has an addon, which will be the next question
+        next_question:Question=curr_node.addon
+        next_node:Node=curr_node
+        next_is_addon=True
+    session["curr_question"]=next_question.as_dict()
+    session["curr_node"]=next_node.as_dict()
 
+    last_q:Question=get_last_question()
+    if next_question==last_q:
+        res=next_node.display_info(next_is_addon,True)
+    else:
+        res=next_node.display_info(next_is_addon,False)
+    #append "is_addon" to the dictionary if the next question is one
+    if next_is_addon:
+        res["is_addon"]="true"
+    return res
+    
 @app.route("/get_prev_question")
 def get_prev_question():
-    """Get the display details of the question of the previous node
+    """Get the display info of the previous question
     
-    Return Keys:
-        "q_str": The q_str of the previous question
-        "prev_a_type": The value of the a_type of the previous question
-        "next_a_type": The value of the a_type of the current question
-        "is_first": Whether the previous question is the first question
+     Returns:
+        A dictionary with the following keys:
+            "q_str": str - The q_str of the previous question
+            "next_question_a_type": str - The value of the a_type of the current question
+            "is_last": str - Whether or not the previous question is the last question (should always be false)
+            "is_first": str - Wheter or not the previous question is the first question
+            "is_addon": str - Whether or not the next question is an addon question
     """
+    #Get the current node and question
     curr_node_dict:dict=session["curr_node"]
-    #get the node from the detail
-    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
-    prev_node=curr_node.prev
+    curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the current node by the detail
+    curr_question_dict:dict=session["curr_question"]
+    on_addon=False
+    prev_is_addon=False
+    if not curr_question_dict==curr_node.question.as_dict():    #the current question is the node's addon question
+        on_addon=True
 
-    if prev_node is not None:   #if there is a prev node
-        session["curr_node"]=prev_node.as_dict()
-        session["curr_question"]=prev_node.question.as_dict()
-        if prev_node==ll.head:  #if the previous node is the first node
-            return {"q_str":prev_node.question.q_str, "prev_a_type":prev_node.question.a_type.value,
-                    "next_a_type":curr_node.question.a_type.value, "is_first":"true"}
+    #Get the previous question
+    if on_addon:    #the current question is an addon and the previous question is its base
+        prev_node:Node=curr_node
+        prev_question:Question=curr_node.question
+    else:   #the previous question is in the previous node
+        prev_node:Node=curr_node.prev
+        if prev_node.addon is not None:
+            prev_question:Question=prev_node.addon
+            prev_is_addon=True
         else:
-            return {"q_str":prev_node.question.q_str, "prev_a_type":prev_node.question.a_type.value,
-                    "next_a_type":curr_node.question.a_type.value}
-    else:                       #this node is the first node (this shouldn't be reachable but handled jic)
-        return "There is no previous node", 400
+            prev_question:Question=prev_node.question
+    session["curr_question"]=prev_question.as_dict()
+    session["curr_node"]=prev_node.as_dict()
+    
+    res=prev_node.display_info(prev_is_addon,False)
+    first_q:Question=ll.head.question
+    if prev_question==first_q:
+        res["is_first"]="true"
+    if prev_is_addon:
+        res["is_addon"]="true"
+    return res
+
+
+# @app.route("/get_prev_question")
+# def get_prev_question():
+#     """Get the display details of the question of the previous node
+    
+#     Return Keys:
+#         "q_str": The q_str of the previous question
+#         "prev_a_type": The value of the a_type of the previous question
+#         "next_a_type": The value of the a_type of the current question
+#         "is_first": Whether the previous question is the first question
+#     """
+#     curr_node_dict:dict=session["curr_node"]
+#     #get the node from the detail
+#     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+#     prev_node=curr_node.prev
+
+#     if prev_node is not None:   #if there is a prev node
+#         session["curr_node"]=prev_node.as_dict()
+#         session["curr_question"]=prev_node.question.as_dict()
+#         if prev_node==ll.head:  #if the previous node is the first node
+#             return {"q_str":prev_node.question.q_str, "prev_a_type":prev_node.question.a_type.value,
+#                     "next_a_type":curr_node.question.a_type.value, "is_first":"true"}
+#         else:
+#             return {"q_str":prev_node.question.q_str, "prev_a_type":prev_node.question.a_type.value,
+#                     "next_a_type":curr_node.question.a_type.value}
+#     else:                       #this node is the first node (this shouldn't be reachable but handled jic)
+#         return "There is no previous node", 400
     
 @app.route("/get_answer_options", methods=["GET"])
 def get_answer_options():
-    curr_node=None
     if "curr_node" in session:
         curr_node_dict:dict=session["curr_node"]
-        #get the node from the detail
-        curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
+        curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the node from the detail
     else:
         curr_node:Node=ll.head
-    if curr_node is not None:
-        return jsonify({"options":curr_node.question.choices})
+    if "curr_question" in session:
+        curr_question_dict:dict=session["curr_question"]
+        if curr_question_dict==curr_node.question.as_dict():
+            curr_question:Question=curr_node.question
+        else:
+            curr_question:Question=curr_node.addon
+    else:
+        curr_question:Question=ll.head.question
+    return jsonify({"options":curr_question.choices})
 
 
 @app.route("/add_answer/<answ>",methods=["POST"])
@@ -859,8 +985,10 @@ def add_all_answers():
 def get_auth_url():
     url=exportData.get_auth_url()
     if url:
+        print("auth_url is ",url)
         return {"auth_url":url}
     else:
+        print("Credentials are already validated")
         return {"message": "Credentials are already validated"}, 200
 
 @app.route("/auth_landing_page/",methods=["GET"])
@@ -874,6 +1002,7 @@ def auth_landing_page():
 def receive_auth_code():
     code=request.get_json()["code"]
     service=exportData.get_service(code)
+    print(f"service is: {service}")
     if type(service)==dict: #it's an error
         return service  #return that error message
     else:
@@ -882,11 +1011,15 @@ def receive_auth_code():
 @app.route("/export_data/sheets",methods=["POST"])
 def export_data_sheets():
     export_result=exportData.export_to_sheets()
+    print("export_result is",export_result)
+    if type(export_result) is tuple:
+        error_code=export_result[1]
+        export_result=export_result[0]
     if export_result.get("error",None) is None:
         res_msg:str=f"{(export_result.get('updates').get('updatedCells'))} cells appended."
         return res_msg
     else:
-        return f"ERROR!!! {export_result.get('error')}"
+        return f"ERROR!!! {export_result.get('error')}",error_code
 
 
 
