@@ -281,9 +281,9 @@ class ExportData:
                 raise AuthenticationError("Credentials are None")
             if not creds.valid:
                 raise AuthenticationError("Credentials are invalid")
-            print(f"Credentials are: {creds}")
+            # print(f"Credentials are: {creds}")
             self.service = build("sheets", "v4", credentials=creds)
-            print("service gotten")
+            # print("service gotten")
             return self.service
         except HttpError as error:
             print(f"An error occurred: {error}")
@@ -554,6 +554,25 @@ def all_to_json():
     """Get every node in the linked list and return them as json"""
     # print("Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
+## ORDER
+@app.route("/reorder_questions", methods=["POST"])
+def reorder_nodes():
+    """Upon being given an ordered list of node details, reorder the linked list to be in that order"""
+    global ll
+    ordered_dict:dict=request.get_json()["order"]
+    print(f"The ordered dict is {ordered_dict}. It is of type {type(ordered_dict)}")
+    new_ll=LinkedList()
+
+    for k,v in ordered_dict.items():
+        node:Node=ll.getByDetail(v)
+        #NOTE: Clearing the node's pointers here is key, or else it will cause an infinite loop
+        node.next=None
+        node.prev=None
+        new_ll.append(node)
+    ll=new_ll
+    ll.printLL()
+
+    return ""
 ## SAVE
 import time
 import os
@@ -710,12 +729,19 @@ def get_next_non_preset_question(forwards:bool)->Node|None:
     
 def answer_starter_presets():
     """Loop backwards from the first non-preset node and answer all, if any, preset nodes before it"""
-    first_valid:Node=get_first_non_preset_node()
-    if first_valid!=ll.head:
-        while first_valid!=ll.head: 
-            first_valid=first_valid.prev
-            #TODO: Find what preset question the node contains and answer it
-    pass
+    curr:Node=get_first_non_preset_node()
+    if curr!=ll.head:
+        while curr!=ll.head: 
+            curr=curr.prev
+            #Find what preset question the node contains and answer it
+            which_preset:str=curr.question.q_str
+            answ=""
+            match which_preset:
+                case "appDate":
+                    answ=answer_application_date()
+                case "empty":
+                    answ=answer_empty()
+            curr.answer=answ
 
 def get_last_question()->Question:
     """Return the last Question in the linked list"""
@@ -745,8 +771,7 @@ def get_first_question_display_info()->dict:
     """
     first_valid:Node=get_first_non_preset_node()
     last_q:Question=get_last_question()
-    ## TODO: Uncomment below when the function is done
-    # answer_starter_presets()
+    answer_starter_presets()
     # Set session variables
     session["curr_node"]=first_valid.as_dict()
     session["curr_question"]=first_valid.question.as_dict()
@@ -842,33 +867,6 @@ def get_prev_question():
         res["is_addon"]="true"
     return res
 
-
-# @app.route("/get_prev_question")
-# def get_prev_question():
-#     """Get the display details of the question of the previous node
-    
-#     Return Keys:
-#         "q_str": The q_str of the previous question
-#         "prev_a_type": The value of the a_type of the previous question
-#         "next_a_type": The value of the a_type of the current question
-#         "is_first": Whether the previous question is the first question
-#     """
-#     curr_node_dict:dict=session["curr_node"]
-#     #get the node from the detail
-#     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
-#     prev_node=curr_node.prev
-
-#     if prev_node is not None:   #if there is a prev node
-#         session["curr_node"]=prev_node.as_dict()
-#         session["curr_question"]=prev_node.question.as_dict()
-#         if prev_node==ll.head:  #if the previous node is the first node
-#             return {"q_str":prev_node.question.q_str, "prev_a_type":prev_node.question.a_type.value,
-#                     "next_a_type":curr_node.question.a_type.value, "is_first":"true"}
-#         else:
-#             return {"q_str":prev_node.question.q_str, "prev_a_type":prev_node.question.a_type.value,
-#                     "next_a_type":curr_node.question.a_type.value}
-#     else:                       #this node is the first node (this shouldn't be reachable but handled jic)
-#         return "There is no previous node", 400
     
 @app.route("/get_answer_options", methods=["GET"])
 def get_answer_options():
