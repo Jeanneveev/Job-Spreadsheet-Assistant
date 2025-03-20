@@ -15,26 +15,26 @@ const prevBtn=document.getElementById("previous");
  * so just get them from there.
 */
 let first_q=sessionStorage.getItem("first_q");
-let is_last="";
+let has_next="";
 let next_a_type="";
 let is_addon=false;
 
 function loadQuestion(){
     if(first_q=="true"){
         console.log("This is the first question");
-        /* Get the first question's display data */
+        /* Set question header */
         fetch(`${SERVER_URL}/get_first_question`,{ method: "GET" })
         .then(response=>response.json())
         .then(data=>{
             questionHeader.innerText=data.q_str;
-            is_last=data.is_last;
-            if(is_last=="false"){
-                next_a_type=data.next_question_a_type;
-                console.log("This is not the last question. The next_a_type is",next_a_type);
-            }else{
-                console.log("This is both the first and last question");
+            has_next=data.has_next;
+            console.log("has_next is:",has_next);
+            if(has_next=="true"){
+                next_a_type=data.next_a_type;
+                console.log("next_a_type is",next_a_type)
             }
-        }).catch(error=>console.error("An error was recieved: ",error));
+        })
+        .catch(error=>console.error("An error was recieved: ",error));
         prevBtn.disabled=true;  //disable prevBtn
         sessionStorage.setItem("first_q","false");  //change flag
     }else{
@@ -44,8 +44,8 @@ function loadQuestion(){
         questionHeader.innerText=q;
         is_addon=sessionStorage.getItem("is_addon")==="true";
         console.log("is_addon for this question is",is_addon)
-        is_last=sessionStorage.getItem("is_last");
-        if(is_last=="false"){
+        has_next=sessionStorage.getItem("has_next");
+        if(has_next=="true"){
             next_a_type=sessionStorage.getItem("next_a_type");
             console.log("next_a_type is",next_a_type);
         }else{
@@ -81,13 +81,11 @@ function fillPresetQuestion(preset=null,forwards) {
             body: JSON.stringify({preset:preset})
         }).then(response=>response.text()).then(data=>{
             console.log("Preset filled: ",data);
-            if(sessionStorage.getItem("is_last")=="false"){
+            if(sessionStorage.getItem("has_next")=="true"){
                 console.log("There is a question after the preset question");
                 //since loadQuestion() isn't run, the variable needs to be set here for the if statement in loadNextQuestion to work
                 next_a_type=sessionStorage.getItem("next_a_type");
-                window.electron.send("print-to-main-terminal",`Preset filled, loading next question of a_type ${next_a_type}`)
                 loadNextQuestion();
-                return;
             }else{
                 window.electron.send("open-confirm-box","This is the last question. Do you wish to submit all your answers?");
             }
@@ -96,7 +94,6 @@ function fillPresetQuestion(preset=null,forwards) {
     }else{          //if called by loadPrev
         //just get the question before it instead
         loadPreviousQuestion();
-        return;
     }
 }
 
@@ -105,55 +102,53 @@ function loadPreviousQuestion(){
     fetch(`${SERVER_URL}/get_prev_question`,{ method: "GET" })
     .then(response=>response.json())
     .then((data)=>{
-        //get where the page will redirect to
-        const prev_a_type=data.next_question_a_type
-        if(prev_a_type=="multiple-choice"){
-            console.log("The previous question is multiple choice");
-            form.action="answerQuestion-multiple_choice.html";
-        }else if(prev_a_type=="open-ended"){
-            console.log("The previous question is open-ended");
-            form.action="answerQuestion-open_ended.html";
-        }else if(prev_a_type=="preset"){
-            fillPresetQuestion(false);
-            return;
-        }
-
         if(data.is_first){ //the previous question is the first question
             sessionStorage.setItem("first_q", "true");  //reset flag
         }else{
             /* Set session variables */
             sessionStorage.setItem("next_q_str",data.q_str);
-            sessionStorage.setItem("is_last","false");  //always false because the current question exists
+            sessionStorage.setItem("has_next","true");  //always true because the current question exists
         }
-        
-        window.location.href=form.action;   //load page of next (previous) question
+        //change what page we go to depending on the a_type of the previous question
+        if(data.prev_a_type=="multiple-choice"){
+            console.log("The previous question is multiple choice");
+            form.action="answerQuestion-multiple_choice.html";
+        }else if(data.prev_a_type=="open-ended"){
+            console.log("The previous question is open-ended");
+            form.action="answerQuestion-open_ended.html";
+        }else if(data.prev_a_type=="preset"){
+            fillPresetQuestion(false);
+            return;
+        }
+        window.location.href=form.action;   //load page of next question
     });
 }
 
 /* NEXT QUESTION */
+/* ERROR!!!: The page of an addon is not being redirected to properly. The correct next_a_type is being sent, meaning there's something wrong here */
 function loadNextQuestion(){
-    //get the display info for the next question
+    //set the text of the next question
     fetch(`${SERVER_URL}/get_next_question`,{ method: "GET" })
     .then(response=>response.json())
     .then((data)=>{
         /* Set all the session variables */
         sessionStorage.setItem("next_q_str",data.q_str);
-        sessionStorage.setItem("next_a_type",data.next_question_a_type);
-        if(data.is_addon){
+        console.log("The next question is",sessionStorage.getItem("next_q_str"));
+        sessionStorage.setItem("next_a_type",data.next_a_type);
+        if(data.next_is_addon){
             sessionStorage.setItem("is_addon","true");
             window.electron.send("print-to-main-terminal","The next question is an addon");
         }else{
             sessionStorage.setItem("is_addon","false");
         }
-        sessionStorage.setItem("is_last",data.is_last);
-
-        //Get where the page will redirect to
-        if(next_a_type=="open-ended"){
-            console.log("The next question is open-ended");
-            form.action="answerQuestion-open_ended.html";
-        }else if(next_a_type=="multiple-choice"){
+        sessionStorage.setItem("has_next",data.has_next);
+        //change what page we go to depending on the a_type of the next question
+        if(next_a_type=="multiple-choice"){
             console.log("The next question is multiple choice");
             form.action="answerQuestion-multiple_choice.html";
+        }else if(next_a_type=="open-ended"){
+            console.log("The next question is open-ended");
+            form.action="answerQuestion-open_ended.html";
         }else if(next_a_type=="preset"){
             const preset=data.q_str
             fillPresetQuestion(preset,true);
@@ -174,11 +169,10 @@ function addFormListener(openEndedFlag){
             }else{
                 submitAnswer(document.querySelector('input[name="option"]:checked').labels[0].textContent);
             }
-            if(is_last=="false"){   //if there is a next question
+            if(has_next=="true"){   //if there is a next question
                 loadNextQuestion();
             }else{                  //this is the last question
                 window.electron.send("open-confirm-box","This is the last question. Do you wish to submit all your answers?");
-                /* NOTE: The rest of the logic is handled by the listeners below */
             }
         }else if(submitterId=="previous"){
             loadPreviousQuestion();
