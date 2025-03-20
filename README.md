@@ -2,7 +2,7 @@
 A small widget to help me save details about jobs I applied to
 
 # Getting Started
-Please note that, currently, the most recent version of the desktop app is within Desktop_App-v2. You can only create open-ended questions and export to Google Sheets.
+Please note that, currently, the most recent version of the desktop app is within Desktop_App-v2 and you can only export to Google Sheets.
 ## Prerequisites
 You'll need:
 - Python 3.10.7 or later
