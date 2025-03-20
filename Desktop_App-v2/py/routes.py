@@ -558,9 +558,21 @@ def all_to_json():
 @app.route("/reorder_questions", methods=["POST"])
 def reorder_nodes():
     """Upon being given an ordered list of node details, reorder the linked list to be in that order"""
-    ordered_details=request.get_json()["order"]
-    for detail in ordered_details:
-        pass
+    global ll
+    ordered_dict:dict=request.get_json()["order"]
+    print(f"The ordered dict is {ordered_dict}. It is of type {type(ordered_dict)}")
+    new_ll=LinkedList()
+
+    for k,v in ordered_dict.items():
+        node:Node=ll.getByDetail(v)
+        #NOTE: Clearing the node's pointers here is key, or else it will cause an infinite loop
+        node.next=None
+        node.prev=None
+        new_ll.append(node)
+    ll=new_ll
+    ll.printLL()
+
+    return ""
 ## SAVE
 import time
 import os

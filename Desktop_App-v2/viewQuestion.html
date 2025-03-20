@@ -26,6 +26,7 @@
         <table id="table">
             <thead>
                 <tr>
+                    <th scope="col">Order</th>
                     <th scope="col">Question</th>
                     <th scope="col">Detail</th>
                     <th scope="col">Q. Type</th>
@@ -38,6 +39,7 @@
         <button id="save">Save Questions</button>
         <input type="file" id="load_q_file" style="display: none;" accept=".json" />
         <input type="button" id="load_q_btn" value="Load Questions" />
+        <button type="button" id="reorder">Reorder Rows</button>
         <button onclick="window.location.href='index.html'">Back to Home</button>
         <script>
             const SERVER_URL = window.electron.SERVER_URL;
@@ -103,6 +105,44 @@
                 
                 return tr;
             }
+            /**
+             * Given a row and an optional tbody, add an "order" column to the start of that row
+             * If the tbody is passed, it's a tbody with a base and addon question and the "order" column should span 2 rows
+            */
+            function createOrderColumn(row,tbody=null){
+                if(tbody){
+                    const td_order=document.createElement("td");
+                    const select=document.createElement("select");
+                    select.classList.add("order-select");
+                    td_order.appendChild(select);
+                    td_order.setAttribute("rowspan","2");
+                    row.prepend(td_order);
+                }else{
+                    const td_order=document.createElement("td");
+                    const select=document.createElement("select");
+                    select.classList.add("order-select");
+                    td_order.appendChild(select);
+                    row.prepend(td_order);
+                }
+            }
+            function populateOrderDropdown(table){
+                const rowNum=table.rows.length-1;
+                console.log("There are",rowNum,"rows");
+                const order_dropdowns=document.querySelectorAll(".order-select");
+
+                let a=0;
+                order_dropdowns.forEach(dropdown=>{
+                    a+=1;
+                    for(let i=0; i<=rowNum; i++){
+                        const option=document.createElement("option");
+                        option.value, option.textContent=i;
+                        if(i==0){
+                            option.value, option.textContent=a;
+                        }
+                        dropdown.appendChild(option);
+                    }
+                });
+            }
             function appendToTable(node_list){
                 /* Add the nodes to the table
                     NOTE: node includes "question" and maybe "addon" dicts
@@ -115,10 +155,10 @@
                     // console.log("node is type",typeof(node));
                     // console.log("question is type",typeof(node.question));
                     console.log("q_str is of type",typeof(node.question.q_str));
-                    /* TODO: If node.addon, make a tbody */
                     if(!("addon" in node)){
-                        console.log("addon not in row",node)
+                        console.log("addon not in row",node);
                         question_row=createQuestionRow(node);
+                        createOrderColumn(question_row);
                         tbody.appendChild(question_row);
                     }else{
                         /* Append the current tbody and any singular questions in it to the table */
@@ -130,12 +170,14 @@
                         addon_row=createAddonRow(node);
                         new_tbody.appendChild(question_row);
                         new_tbody.appendChild(addon_row);
+                        createOrderColumn(question_row,new_tbody);
                         
                         table.appendChild(new_tbody);
                         tbody=document.createElement("tbody");
                     }
                 });
                 table.appendChild(tbody);
+                populateOrderDropdown(table);
             }
             function clearTable(){
                 const tbodies=Array.from(table.querySelectorAll("tbody"));
@@ -148,6 +190,52 @@
                 getJSON().then((result)=>{
                     appendToTable(result);
                 });
+            });
+            
+            function reorderTable(){
+                /* Send the ordered list of q_details to the backend */
+                order_detail_dict={};
+                rows=Array.from(document.getElementsByTagName("tr"));
+                rows.forEach(row => {
+                    //if the row has a dropdown in it (all rows but headers and addons)
+                    if(row.querySelector(".order-select")){
+                        const order=row.querySelector(".order-select").value;
+                        const detail=row.querySelector("td:nth-child(3)").innerText;
+                        // console.log("select found. order is",order);
+                        console.log("detail is",detail);
+                        if(Object.keys(order_detail_dict).includes(order)){
+                            window.electron.send("open-alert","ERROR: Two questions cannot share the same order number.");
+                            return;
+                        }else{
+                            order_detail_dict[order]=detail;
+                        }
+                    }
+                });
+                //order the dictionary by its keys
+                const ordered_dict={};
+                const keys=Object.keys(order_detail_dict).sort();
+                keys.forEach(key=>{ ordered_dict[key]= order_detail_dict[key] });
+
+                console.log(order_detail_dict);
+                fetch(`${SERVER_URL}/reorder_questions`,{
+                    method: "POST",
+                    headers:{
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({order:ordered_dict})
+                })
+                .then(response=>response.text())
+                .then(data=>console.log(data));
+
+                //clear the table and append the reordered nodes
+                clearTable();
+                getJSON().then((result)=>{
+                    appendToTable(result);
+                });
+            }
+            const reorderBtn=document.getElementById("reorder");
+            reorderBtn.addEventListener("click",(event)=>{
+                reorderTable();
             });
 
 
