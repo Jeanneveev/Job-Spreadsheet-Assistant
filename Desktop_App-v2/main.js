@@ -173,7 +173,7 @@ ipcMain.on("open-auth-window", (event,authURL)=>{
  * Create a confirmation message box
  *  This is done because just using confirm() in the renderer proc causes a bug with text inputs
   */
-ipcMain.on("open-confirm-box", (event,message)=>{
+ipcMain.on("open-confirm", (event,message)=>{
     dialog.showMessageBox(win, {
         "type": "question",
         "title": "Confirmation",

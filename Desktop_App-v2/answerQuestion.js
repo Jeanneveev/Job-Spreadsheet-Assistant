@@ -89,7 +89,7 @@ function fillPresetQuestion(preset=null,forwards) {
                 loadNextQuestion();
                 return;
             }else{
-                window.electron.send("open-confirm-box","This is the last question. Do you wish to submit all your answers?");
+                window.electron.send("open-confirm","This is the last question. Do you wish to submit all your answers?");
             }
         })
         .catch(err=>console.error(err));
@@ -177,7 +177,7 @@ function addFormListener(openEndedFlag){
             if(is_last=="false"){   //if there is a next question
                 loadNextQuestion();
             }else{                  //this is the last question
-                window.electron.send("open-confirm-box","This is the last question. Do you wish to submit all your answers?");
+                window.electron.send("open-confirm","This is the last question. Do you wish to submit all your answers?");
                 /* NOTE: The rest of the logic is handled by the listeners below */
             }
         }else if(submitterId=="previous"){

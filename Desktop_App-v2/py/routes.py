@@ -105,6 +105,18 @@ class LinkedList:
         node.prev=self.tail
         #update linked list tail
         self.tail=node
+    def remove(self,node:Node)->None:
+        """Remove a node from the linked list"""
+        if node==self.head:
+            self.head=node.next
+            return
+        
+        prev:Node=node.prev
+        prev.next=node.next
+        prev.next.prev=prev
+        #fully unlinking node so that the garbace collector knows to get it
+        node.next=None
+        node.prev=None
 
     def printLL(self):
         """Print all of the linked list's node's details"""
@@ -134,13 +146,22 @@ class LinkedList:
             curr=curr.next
         return found
     def getByDetail(self,val:str)->Node|None:
-        """Search linked list by detail"""
+        """Search linked list by a node's question.q_detail"""
         ## NOTE: I feel like I could add some caching to this function
         curr:Node=self.head
         while curr:
             if curr.question.q_detail==val:
-                # print("matched")
+                print(f"matched {val}")
                 return curr
+            curr=curr.next
+        return None
+    def getByAddonDetail(self,val:str)->Node|None:
+        """Search linked list by a node's addon.q_detail"""
+        curr:Node=self.head
+        while curr:
+            if curr.addon:
+                if curr.addon.q_detail==val:
+                    return curr
             curr=curr.next
         return None
     def getByIdx(self,idx)->Node:
@@ -555,24 +576,59 @@ def all_to_json():
     # print("Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
 ## ORDER
+###ERROR!!! There's an error where node is None
+#   Have set up print statement. TODO: Complete tomorrow
 @app.route("/reorder_questions", methods=["POST"])
 def reorder_nodes():
     """Upon being given an ordered list of node details, reorder the linked list to be in that order"""
     global ll
     ordered_dict:dict=request.get_json()["order"]
     print(f"The ordered dict is {ordered_dict}. It is of type {type(ordered_dict)}")
+    print(f"Before reordering, the ll looks like: {ll.returnLL()}")
     new_ll=LinkedList()
 
+    reordered_nodes:list[Node]=[]
     for k,v in ordered_dict.items():
+        print("Reordering",v)
         node:Node=ll.getByDetail(v)
+        if node is None:
+            return "ERROR: Node not found", 404
+        reordered_nodes.append(node)
+    #append the reordered nodes
+    for node in reordered_nodes:
         #NOTE: Clearing the node's pointers here is key, or else it will cause an infinite loop
         node.next=None
         node.prev=None
         new_ll.append(node)
     ll=new_ll
-    ll.printLL()
+    print(f"After reordering, the ll looks like: {ll.returnLL()}")
 
-    return ""
+    return "Linked List reordered",200
+## DELETE
+@app.route("/delete_question", methods=["POST"])
+def del_node():
+    """Given a node's detail, find and delete it"""
+    data=request.get_json()
+    if "is_addon" in data:
+        is_addon=True
+    else:
+        is_addon=False
+    del_detail:str=request.get_json()["q_detail"]
+    print(f"del_detail is {del_detail}")
+    if is_addon:
+        del_node:Node=ll.getByAddonDetail(del_detail)
+    else:
+        del_node:Node=ll.getByDetail(del_detail)
+    #if the question being deleted is an addon, just delete the addon
+    if(del_node.addon):
+        if (del_node.addon.q_detail==del_detail):
+            del_node.addon=None
+            return f"Addon question {del_detail} deleted"
+    else:   #otherwise, delete the whole node
+        ll.remove(del_node)
+        ll.printLL()
+        return f"Node {del_detail} deleted"
+    
 ## SAVE
 import time
 import os
@@ -660,7 +716,7 @@ def upload_file():
         
         file_json=json.load(file)   #this puts the file stream pointer at the end
         file.seek(0)    #reset file pointer to the start
-        print(f"File is: {file_json}. Filename is: {file.filename}")
+        # print(f"File is: {file_json}. Filename is: {file.filename}")
         # if the file exists and it's of the right extension in the right format
         if file and check_allowed_extension(file.filename):
             if validate_upload(file_json):
