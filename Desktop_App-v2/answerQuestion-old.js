@@ -87,7 +87,7 @@ function fillPresetQuestion(preset=null,forwards) {
                 next_a_type=sessionStorage.getItem("next_a_type");
                 loadNextQuestion();
             }else{
-                window.electron.send("open-confirm-box","This is the last question. Do you wish to submit all your answers?");
+                window.electron.send("open-confirm","This is the last question. Do you wish to submit all your answers?");
             }
         })
         .catch(err=>console.error(err));
@@ -172,7 +172,7 @@ function addFormListener(openEndedFlag){
             if(has_next=="true"){   //if there is a next question
                 loadNextQuestion();
             }else{                  //this is the last question
-                window.electron.send("open-confirm-box","This is the last question. Do you wish to submit all your answers?");
+                window.electron.send("open-confirm","This is the last question. Do you wish to submit all your answers?");
             }
         }else if(submitterId=="previous"){
             loadPreviousQuestion();
