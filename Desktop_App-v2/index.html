@@ -4,34 +4,45 @@
         <meta charset='UTF-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
         <title>Job Spreadsheet Assistant</title>
+        <style>
+            *{
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            h1{
+                margin-block: .5rem 1rem;
+                text-align: center;
+            }
+            .buttons-wrapper{
+                margin-inline: 4rem;
+
+                display: flex;
+                justify-content: center;
+                flex-direction: column;
+
+                button{
+                    padding-block: .5rem;
+                    margin-bottom: .75rem;
+                }
+            }
+        </style>
     </head>
     <body>
         <h1>Job Spreadsheet Assistant</h1>
-        <p id="test"></p>
         <div class="buttons-wrapper">
-            <button id="add_q_btn" onclick="window.location.href='addQuestion.html'">Add Question</button>
+            <!-- <button id="add_q_btn" onclick="window.location.href='addQuestion.html'">Add Question</button>
             <button id="view_q_btn" onclick="window.location.href='viewQuestion.html'">View All Questions</button>
+            <button id="answ_q_btn">Answer Questions</button>
+            <button id="export_src_btn" onclick="window.location.href='selectExport.html'">Select Export Source</button> -->
+            <button id="get_q_btn">Get Questions</button>
             <button id="answ_q_btn">Answer Questions</button>
             <button id="export_src_btn" onclick="window.location.href='selectExport.html'">Select Export Source</button>
         </div>
         <script>
             /* FLASK STUFF */
             const SERVER_URL = window.electron.SERVER_URL;
-            /* test connection - WORKS */
-            function testConnection(){
-                fetch(`${SERVER_URL}/`,{
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        Accept: "application/json",
-                        "Content-Type": "application/json",
-                    },
-                }).then(response=>response.json()).then((data)=>{
-                    //put the result inside the result p
-                    document.getElementById("test").innerText = data.result;     //data.result should have the result from python script
-                })
-            }
-            
+            const getQBtn=document.getElementById("get_q_btn");
             const answerQBtn=document.getElementById("answ_q_btn");
             /* if no questions or export method set yet, grey out Answer Questions */
             async function getJSON(){
@@ -104,6 +115,10 @@
             answerQBtn.addEventListener("click",()=>{
                 sessionStorage.setItem("first_q","true");
             });
+
+            getQBtn.addEventListener("click", ()=>{
+                window.electron.send("open-question-window");
+            })
         </script>
     </body>
 </html>

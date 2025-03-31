@@ -630,21 +630,73 @@ def del_node():
         return f"Node {del_detail} deleted"
     
 ## SAVE
-import time
 import os
-@app.route("/save_file", methods=["GET"])
+import re
+def get_preexisting_filenames():
+    """Get all pre-existing question group filenames from the saves
+    folder, and database and returns it as a singular list
+    """
+    #get from saves folder
+    files_filenames:list[str]=[]
+    curr_dir=os.path.dirname(__file__)
+    path=f"Saves/"
+    save_folder=os.path.join(curr_dir, os.pardir, path)
+    files=os.listdir(save_folder)
+    for file in files:
+        if re.match("^qg_.*\.json$"):
+            file_name=file.removeprefix("qg_").removesuffix(".json")
+            files_filenames.append(file_name)
+    #TODO: Get from database
+    db_filenames:list[str]=[]
+    #make a combined list with no duplicates
+    all_filenames:list[str]=list(set(files_filenames.extend(db_filenames)))
+    return all_filenames   
+    
+def validate_filename(filename:str):
+    """Check that the given filename does not exist within the list
+    of existing filenames, and append it to that list if so
+
+    Parameters:
+        filename: str - the filename to be checked
+    Returns:
+        True - A flag representing that filename was not in the list
+        and was then appended to it
+
+        False - A flag representing that the filename was in the list
+        and was thus not appended to it
+    """
+    #get the existing filenames from the session variable or from the get_preexisting function
+    # if this is the first time this validate function is run
+    existing_filenames=session.get("filenames",get_preexisting_filenames())
+    if filename not in existing_filenames:
+        existing_filenames.append(filename)
+        session["filenames"]=existing_filenames
+        session.modified = True
+        return True
+    else:
+        return False
+    
+def save_to_database():
+    pass
+
+@app.route("/save_file", methods=["POST"])
 def write_ll_to_file():
     """Write all nodes of the linked list to a file"""
-    ll_json:list[dict]=ll.getAll()
-    #using the current time to make each save unique
-    curr_time = time.strftime("%m%d%Y_%H%M%S", time.localtime())
-    curr_dir=os.path.dirname(__file__)
-    path=f"Saves/questions_{curr_time}.json"
-    save_path=os.path.join(curr_dir, os.pardir, path)
-    with open(save_path,"w+", encoding="utf-8") as file:
-        json.dump(ll_json,file,ensure_ascii=False,indent=4)
+    name:str=request.get_json()["name"]
+    #convert the given name into a valid filename
+    filename=secure_filename(name)
+    if validate_filename(filename): #if the filename is unique
+        ll_jsonable:list[dict]=ll.getAll()
+        curr_dir=os.path.dirname(__file__)
+        path=f"Saves/qg_{name}.json"
+        save_path=os.path.join(curr_dir, os.pardir, path)
 
-    return {"result":f"Questions saved to {save_path}"}
+        with open(save_path,"w+", encoding="utf-8") as file:
+            json.dump(ll_jsonable,file,ensure_ascii=False,indent=4)
+
+        return f"Question group saved to {save_path}", 200
+    else:
+        return f"Name already exists", 400
 ## LOAD
 #double-checking extensions since the "accepts" attribute can be bypassed
 from jsonschema import validate
