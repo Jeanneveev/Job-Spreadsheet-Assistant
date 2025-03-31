@@ -296,12 +296,6 @@
             const saveBtn=document.getElementById("save");
             saveBtn.addEventListener("click", (event)=>{
                 window.electron.send("open-prompt");
-                // fetch(`${SERVER_URL}/save_file`,{method: "GET"})
-                // .then(response=>response.json())
-                // .then(data=>{
-                //     console.log(data.result);
-                //     message.innerText="Question Group saved to Saves folder"
-                // });
             });
             /* LOAD QUESTIONS */
             /**

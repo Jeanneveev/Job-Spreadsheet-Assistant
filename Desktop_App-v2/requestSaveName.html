@@ -31,14 +31,18 @@
                     body: JSON.stringify({name:name})
                 }).then(response=>{
                     if(response.ok){
-                        message.innerText="Question Group saved to Saves folder"
-                    }else{
-                        message.innerText="Name already exists, please try again"
+                        message.innerText="Question Group saved to Saves folder.\n"
+                        message.innerText+="You can now close this popup."
+                        return response.text();
                     }
-                    return response.text()
+                    message.innerText="Name already exists, please try again";
+                    return Promise.reject(response.text());
                 }).then(data=>console.log(data))
-                // .then(()=>window.electron.send("close-prompt"))
+                .catch(err=>console.error(err));
             });
+            cancelBtn.addEventListener("click",()=>{
+                window.electron.send("close-prompt");
+            })
         </script>
     </body>
 </html>

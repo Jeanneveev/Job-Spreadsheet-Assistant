@@ -11,7 +11,7 @@ let flaskProc=null;
 const connectToFlask=function(){
     //test version
     const venvPath="./py/.venv/bin/python3"
-    const scriptPath='./py/routes.py'
+    const scriptPath='./py/routes/routes.py'
     flaskProc = require('child_process').spawn("wsl", [venvPath, "-u", scriptPath]);
     //executable version
     //flaskProc = require('child_process').execFile("routes.exe");
@@ -63,7 +63,7 @@ const createWindow = () => {
             preload: path.resolve(app.getAppPath(), 'preload.js')
         }
     });
-    win.setAlwaysOnTop("true",'screen-saver', 1);
+    win.setAlwaysOnTop("true","main-menu", 1);
 
     win.loadFile('index.html');
     win.on('close', (evt) => {
@@ -149,7 +149,9 @@ ipcMain.on("open-question-window",(event)=>{
         parent: win,
         modal: true
     });
-    questionWindow.setAlwaysOnTop("true",'screen-saver', 1);
+
+    win.setAlwaysOnTop("false"); //remove parent's always on top
+    questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
 
     questionWindow.loadFile('loadQuestionGroups.html');
 
@@ -161,6 +163,10 @@ ipcMain.on("close-question-window",()=>{
     if(questionWindow){
         questionWindow.close();
         questionWindow=null;
+        //reset parent's always on top
+        if(win){
+            win.setAlwaysOnTop("true","main-menu", 1);
+        }
     }
 })
 
@@ -246,14 +252,25 @@ ipcMain.on("open-prompt", (event)=>{
             preload: path.resolve(app.getAppPath(), 'preload.js')
         },
     });
+    
+    questionWindow.setAlwaysOnTop("false"); //remove parent's always on top
     promptWindow.setAlwaysOnTop("true",'pop-up-menu', 1);
     promptWindow.loadFile("requestSaveName.html");
 
     promptWindow.on("closed",()=>{
         promptWindow=null;
     });
+});
+ipcMain.on("close-prompt",(event)=>{
+    if(promptWindow){
+        promptWindow.close();
+        promptWindow=null;
+        //reset parent's always on top
+        if(questionWindow){
+            questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
+        }
+    }
 })
-
 
 let choiceWindow=null;
 ipcMain.on("open-choices-window",(event)=>{
@@ -277,5 +294,6 @@ ipcMain.on("open-choices-window",(event)=>{
 ipcMain.on("close-choices",(event)=>{
     if(choiceWindow){
         choiceWindow.close();
+        choiceWindow=null;
     }
 })
