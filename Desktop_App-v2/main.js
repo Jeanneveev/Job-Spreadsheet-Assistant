@@ -11,7 +11,7 @@ let flaskProc=null;
 const connectToFlask=function(){
     //test version
     const venvPath="./py/.venv/bin/python3"
-    const scriptPath='./py/routes/routes.py'
+    const scriptPath='./py/routes/main.py'
     flaskProc = require('child_process').spawn("wsl", [venvPath, "-u", scriptPath]);
     //executable version
     //flaskProc = require('child_process').execFile("routes.exe");

@@ -1,1 +1,1 @@
-from routes.routes import *
+from routes.main import *
