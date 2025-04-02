@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, remote } = require('electron');
 const { exec } = require("child_process");
 const fetch=require("node-fetch");
 const path=require("path");
@@ -11,7 +11,7 @@ let flaskProc=null;
 const connectToFlask=function(){
     //test version
     const venvPath="./py/.venv/bin/python3"
-    const scriptPath='./py/routes.py'
+    const scriptPath='./py/routes/main.py'
     flaskProc = require('child_process').spawn("wsl", [venvPath, "-u", scriptPath]);
     //executable version
     //flaskProc = require('child_process').execFile("routes.exe");
@@ -55,15 +55,15 @@ app.on("before-quit",(evt)=>{
 let win=null;
 const createWindow = () => {
     win = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 400,
+        height: 300,
         webPreferences:{
             nodeIntegration: true,
             contextIsolation: true,
             preload: path.resolve(app.getAppPath(), 'preload.js')
         }
     });
-    win.setAlwaysOnTop("true",'screen-saver', 1);
+    win.setAlwaysOnTop("true","main-menu", 1);
 
     win.loadFile('index.html');
     win.on('close', (evt) => {
@@ -130,6 +130,44 @@ app.whenReady().then(() => {
  */
 ipcMain.on("print-to-main-terminal",(event,message)=>{
     console.log(message);
+});
+
+/**
+ * Create a second browser window for handling question creation
+ */
+let questionWindow=null;
+ipcMain.on("open-question-window",(event)=>{
+    console.log("Question window opening");
+    questionWindow=new BrowserWindow({
+        width: 600,
+        height: 400,
+        webPreferences:{
+            nodeIntegration: true,
+            contextIsolation: true,
+            preload: path.resolve(app.getAppPath(), 'preload.js')
+        },
+        parent: win,
+        modal: true
+    });
+
+    win.setAlwaysOnTop("false"); //remove parent's always on top
+    questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
+
+    questionWindow.loadFile('loadQuestionGroups.html');
+
+    questionWindow.on("closed",()=>{
+        questionWindow=null;
+    });
+});
+ipcMain.on("close-question-window",()=>{
+    if(questionWindow){
+        questionWindow.close();
+        questionWindow=null;
+        //reset parent's always on top
+        if(win){
+            win.setAlwaysOnTop("true","main-menu", 1);
+        }
+    }
 })
 
 /**
@@ -201,7 +239,38 @@ ipcMain.on("open-alert", (event,message)=>{
         return;
     })
 });
+let promptWindow=null
+ipcMain.on("open-prompt", (event)=>{
+    promptWindow=new BrowserWindow({
+        width: 300,
+        height: 175,
+        parent: BrowserWindow.getFocusedWindow(),
+        autoHideMenuBar: true,
+        webPreferences:{
+            nodeIntegration: true,
+            contextIsolation: true,
+            preload: path.resolve(app.getAppPath(), 'preload.js')
+        },
+    });
+    
+    questionWindow.setAlwaysOnTop("false"); //remove parent's always on top
+    promptWindow.setAlwaysOnTop("true",'pop-up-menu', 1);
+    promptWindow.loadFile("requestSaveName.html");
 
+    promptWindow.on("closed",()=>{
+        promptWindow=null;
+    });
+});
+ipcMain.on("close-prompt",(event)=>{
+    if(promptWindow){
+        promptWindow.close();
+        promptWindow=null;
+        //reset parent's always on top
+        if(questionWindow){
+            questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
+        }
+    }
+})
 
 let choiceWindow=null;
 ipcMain.on("open-choices-window",(event)=>{
@@ -225,5 +294,6 @@ ipcMain.on("open-choices-window",(event)=>{
 ipcMain.on("close-choices",(event)=>{
     if(choiceWindow){
         choiceWindow.close();
+        choiceWindow=null;
     }
 })

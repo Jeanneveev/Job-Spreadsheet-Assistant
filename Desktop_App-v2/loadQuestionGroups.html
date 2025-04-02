@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <style>
+            table, td, th {  
+                border: 1px solid #ddd;
+                text-align: left;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            th, td {
+                padding: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Load Question Groups</h1>
+        <table id="table">
+            <thead>
+                <tr>
+                    <th scope="col"></th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Create Date</th>
+                    <th scope="col"># Questions</th>
+                </tr>
+            </thead>
+        </table>
+        <button id="back">Back</button>
+        <button onclick="window.location.href='viewQuestion.html'">Create Question Group</button>
+
+        <script>
+            const SERVER_URL = window.electron.SERVER_URL;
+            const table=document.getElementById("table");
+            const backBtn=document.getElementById("back");
+
+            backBtn.addEventListener("click",()=>{
+                window.electron.send("close-question-window");
+            });
+        </script>
+    </body>
+</html>

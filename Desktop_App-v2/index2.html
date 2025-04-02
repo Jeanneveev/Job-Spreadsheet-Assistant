@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <title>Job Spreadsheet Assistant</title>
+    </head>
+    <body>
+        <h1>Job Spreadsheet Assistant</h1>
+        <p id="test"></p>
+        <div class="buttons-wrapper">
+            <button id="add_q_btn" onclick="window.location.href='addQuestion.html'">Add Question</button>
+            <button id="view_q_btn" onclick="window.location.href='viewQuestion.html'">View All Questions</button>
+            <button id="answ_q_btn">Answer Questions</button>
+            <button id="export_src_btn" onclick="window.location.href='selectExport.html'">Select Export Source</button>
+        </div>
+        <script>
+            /* FLASK STUFF */
+            const SERVER_URL = window.electron.SERVER_URL;
+            /* test connection - WORKS */
+            function testConnection(){
+                fetch(`${SERVER_URL}/`,{
+                    method: "GET",
+                    credentials: "include",
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                    },
+                }).then(response=>response.json()).then((data)=>{
+                    //put the result inside the result p
+                    document.getElementById("test").innerText = data.result;     //data.result should have the result from python script
+                })
+            }
+            
+            const answerQBtn=document.getElementById("answ_q_btn");
+            /* if no questions or export method set yet, grey out Answer Questions */
+            async function getJSON(){
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_ll_json`,{
+                        method: "GET"
+                    });
+                    const ll_json=await response.json();
+                    return ll_json.result;
+                }catch(error){
+                    console.error(error);
+                }
+            }
+            async function getExport() {
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_export_method`,{
+                        method: "GET"
+                    });
+                    const data=await response.text();
+                    return data;
+                }catch(error){
+                    console.error(error);
+                }
+            }
+            /* Check type of first question */
+            async function getFirstAType() {
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_first_a_type`,{
+                        method: "GET"
+                    });
+                    const data=await response.text();
+                    return data;
+                }catch(error){
+                    console.error(error);
+                }
+            }
+            window.addEventListener("load", (event) => {
+                testConnection();
+                getJSON().then((result)=>{
+                    console.log("result is",result);
+                    //NOTE: if(result==[]) doesn't work, possibly because of type differences,
+                    // so this is a better way to check for it being empty
+                    if(result.length==0){
+                        console.log("Result: no questions yet");
+                        answerQBtn.disabled=true;
+                    }else{
+                        console.log("Result: questions exist")
+                        answerQBtn.disabled=false;
+                        //add correct redirect to the button
+                        getFirstAType().then((result)=>{
+                            console.log("first a_type is", result);
+                            if(result=="open-ended"){
+                                answerQBtn.addEventListener("click",()=>{
+                                    window.location.href=window.electron.getPath("answerQuestion-open_ended.html");
+                                });
+                            }else if(result=="multiple-choice"){
+                                answerQBtn.addEventListener("click",()=>{
+                                    window.location.href=window.electron.getPath("answerQuestion-multiple_choice.html");
+                                });
+                            }else{
+                                answerQBtn.addEventListener("click",()=>{
+                                    window.electron.send("open-alert",result);
+                                })
+                            }
+                        });
+                    }
+                });
+            });
+            /* Initialize question flags */
+            answerQBtn.addEventListener("click",()=>{
+                sessionStorage.setItem("first_q","true");
+            });
+        </script>
+    </body>
+</html>
