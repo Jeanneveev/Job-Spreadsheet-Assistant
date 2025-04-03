@@ -19,5 +19,19 @@ class Config:
     #Session
     SESSION_PERMANENT=False
     
+class TestConfig:
+    """Sets test config variables"""
+    #General
+    SECRET_KEY=os.environ.get("SECRET_KEY")
+    #Sessions and Cookies
+    SESSION_COOKIE_SAMESITE="None"
+    SESSION_COOKIE_SECURE=True
+    #CORS
+    CORS_HEADERS="Content-Type"
+    #Session
+    SESSION_PERMANENT=False
+    #Testing
+    TESTING: True
+
 class sheetsConfig:
     SPREADSHEET_ID=os.environ.get("SPREADSHEET_ID")

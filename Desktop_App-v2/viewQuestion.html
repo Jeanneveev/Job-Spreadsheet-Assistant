@@ -262,6 +262,10 @@
             });
 
             /* DELETE QUESTIONS */
+            /**
+             * Summary: Delete a question from the question group and its detail from the
+             * list of existing details
+            */
             function deleteQuestion(q_detail,is_addon=null){
                 console.log("Q_detail to delete is",q_detail,"and its type is", typeof q_detail);
                 window.electron.send("open-confirm","Are you sure you want to delete this question?");
@@ -285,7 +289,14 @@
                             body: JSON.stringify({q_detail:q_detail})
                         })
                         .then(response=>response.text())
-                        .then(data=>console.log(data));
+                        .then(data=>console.log(data))
+                        .then(()=>{
+                            fetch(`${SERVER_URL}/delete_detail/${q_detail}`,{ method: "POST" })
+                            .then(response=>response.text())
+                            .then(data=>console.log(data))
+                            .catch(err=>console.error(err))
+                        })
+                        .catch(err=>console.error(err));
                     }
                     //reload the page
                     window.location.href="viewQuestion.html";

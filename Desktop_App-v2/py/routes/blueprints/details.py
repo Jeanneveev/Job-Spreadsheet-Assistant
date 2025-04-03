@@ -5,7 +5,7 @@ from utils.linked_list_handler import get_ll
 
 detail_bp = Blueprint("details", __name__)
 
-@detail_bp.route("/add_detail/<detail>",methods=["GET","POST"])
+@detail_bp.route("/add_detail/<detail>",methods=["POST"])
 def add_detail_to_list(detail):
     """Add a q_detail to a list of q_details"""
     # Initialize the list if it doesn't exist
@@ -22,6 +22,21 @@ def add_detail_to_list(detail):
     session.modified = True
 
     return {"response":f"{detail_lst}"}
+
+@detail_bp.route("/delete_detail/<detail>", methods=["POST"])
+def delete_detail_from_list(detail):
+    """Delete a given q_detail from the list of details"""
+    detail_lst=session.get("detail_lst",[])
+    #if detail_lst hasn't been initialized yet or its empty, return error
+    if (detail_lst==[]) or (json.loads(detail_lst)==[]):
+        return "No details to delete", 404
+    #else, remove the given detail
+    detail_lst:list[str]=json.loads(detail_lst)
+    detail_lst=detail_lst.remove(detail)
+    session['detail_lst'] = json.dumps(detail_lst)
+    session.modified = True
+    return f"Detail {detail} deleted"
+    
 
 @detail_bp.route("/get_all_details",methods=["GET"])
 def get_all_details():

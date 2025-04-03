@@ -1,6 +1,6 @@
 import os
 import sys
-#add the parent directory, "py" to sys.path to allow for imports from py/
+#add the parent directory, "backend" to sys.path to allow for imports from backend/
 basedir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(basedir)
 ## Routes Imports
@@ -13,22 +13,27 @@ from routes.blueprints import q_crud_bp, detail_bp, choice_bp, save_bp, load_bp,
 from utils.linked_list_handler import init_ll
 from utils.export_data_handler import init_exportdata
 
-app = Flask(__name__)
-app.config.from_object("config.config.Config")
+def create_app(config_obj:str)->Flask:
+    app = Flask(__name__)
+    app.config.from_object(config_obj)
 
-# Initialize Plugins
-CORS(app,supports_credentials=True)
-init_ll(app)
-init_exportdata(app)
+    # Initialize Plugins
+    CORS(app,supports_credentials=True)
+    init_ll(app)
+    init_exportdata(app)
 
-# Blueprints
-app.register_blueprint(q_crud_bp)
-app.register_blueprint(detail_bp)
-app.register_blueprint(choice_bp)
-app.register_blueprint(save_bp)
-app.register_blueprint(load_bp)
-app.register_blueprint(answ_bp)
-app.register_blueprint(export_bp)
+    # Blueprints
+    app.register_blueprint(q_crud_bp)
+    app.register_blueprint(detail_bp)
+    app.register_blueprint(choice_bp)
+    app.register_blueprint(save_bp)
+    app.register_blueprint(load_bp)
+    app.register_blueprint(answ_bp)
+    app.register_blueprint(export_bp)
+
+    return app
+
+app=create_app("config.config.Config")
 
 @app.route("/", methods=["GET","POST"])
 def check():
