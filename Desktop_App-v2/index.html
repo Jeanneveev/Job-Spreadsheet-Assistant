@@ -32,7 +32,7 @@
         <h1>Job Spreadsheet Assistant</h1>
         <div class="buttons-wrapper">
             <button id="get_q_btn">Get Questions</button>
-            <button id="answ_q_btn">Answer Questions</button>
+            <button id="answ_q_btn" disabled>Answer Questions</button>
             <button id="export_src_btn" onclick="window.location.href='selectExport.html'">Select Export Source</button>
         </div>
         <script>
@@ -76,7 +76,6 @@
                 }
             }
             window.addEventListener("load", (event) => {
-                testConnection();
                 getJSON().then((result)=>{
                     console.log("result is",result);
                     //NOTE: if(result==[]) doesn't work, possibly because of type differences,

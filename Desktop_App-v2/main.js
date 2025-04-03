@@ -10,8 +10,8 @@ const { electron } = require('process');
 let flaskProc=null;
 const connectToFlask=function(){
     //test version
-    const venvPath="./py/.venv/bin/python3"
-    const scriptPath='./py/routes/main.py'
+    const venvPath="./backend/.venv/bin/python3"
+    const scriptPath='./backend/routes/run.py'
     flaskProc = require('child_process').spawn("wsl", [venvPath, "-u", scriptPath]);
     //executable version
     //flaskProc = require('child_process').execFile("routes.exe");
@@ -20,7 +20,7 @@ const connectToFlask=function(){
         const output = data.toString('utf8');
         console.log("FLASK RUNNING! data:", output);
         /* Wait until Flask server is running to create the window */
-        if(output.includes("Flask server running")){
+        if(output.includes("Serving Flask")){
             createWindow();
         }
     });
