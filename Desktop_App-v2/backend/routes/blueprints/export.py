@@ -8,8 +8,9 @@ from routes.blueprints import get_all_answers_handler
 
 export_bp = Blueprint("export", __name__)
 
-@export_bp.route("/set_export_method/<method>",methods=["POST"])
-def set_export_method(method):
+@export_bp.route("/set_export_method",methods=["POST"])
+def set_export_method():
+    method:str = request.data.decode("utf-8")
     exportData = get_exportdata(current_app)
     exportData.method=method
     return f"Method {exportData.method} set"

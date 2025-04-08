@@ -3,7 +3,7 @@ question groups
 """
 import os
 from jsonschema import validate
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request, current_app, session
 from classes import Question, QTypeOptions, ATypeOptions, Node
 from utils.linked_list_handler import get_ll
 from werkzeug.utils import secure_filename
@@ -66,14 +66,21 @@ def validate_upload(file_json):
     print("file validated")
     return True
 
-# TODO: Complete this
-def load_details_from_file():
+def load_details_from_file(file_json:list[dict]):
     """Add the details from an uploaded linked list into the
-    'details' session variable
+    'detail_lst' session variable
     """
-    pass
+    detail_lst=session.get("detail_lst",json.dumps([]))
+    detail_lst:list[str] = json.loads(detail_lst)
+    for obj in file_json:
+        q_info:dict = obj["question"]
+        q_detail:str = q_info["q_detail"]
+        print(f"loading q_detail: {q_detail}")
+        detail_lst.append(q_detail)
+    session['detail_lst'] = json.dumps(detail_lst)
+    session.modified = True
 
-def load_ll_from_file(file_json):
+def load_ll_from_file(file_json:list[dict]):
     """Load new linked list from a saved file's JSON"""
     ll = get_ll(current_app)
     # clear old linked list
@@ -101,6 +108,8 @@ def load_ll_from_file(file_json):
                 new_addon=Question(addon["q_str"],addon["q_detail"],addon_q_type,addon_a_type)
             new_node.addon=new_addon
         ll.append(new_node)
+    #add the newly appended question's q_details to the session variable
+    load_details_from_file(file_json)
 
 @load_bp.route("/upload_file", methods=["GET","POST"])
 def upload_file():
@@ -112,7 +121,7 @@ def upload_file():
         if file.filename=="":
             return "ERROR: No selected file", 404
         
-        file_json=json.load(file)   #this puts the file stream pointer at the end
+        file_json:list[dict]=json.load(file)   #this puts the file stream pointer at the end
         file.seek(0)    #reset file pointer to the start
         # print(f"File is: {file_json}. Filename is: {file.filename}")
         # if the file exists and it's of the right extension in the right format

@@ -47,7 +47,7 @@ def get_curr_options():
     options:list[str]=session.get("curr_opt_lst",[])
     return jsonify({"result":options})
 
-@choice_bp.route("/clear_current_choices",methods=["GET"])
+@choice_bp.route("/clear_current_choices",methods=["DELETE"])
 def clear_current_choices():
     """Clear the curr_options session variable"""
     if 'curr_opt_lst' in session:
