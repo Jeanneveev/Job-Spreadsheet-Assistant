@@ -42,13 +42,13 @@
             const answerQBtn=document.getElementById("answ_q_btn");
             const exportBtn=document.getElementById("export_src_btn");
             /* if no questions or export method set yet, grey out Answer Questions */
-            async function getJSON(){
+            async function checkAnyQuestions(){
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_ll_json`,{
+                    const response=await fetch(`${SERVER_URL}/get_questions_exist`,{
                         method: "GET"
                     });
-                    const ll_json=await response.json();
-                    return ll_json.result;
+                    const result=await response.text();
+                    return result;
                 }catch(error){
                     console.error(error);
                 }
@@ -77,9 +77,9 @@
                 }
             }
             window.addEventListener("load", async (event) => {
-                const getJSONResult = await getJSON();
+                const checkQuestionsResult = await checkAnyQuestions();
                 const getExportResult = await getExport();
-                const jsonResult = getJSONResult.length>0;
+                const jsonResult = checkQuestionsResult==="true";
                 const exportResult = getExportResult == "sheets" || getExportResult == "csv"
                 
                 if(jsonResult && !exportResult){

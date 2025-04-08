@@ -36,11 +36,11 @@
             </thead>
             <!-- Table details get inserted here -->
         </table>
+        <button onclick="window.location.href='selectQuestionGroup.html'">Back</button>
         <button id="save">Save Questions</button>
         <input type="file" id="load_q_file" style="display: none;" accept=".json" />
         <input type="button" id="load_q_btn" value="Load Questions" />
         <button type="button" id="reorder">Reorder Rows</button>
-        <button onclick="window.location.href='loadQuestionGroups.html'">Back</button>
         <script>
             const SERVER_URL = window.electron.SERVER_URL;
             const table=document.getElementById("table");

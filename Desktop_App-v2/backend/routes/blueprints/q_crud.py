@@ -93,10 +93,18 @@ def add_preset():
 ## READ
 @q_crud_bp.route("/get_ll_json", methods=["GET"])
 def all_to_json():
-    ll = get_ll(current_app)
     """Get every node in the linked list and return them as json"""
+    ll:LinkedList = get_ll(current_app)
     # print("Get_ll_json called. Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
+
+@q_crud_bp.route("/get_questions_exist", methods=["GET"])
+def check_ll_exists():
+    ll:LinkedList = get_ll(current_app)
+    if ll.head == None: #if nothing's in the LinkedList
+        return "false"
+    else:
+        return "true"
 
 ## EDIT
 @q_crud_bp.route("/reorder_questions", methods=["POST"])

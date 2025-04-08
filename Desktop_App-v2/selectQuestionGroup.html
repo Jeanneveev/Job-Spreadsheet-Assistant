@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <style>
+            table, td, th {  
+                border: 1px solid #ddd;
+                text-align: left;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            th, td {
+                padding: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Select Question Group</h1>
+        <p>Selected Question Group: <span id="selected">None</span></p>
+        <table id="table">
+            <thead>
+                <tr>
+                    <th scope="col"></th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Creation Date</th>
+                    <th scope="col"># Questions</th>
+                </tr>
+            </thead>
+        </table>
+        <button id="back">Back</button>
+        <button onclick="window.location.href='viewQuestions.html'">Create Question Group</button>
+
+        <script>
+            const SERVER_URL = window.electron.SERVER_URL;
+            const selectedSpan = document.getElementById("selected");
+            const table = document.getElementById("table");
+            const backBtn = document.getElementById("back");
+
+            backBtn.addEventListener("click",()=>{
+                window.electron.send("close-question-window");
+            });
+
+            /* Given a list of display data, append it to its corresponding column */
+            function createQGRow(display_data){
+                const tr = document.createElement("tr");
+                const td_selected = document.createElement("td");
+                const selected = document.createTextNode("");   //TODO: change this into a radio button
+                const td_name = document.createElement("td");
+                const name = document.createTextNode(display_data[0]);
+                const td_date = document.createElement("td");
+                const date = document.createTextNode(display_data[1]);
+                const td_q_num = document.createElement("td");
+                const q_num = document.createTextNode(display_data[2]);
+
+                td_selected.appendChild(selected);
+                td_name.appendChild(name);
+                td_date.appendChild(date);
+                td_q_num.appendChild(q_num);
+                tr.appendChild(td_selected);
+                tr.appendChild(td_name);
+                tr.appendChild(td_date);
+                tr.appendChild(td_q_num);
+
+                table.appendChild(tr);
+            }
+
+            async function checkCreatedQG(){
+                try{
+                    const response = await fetch(`${SERVER_URL}/get_questions_exist`,{ method: "GET" })
+                    const data = await response.text();
+                    return data === "true";
+                }catch(error){ console.error(error) };
+            }
+
+            window.addEventListener("load",(event)=>{
+                checkCreatedQG().then((result) => {
+                    console.log("result is:",result)
+                    if(result){
+                        fetch(`${SERVER_URL}/get_created_qg`,{
+                            method: "GET"
+                        }).then(response => response.json())
+                        .then((data) =>{
+                            const createdDisplayDetails = JSON.parse(data.result);
+                            console.log(createdDisplayDetails);
+                            createQGRow(createdDisplayDetails);
+                            selectedSpan.innerText=createdDisplayDetails[0]
+                        })
+                    }
+                })
+            });
+        </script>
+    </body>
+</html>

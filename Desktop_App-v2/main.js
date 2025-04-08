@@ -153,7 +153,7 @@ ipcMain.on("open-question-window",(event)=>{
     win.setAlwaysOnTop("false"); //remove parent's always on top
     questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
 
-    questionWindow.loadFile('loadQuestionGroups.html');
+    questionWindow.loadFile('selectQuestionGroup.html');
 
     questionWindow.on("closed",()=>{
         win.loadFile("index.html"); //reload main page to activate buttons

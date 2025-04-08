@@ -6,8 +6,15 @@ from utils.linked_list_handler import init_ll, get_ll, override_ll
 
 qg_crud_bp = Blueprint("qg_crud", __name__)
 
-##VIEW
-def get_created_question_group():
+##READ
+@qg_crud_bp.route("/get_created_qg", methods=["GET"])
+def get_created_qg_display_data():
     """Get the display data of a qg created in the 'viewQuestions' page"""
-    created_qg:LinkedList = get_ll(current_app)
-    # qg_date = 
+    qg:LinkedList = get_ll(current_app)
+    qg_name:str = "Working QG"
+    qg_date:str = "Not Saved"
+    num_q:int = qg.getQNum()
+    return {"result":json.dumps([qg_name,qg_date,num_q])}
+
+# def get_uploaded_qg_display_data():
+#     qg:LinkedList = 
