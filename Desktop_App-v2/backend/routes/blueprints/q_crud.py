@@ -1,4 +1,4 @@
-"""Blueprints for routes related to adding questions to a question group"""
+"""Blueprints for routes related to CRUD functionality for questions in a question group"""
 import json
 from flask import Blueprint, request, session, current_app
 from classes import Question, QTypeOptions, ATypeOptions, Node, LinkedList
@@ -9,7 +9,7 @@ q_crud_bp = Blueprint("q_crud", __name__)
 ## CREATE
 @q_crud_bp.route("/add_question", methods=["POST"])
 def add_question():
-    """Make a new Question with the info passed"""
+    """Add a new question to the question group with the info passed"""
     ll = get_ll(current_app)
     result=request.form
     print("Form is", result)
@@ -129,7 +129,7 @@ def reorder_nodes():
     return "Linked List reordered",200
 
 ## DELETE
-@q_crud_bp.route("/delete_question", methods=["POST"])
+@q_crud_bp.route("/delete_question", methods=["DELETE"])
 def del_node():
     """Given a node's detail, find and delete it"""
     ll = get_ll(current_app)

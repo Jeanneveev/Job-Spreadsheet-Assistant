@@ -26,7 +26,13 @@
                 const selectedOpt=selectedEl.value;
                 const optText=selectedEl.labels[0].textContent;
                 result.innerText=optText;
-                fetch(`${SERVER_URL}/set_export_method/${selectedOpt}`,{method: "POST"})
+                fetch(`${SERVER_URL}/set_export_method`,{
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain"
+                    },
+                    body: selectedOpt
+                })
                 .then(response=>response.text())
                 .then(data=>console.log("set result:",data));
                 // fetch(`${SERVER_URL}/set_export_loc`,{method: "POST"})

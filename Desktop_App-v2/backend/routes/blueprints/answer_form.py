@@ -171,8 +171,9 @@ def get_prev_question():
         res["is_addon"]="true"
     return res
 
-@answ_bp.route("/add_answer/<answ>",methods=["POST"])
-def add_answer(answ):
+@answ_bp.route("/add_answer",methods=["POST"])
+def add_answer():
+    answ:str = request.data.decode("utf-8")
     ll = get_ll(current_app)
     curr_node_dict:dict=session["curr_node"]
     #get the node from the detail
@@ -180,8 +181,9 @@ def add_answer(answ):
     curr_node.answer=answ
     print(f"Answer {answ} set")
     return f"Answer {answ} set"
-@answ_bp.route("/add_addon_answer/<answ>",methods=["POST"])
-def add_addon_answer(answ:str):
+@answ_bp.route("/add_addon_answer",methods=["POST"])
+def add_addon_answer():
+    answ:str = request.data.decode("utf-8")
     ll = get_ll(current_app)
     answer=f" ({answ.lower()})"
     curr_node_dict:dict=session["curr_node"]

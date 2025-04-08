@@ -25,7 +25,6 @@
             <label>* Question:<input type="text" name="question" id="question" placeholder="Please enter the JOB NAME" required /></label>
             <label>** Detail:<input type="text" name="detail" id="detail" placeholder="Job Name" required /></label>
             
-            <!-- NOTE: To label a group of fields, use <fieldset> and <legend> -->
             <fieldset>
                 <legend>* Question Type:</legend>
                 <label><input type="radio" name="q_type" id="singular_q" value="singular" required />Singular</label>
@@ -43,7 +42,7 @@
                 <label><input type="radio" name="a_type" class="inline" id="mult" value="multiple-choice" required />Multiple-Choice</label>
                 <button type="button" class="inline" id="choices" onclick="openChoices();" disabled>Add Choice Options</button>
             </fieldset>
-            <button type="button" onclick="window.location.href='viewQuestion.html'">Finish</button>
+            <button type="button" onclick="window.location.href='viewQuestions.html'">Finish</button>
             <button type="submit" id="submit">Continue</button>
         </form>
         <p>*: Required</p>
@@ -52,14 +51,14 @@
             const SERVER_URL = window.electron.SERVER_URL;
             const form=document.getElementById("form");
 
-            /* FORM CONTROLS */
+            /** FORM CONTROLS **/
             /* If Two-Part is selected, enable base and add-on, and re-disable when it isn't */
             const twopart=document.getElementById("two_part_q");
             const base=document.getElementById("base_q");
             const addon=document.getElementById("addon_q");
             const dropdown=document.getElementById("addon_to");
             const qTypeRadios=document.querySelectorAll('input[name="q_type"]'); // Select all radios with name q_type
-            // The event listener has to be added to ALL radio buttons in the group
+            // NOTE: The event listener has to be added to ALL radio buttons in the group
             qTypeRadios.forEach(radio => {
                 radio.addEventListener("change", () => {
                     if(twopart.checked) {
@@ -107,12 +106,10 @@
                 })
             });
 
-            /* Populate the addon_to dropdown with all the base questions' details
-                In other words, get all nodes.questions.detail where node.question.q_type=base
-            */
             async function getBaseNodes(){
+                /* Populate the addon_to dropdown with all the base questions' q_details */
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_all_base_details`,{
+                    const response=await fetch(`${SERVER_URL}/get_base_details`,{
                         method: "GET"
                     });
                     const baseNodesJSON=await response.json();
@@ -132,46 +129,22 @@
                 window.electron.send("open-choices-window");
             }
 
-            /* FORM VERIFICATION */
+            /** FORM VERIFICATION **/
             /* 
                 Check that the q_detail of the question being added doesn't already exist
             */
             /* On form submit, pass the detail to a list to be easily accessed by checkDetail */
-            async function sendDetail(detail) {
-                try{
-                    const response=await fetch(`${SERVER_URL}/add_detail/${detail}`,{
-                        method: "POST",
-                        credentials: 'include',
-                        headers: {
-                            Accept: "application/json",
-                            "Content-Type": "application/json",
-                        }
-                    });
-                    const data=await response.json();
-                    const details=data.response;
-                    console.log("Added detail. Details are now:", details);
-                }catch(e){
-                    console.error(e);
-                }
-            }
             async function checkUniqueDetail(detail_to_add){
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_all_details`,{
-                        method: "GET",
-                        credentials: 'include',
-                        headers: {
-                            Accept: "application/json",
-                            "Content-Type": "application/json",
-                        },
-                    });
+                    const response=await fetch(`${SERVER_URL}/check_detail/${detail_to_add}`,{ method: "GET" });
                     const data=await response.json();
-                    const existing_details=data.result;
-                    console.log("Existing details:", existing_details);
-                    console.log("Checking detail", detail_to_add);
-                    if(existing_details.includes(detail_to_add)){
+                    console.log("Check unique detail response:", data);
+                    const already_exists=data.result==="True"
+                    if(already_exists){
+                        console.log("Question's q_detail is not unique");
                         return false;
                     }else{
-                        console.log("Is unique");
+                        console.log("Question's q_detail is unique");
                         return true;
                     }
                 }catch(e){
@@ -194,6 +167,23 @@
                 console.log("Validated is:",validated)
                 return validated;
             }
+            async function sendDetail(detail) {
+                try{
+                    const response=await fetch(`${SERVER_URL}/add_detail`,{
+                        method: "POST",
+                        credentials: 'include',
+                        headers: {
+                            "Content-Type": "text/plain",
+                        },
+                        body: detail
+                    });
+                    const data=await response.json();
+                    const details=data.result;
+                    console.log("Added detail. Details are now:", details);
+                }catch(e){
+                    console.error(e);
+                }
+            }
 
             /* FORM SUBMISSION */
             /* 
@@ -210,6 +200,7 @@
                 }else{
                     link=`${SERVER_URL}/add_question`;
                 }
+                //if the question is multiple-choice, add the choices to the form data
                 if(formData.get("a_type")=="multiple-choice"){
                     /* using await here so the code outside the if statement only runs after the Promise is fulfilled */
                     try{
@@ -231,13 +222,14 @@
                     body: formData
                 }).then(response=>response.json()).then((data)=>{
                     if(data.mult_response){
-                        fetch(`${SERVER_URL}/clear_current_choices`,{method: "GET"})
+                        fetch(`${SERVER_URL}/clear_current_choices`,{method: "DELETE"})
                         .then(response=>response.text()).then(data=>console.log(data))
                         .catch(err=>console.error(err));
                     }
                 })
                 .catch(e=>console.error(e));
             }
+
             /* Confirm user wants to submit form. If so, run form checking and submission functions */
             window.electron.on("confirm-box-confirmed",()=>{
                 const formData = new FormData(form);
@@ -246,7 +238,7 @@
                 /* Form validation */
                 checkUniqueDetail(qd).then(result=>{
                     isUniqueDetail=result;
-                    console.log("unique:",isUniqueDetail);
+                    console.log("unique: ",isUniqueDetail);
                     /* If validated, send info */
                     if(isUniqueDetail==true){
                         sendForm();

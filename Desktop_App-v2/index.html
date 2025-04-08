@@ -33,13 +33,14 @@
         <div class="buttons-wrapper">
             <button id="get_q_btn">Get Questions</button>
             <button id="answ_q_btn" disabled>Answer Questions</button>
-            <button id="export_src_btn" onclick="window.location.href='selectExport.html'">Select Export Source</button>
+            <button id="export_src_btn" onclick="window.location.href='selectExport.html'" disabled>Select Export Source</button>
         </div>
         <script>
             /* FLASK STUFF */
             const SERVER_URL = window.electron.SERVER_URL;
             const getQBtn=document.getElementById("get_q_btn");
             const answerQBtn=document.getElementById("answ_q_btn");
+            const exportBtn=document.getElementById("export_src_btn");
             /* if no questions or export method set yet, grey out Answer Questions */
             async function getJSON(){
                 try{
@@ -75,40 +76,43 @@
                     console.error(error);
                 }
             }
-            window.addEventListener("load", (event) => {
-                getJSON().then((result)=>{
-                    console.log("result is",result);
-                    //NOTE: if(result==[]) doesn't work, possibly because of type differences,
-                    // so this is a better way to check for it being empty
-                    if(result.length==0){
-                        console.log("Result: no questions yet");
-                        answerQBtn.disabled=true;
-                    }else{
-                        console.log("Result: questions exist")
-                        answerQBtn.disabled=false;
-                        //add correct redirect to the button
-                        getFirstAType().then((result)=>{
-                            console.log("first a_type is", result);
-                            if(result=="open-ended"){
-                                answerQBtn.addEventListener("click",()=>{
-                                    window.location.href=window.electron.getPath("answerQuestion-open_ended.html");
-                                });
-                            }else if(result=="multiple-choice"){
-                                answerQBtn.addEventListener("click",()=>{
-                                    window.location.href=window.electron.getPath("answerQuestion-multiple_choice.html");
-                                });
-                            }else{
-                                answerQBtn.addEventListener("click",()=>{
-                                    window.electron.send("open-alert",result);
-                                })
-                            }
-                        });
-                    }
-                });
+            window.addEventListener("load", async (event) => {
+                const getJSONResult = await getJSON();
+                const getExportResult = await getExport();
+                const jsonResult = getJSONResult.length>0;
+                const exportResult = getExportResult == "sheets" || getExportResult == "csv"
+                
+                if(jsonResult && !exportResult){
+                    exportBtn.disabled=false;
+                }else if(jsonResult && exportResult){
+                    answerQBtn.disabled=false;
+                    exportBtn.disabled=false;
+                    //add correct redirect to the button
+                    getFirstAType().then((result)=>{
+                        console.log("first a_type is", result);
+                        if(result=="open-ended"){
+                            answerQBtn.addEventListener("click",()=>{
+                                window.location.href=window.electron.getPath("answerQuestion-open_ended.html");
+                            });
+                        }else if(result=="multiple-choice"){
+                            answerQBtn.addEventListener("click",()=>{
+                                window.location.href=window.electron.getPath("answerQuestion-multiple_choice.html");
+                            });
+                        }else{
+                            answerQBtn.addEventListener("click",()=>{
+                                window.electron.send("open-alert",result);
+                            })
+                        }
+                    });
+                }else{
+                    exportBtn.disabled=true;
+                    answerQBtn.disabled=true;
+                }
             });
             /* Initialize question flags */
             answerQBtn.addEventListener("click",()=>{
                 sessionStorage.setItem("first_q","true");
+                sessionStorage.setItem("first_submit","true");
             });
 
             getQBtn.addEventListener("click", ()=>{

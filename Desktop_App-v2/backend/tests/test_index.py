@@ -1,4 +1,5 @@
 from flask.testing import FlaskClient   #for type hint
+import json
 
 def test_home_page(test_client: FlaskClient):
     """
@@ -9,4 +10,5 @@ def test_home_page(test_client: FlaskClient):
     response = test_client.get("/")
     print(f"response is: {response.data}")
     assert response.status_code == 200
-    
+    assert json.loads(response.data) == {"result":"Server active!"}
+    assert json.loads(response.data)["result"] == "Server active!"

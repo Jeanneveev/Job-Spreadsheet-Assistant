@@ -147,7 +147,7 @@ ipcMain.on("open-question-window",(event)=>{
             preload: path.resolve(app.getAppPath(), 'preload.js')
         },
         parent: win,
-        modal: true
+        // modal: true
     });
 
     win.setAlwaysOnTop("false"); //remove parent's always on top
@@ -156,6 +156,7 @@ ipcMain.on("open-question-window",(event)=>{
     questionWindow.loadFile('loadQuestionGroups.html');
 
     questionWindow.on("closed",()=>{
+        win.loadFile("index.html"); //reload main page to activate buttons
         questionWindow=null;
     });
 });

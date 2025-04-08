@@ -59,12 +59,24 @@ function loadQuestion(){
 function submitAnswer(answer){
     answer=answer.trim();
     if(is_addon==false){  //if the question is a base or singular question
-        fetch(`${SERVER_URL}/add_answer/${answer}`,{method:"POST"})
+        fetch(`${SERVER_URL}/add_answer`, {
+            method:"POST",
+            headers: {
+                "Content-Type": "text/plain"
+            },
+            body: answer
+        })
         .then(response=>response.text())
         .then(data=>console.log("data"));
     }else{          //if the question is an addon
         // console.log("add_addon_answer called");
-        fetch(`${SERVER_URL}/add_addon_answer/${answer}`,{method:"POST"})
+        fetch(`${SERVER_URL}/add_addon_answer`,{
+            method:"POST",
+            headers: {
+                "Content-Type": "text/plain"
+            },
+            body: answer
+        })
         .then(response=>response.text())
         .then(data=>console.log("data"));
     }
@@ -177,7 +189,13 @@ function addFormListener(openEndedFlag){
             if(is_last=="false"){   //if there is a next question
                 loadNextQuestion();
             }else{                  //this is the last question
-                window.electron.send("open-confirm","This is the last question. Do you wish to submit all your answers?");
+                if(sessionStorage.getItem("first_submit")==="true"){
+                    window.electron.send("open-confirm","This is the last question. Do you wish to submit all your answers?");
+                    sessionStorage.setItem("first_submit","false");
+                }else{
+                    window.electron.send("open-confirm","You've already submitted your answers. Do you wish to submit them all again?")
+                }
+                
                 /* NOTE: The rest of the logic is handled by the listeners below */
             }
         }else if(submitterId=="previous"){
