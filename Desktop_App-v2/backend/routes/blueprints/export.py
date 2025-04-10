@@ -4,7 +4,7 @@ another form
 import os
 from flask import Blueprint, request, current_app
 from utils.export_data_handler import get_exportdata
-from routes.blueprints import get_all_answers_handler
+from routes.blueprints import answer_form
 
 export_bp = Blueprint("export", __name__)
 
@@ -30,8 +30,9 @@ def get_export_method():
 @export_bp.route("/add_all_answers",methods=["POST"])
 def add_all_answers():
     exportData = get_exportdata(current_app)
-    answs=get_all_answers_handler(by_route=False)
+    answs=answer_form.get_all_answers_handler(by_route=False)
     exportData.data=answs
+    print(f"Answers {exportData.data} added")
     return f"Answers {exportData.data} added"
 
 @export_bp.route("/get_auth_url",methods=["GET"])

@@ -2,38 +2,39 @@
 import os
 import re
 import json
+import sqlite3
 from flask import Blueprint, session, request, current_app
 from utils.linked_list_handler import get_ll
 from werkzeug.utils import secure_filename
 
 save_bp = Blueprint("saves", __name__)
 
-def get_preexisting_filenames():
-    """Get all pre-existing question group filenames from the saves
-    folder, and database and returns it as a singular list
+## FILE
+def get_preexisting_filenames() -> list[str]:
+    """Gets the root filename of all pre-existing question group files
+    from the upload folder, and database and returns it as a singular list
     """
     print("reached get_preexisting")
     #get from saves folder
     files_filenames:list[str]=[]
-    curr_dir=os.path.dirname(__file__)
-    path=f"Saves/"
-    save_folder=os.path.join(curr_dir, os.pardir, os.pardir, path)
-    # print(f"save folder is {save_folder}")
+    save_folder=current_app.config["UPLOAD_FOLDER"]
+    print(f"save folder is {save_folder}")
     files=os.listdir(save_folder)
     print(f"files are {files}")
     for file in files:
-        print(f"file is {file}")
+        # print(f"file is {file}")
         if re.match(r"^qg_.*\.json$", file):
-            print("matched")
+            # print("matched")
             file_name=file.removeprefix("qg_").removesuffix(".json")
             files_filenames.append(file_name)
-        else:
-            print("didn't match")
-    print(f"files_filenames is {files_filenames}")
+    #     else:
+    #         print("didn't match")
+    # print(f"files_filenames is {files_filenames}")
     #TODO: Get from database
     db_filenames:list[str]=[]
     #make a combined list with no duplicates
     all_filenames:list[str]=list(set(files_filenames + db_filenames))
+    # print(f"all filenames are: {all_filenames}")
     return all_filenames
     
 def validate_filename(filename:str):
@@ -61,9 +62,6 @@ def validate_filename(filename:str):
         return True
     else:
         return False
-    
-def save_to_database():
-    pass
 
 @save_bp.route("/save_file", methods=["POST"])
 def write_ll_to_file():
@@ -78,8 +76,8 @@ def write_ll_to_file():
         print(f"filename validated")
         ll_jsonable:list[dict]=ll.getAll()
         curr_dir=os.path.dirname(__file__)
-        path=f"Saves/qg_{name}.json"
-        save_path=os.path.join(curr_dir, os.pardir, os.pardir, path)
+        path=f"Saves/qg_{filename}.json"
+        save_path=os.path.join(curr_dir, os.pardir, os.pardir, os.pardir, path)
 
         with open(save_path,"w+", encoding="utf-8") as file:
             json.dump(ll_jsonable,file,ensure_ascii=False,indent=4)
@@ -87,3 +85,11 @@ def write_ll_to_file():
         return f"Question group saved to {save_path}", 200
     else:
         return f"Name already exists", 400
+    
+## DATABASE
+def get_db_connection():
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+def save_to_database():
+    pass

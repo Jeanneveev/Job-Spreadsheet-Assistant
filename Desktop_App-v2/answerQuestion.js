@@ -57,7 +57,11 @@ function loadQuestion(){
 
 /* FORM SUBMISSION */
 function submitAnswer(answer){
-    answer=answer.trim();
+    if(answer!="" && answer!=null){
+        answer=answer.trim();
+    }else{
+        answer=" "
+    }
     if(is_addon==false){  //if the question is a base or singular question
         fetch(`${SERVER_URL}/add_answer`, {
             method:"POST",

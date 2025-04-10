@@ -11,6 +11,7 @@ class Config:
     SECRET_KEY=os.environ.get("SECRET_KEY")
     saves="../Saves"
     UPLOAD_FOLDER=os.path.normpath(os.path.join(basedir,saves))
+    DATABASE = os.path.join(basedir, "/database/database.db")
     #Sessions and Cookies
     SESSION_COOKIE_SAMESITE="None"
     SESSION_COOKIE_SECURE=True

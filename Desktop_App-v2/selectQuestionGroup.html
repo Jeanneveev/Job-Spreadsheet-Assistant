@@ -25,7 +25,7 @@
                 <tr>
                     <th scope="col"></th>
                     <th scope="col">Name</th>
-                    <th scope="col">Creation Date</th>
+                    <th scope="col">Last Modified</th>
                     <th scope="col"># Questions</th>
                 </tr>
             </thead>
@@ -55,6 +55,9 @@
                 const td_q_num = document.createElement("td");
                 const q_num = document.createTextNode(display_data[2]);
 
+                tr.addEventListener("click", ()=>{
+                    switchSelectedRow(display_data[0])
+                });
                 td_selected.appendChild(selected);
                 td_name.appendChild(name);
                 td_date.appendChild(date);
@@ -74,8 +77,7 @@
                     return data === "true";
                 }catch(error){ console.error(error) };
             }
-
-            window.addEventListener("load",(event)=>{
+            function loadUnsavedQG(){
                 checkCreatedQG().then((result) => {
                     console.log("result is:",result)
                     if(result){
@@ -90,7 +92,40 @@
                         })
                     }
                 })
+            }
+            function loadSavedQGs(){
+                fetch(`${SERVER_URL}/load_all_files`,{ method: "GET" })
+                .then(response => response.text())
+                .then((data) =>{
+                    const qgs = JSON.parse(data);
+                    // console.log(qgs);
+                    qgs.forEach(qg => {
+                        createQGRow(qg);
+                    });
+                })
+                .catch(error => console.error(error))
+            }
+
+            window.addEventListener("load",(event)=>{
+                loadUnsavedQG();
+                loadSavedQGs();
             });
+
+            /* SWITCH SELECTED QG */
+            /* when you click a row, set it as the selected row */
+            function switchSelectedRow(row_name){
+                selectedSpan.innerText = row_name;
+                fetch(`${SERVER_URL}/update_selected_qg`,{
+                    method: "POST",
+                    credentials: 'include',
+                    headers: {
+                        "Content-Type": "text/plain",
+                    },
+                    body: row_name
+                }).then(response => response.text())
+                .then(data => console.log(data))
+                .catch(error => console.error(error));
+            }
         </script>
     </body>
 </html>

@@ -75,7 +75,7 @@ def check_detail(detail:str):
     """Check if the given q_detail exists within the list of
     details
     """
-    detail = unquote(detail)
+    detail:str = unquote(detail)
     details:list[str]=session.get("detail_lst",[])
     if detail in details:
         return {"result":"True","detail_list":details}

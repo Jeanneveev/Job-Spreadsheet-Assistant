@@ -8,4 +8,3 @@ from routes.blueprints.save import *
 from routes.blueprints.export import *
 from routes.blueprints.other import *
 from routes.blueprints.shutdown import *
-from routes.blueprints.qg_crud import *
