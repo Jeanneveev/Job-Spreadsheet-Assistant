@@ -47,7 +47,7 @@
             function createQGRow(display_data){
                 const tr = document.createElement("tr");
                 const td_selected = document.createElement("td");
-                const selected = document.createTextNode("");   //TODO: change this into a radio button
+                const selected = document.createTextNode("");
                 const td_name = document.createElement("td");
                 const name = document.createTextNode(display_data[0]);
                 const td_date = document.createElement("td");
@@ -56,7 +56,7 @@
                 const q_num = document.createTextNode(display_data[2]);
 
                 tr.addEventListener("click", ()=>{
-                    switchSelectedRow(display_data[0])
+                    switchSelectedRow(display_data[0], td_selected)
                 });
                 td_selected.appendChild(selected);
                 td_name.appendChild(name);
@@ -113,7 +113,7 @@
 
             /* SWITCH SELECTED QG */
             /* when you click a row, set it as the selected row */
-            function switchSelectedRow(row_name){
+            function switchSelectedRow(row_name, td_selected){
                 selectedSpan.innerText = row_name;
                 fetch(`${SERVER_URL}/update_selected_qg`,{
                     method: "POST",
@@ -125,6 +125,15 @@
                 }).then(response => response.text())
                 .then(data => console.log(data))
                 .catch(error => console.error(error));
+
+                //switch check
+                prevSelected = document.querySelector(".selected_qg");
+                if(prevSelected){
+                    prevSelected.classList.remove("selected_qg");
+                    prevSelected.innerText=="";
+                }
+                td_selected.classList.add("selected_qg");
+                td_selected.innerText=="X";
             }
         </script>
     </body>
