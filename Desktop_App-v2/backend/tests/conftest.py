@@ -2,6 +2,8 @@
 import os
 import sys
 import pytest
+from flask.testing import FlaskClient   #for type hint
+
 #add the parent directory, "backend" to sys.path to allow for imports from backend/
 basedir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(basedir)

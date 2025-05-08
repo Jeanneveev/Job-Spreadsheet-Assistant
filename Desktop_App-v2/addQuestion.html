@@ -112,8 +112,8 @@
                     const response=await fetch(`${SERVER_URL}/get_base_details`,{
                         method: "GET"
                     });
-                    const baseNodesJSON=await response.json();
-                    const baseNodes=baseNodesJSON.result;
+                    const baseNodesJSON=await response.text();
+                    const baseNodes=JSON.parse(baseNodesJSON);
                     baseNodes.forEach(node => {
                         //append node as an option in the select
                         const option=document.createElement("option");

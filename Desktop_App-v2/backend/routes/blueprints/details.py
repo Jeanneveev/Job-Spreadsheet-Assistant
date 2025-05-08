@@ -58,17 +58,17 @@ def clear_all_details():
     session["detail_lst"]=detail_lst_str
     return f"Any if all details deleted. Detail_lst is now: {detail_lst_str}"
 
-@detail_bp.route("/get_details",methods=["GET"])
-def get_all_details():
-    details:list[str]=session.get("detail_lst",[])
-    return {"result":details}
+# @detail_bp.route("/get_details",methods=["GET"])
+# def get_all_details():
+#     details:list[str]=session.get("detail_lst",json.dumps([]))
+#     return details
 
 @detail_bp.route("/get_base_details", methods=["GET"])
 def get_all_base_details():
     """Get the details of all nodes with the q_type 'base'"""
     ll = get_ll(current_app)
     base_list=ll.getByQType("base")
-    return {"result":base_list}
+    return json.dumps(base_list)
 
 @detail_bp.route("/check_detail/<detail>", methods=["GET"])
 def check_detail(detail:str):

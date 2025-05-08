@@ -48,7 +48,11 @@ class LinkedList:
         res += "null"
         return res
     def getByQType(self,val:str)->list[str]:
-        """Search linked list for all nodes with a certain q_type"""
+        """Search linked list for all nodes with a certain q_type
+        
+        Returns:
+            found (list[str]): The q_details of the matching questions' q_type
+        """
         found:list[str] = []
         curr:Node = self.head
         while curr:

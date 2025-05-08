@@ -1,0 +1,18 @@
+{
+  "name": "application_spreadsheet_assistant",
+  "version": "1.0.0",
+  "description": "V3 of the application spreadsheet assistant program",
+  "main": "./apps/frontend/src/electron/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "author": "Genevieve Jones",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^36.1.0"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}

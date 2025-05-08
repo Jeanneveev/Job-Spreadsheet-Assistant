@@ -9,13 +9,12 @@ const { electron } = require('process');
  */
 let flaskProc=null;
 const connectToFlask=function(){
-    //test version
+    //dev version
     const venvPath="./backend/.venv/bin/python3"
-    const scriptPath='./backend/routes/run.py'
-    flaskProc = require('child_process').spawn("wsl", [venvPath, "-u", scriptPath]);
+    const scriptPath="./backend/routes/run.py"
+    flaskProc = require("child_process").spawn("wsl", [venvPath, "-u", scriptPath]);
     //executable version
     //flaskProc = require('child_process').execFile("routes.exe");
-    /* For some reason, this part runs during shutdown too */
     flaskProc.stdout.on('data', function (data) {  
         const output = data.toString('utf8');
         console.log("FLASK RUNNING! data:", output);
@@ -67,11 +66,11 @@ const createWindow = () => {
 
     win.loadFile('index.html');
     win.on('close', (evt) => {
-        if(!isAppQuitting){
+        if (!isAppQuitting) {
             evt.preventDefault();   //pause shutdown to run one last request
             if (flaskProc) {
-                console.log("Attempting graceful exit of Flask...")
-                fetch("http://127.0.0.1:5000/shutdown",{method:"POST"})
+                console.log("Attempting graceful exit of Flask...");
+                fetch("http://127.0.0.1:5000/shutdown",{ method:"POST" })
                 .then((response) => {
                     /* If the response doesn't come back, Flask has probably already shut down itself
                         This should cause some sort of ECONN error first, but handling it jic
@@ -122,7 +121,6 @@ app.on('quit', () => {
  */
 app.whenReady().then(() => {
     connectToFlask();
-    // createWindow();
 });
 
 /**
