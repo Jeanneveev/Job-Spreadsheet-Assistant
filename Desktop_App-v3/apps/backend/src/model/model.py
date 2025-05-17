@@ -66,11 +66,13 @@ class Question:
                 raise ValueError(f"Question {self.id}: two-part questions must have a valid answ_part.")
             #Addon questions must have a base id
             if self.answ_part == AnswerPart.ADDON and not self.base_id:
-                raise ValueError(f"Question {self.id}: addon questions must have a base_question_id.")
+                raise ValueError(f"Question {self.id}: addon questions must have a base_id.")
         else:
-            #Singular questions can't have an answer part or a base id
-            if self.answ_part is not None or self.base_id is not None:
-                raise ValueError(f"Question {self.id}: singular questions must not have answ_part or base_question_id.")
-            
+            #One-part questions can't have an answer part
+            if self.answ_part is not None:
+                raise ValueError(f"Question {self.id}: one-part questions must not have answ_part.")
+        #Non-addon questions can't have a base id
+        if self.answ_part != AnswerPart.ADDON and self.base_id is not None:
+            raise ValueError(f"Question {self.id}: non-addon questions must not have a base_id.")
 
         

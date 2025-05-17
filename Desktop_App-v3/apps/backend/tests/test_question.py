@@ -45,6 +45,8 @@ class TestValidAttributeTyping:
                 answ_type=AnswerType("one-part"),
                 answ_part=wrong_answ_part
             )
+
+class TestAttributeCombinations:
     def test_multiple_choice_question_must_include_choices(self):
         q_id=0
         with pytest.raises(ValueError, match=f"Question {q_id}: multiple-choice questions must include choices."):
@@ -65,6 +67,57 @@ class TestValidAttributeTyping:
                 answ_type=AnswerType("one-part"),
                 choices=["Choice 1", "Choice 2"]
             )
+    def test_two_part_questions_must_have_answ_type(self):
+        q_id=0
+        with pytest.raises(ValueError, match=f"Question {q_id}: two-part questions must have a valid answ_part."):
+            two_part_q = Question(
+                id=q_id,
+                text="Select job type:",
+                q_type=QuestionType("open-ended"),
+                answ_type=AnswerType("two-part"),
+                answ_part=None
+            )
+        two_part_q_2 = Question(
+            id=1,
+            text="Select job type:",
+            q_type=QuestionType("open-ended"),
+            answ_type=AnswerType("two-part"),
+            answ_part=AnswerPart("base")
+        )
+        assert two_part_q_2.answ_part == AnswerPart("base")
+    def test_one_part_questions_cannot_have_answ_type(self):
+        q_id=0
+        with pytest.raises(ValueError, match=f"Question {q_id}: one-part questions must not have answ_part."):
+            one_part_q = Question(
+                id=q_id,
+                text="Select job type:",
+                q_type=QuestionType("open-ended"),
+                answ_type=AnswerType("one-part"),
+                answ_part=AnswerPart("base")
+            )
+    def test_addon_questions_must_have_a_base_id(self):
+        q_id=0
+        with pytest.raises(ValueError, match=f"Question {q_id}: addon questions must have a base_id."):
+            addon_q = Question(
+                id=q_id,
+                text="Select job type:",
+                q_type=QuestionType("open-ended"),
+                answ_type=AnswerType("two-part"),
+                answ_part=AnswerPart("addon"),
+                base_id=None
+            )
+    def test_non_addon_questions_cannot_have_a_base_id(self):
+        q_id=0
+        with pytest.raises(ValueError, match=f"Question {q_id}: non-addon questions must not have a base_id."):
+            non_addon_q = Question(
+                id=q_id,
+                text="Select job type:",
+                q_type=QuestionType("open-ended"),
+                answ_type=AnswerType("two-part"),
+                answ_part=AnswerPart("base"),
+                base_id=1
+            )
+
     
 
 
