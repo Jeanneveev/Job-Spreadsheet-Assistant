@@ -25,3 +25,7 @@ class Question:
         self.choices = choices
 ```
 was too bloated. Specifically, this thought came about when I was thinking of how to test that addon questions should have a reference to the id of a certain base question. This would require adding some attribute `base_id`, which would mean that 3 of the 7 attributes of the class are not only optional, but based on other attributes of the class. Thus, I tried to change it by implementing subclasses and a factory pattern, but that didn't work due to the many ways question types can be combined. So, in the end, I settled for a dataclass with a lot of post-initialization validation.
+
+I had initially planned to add the checks for if addon questions linked to a valid base ids in the Question class, but later decided that functions related to multiple Questions should go in the QuestionSet class.
+I had initially called it the QuestionSet class because it was supposed to contain a set of Questions, but since sets require their content to be hashable and adding proper hashing to Questions seemed unnecessary, I just decided to stick with a list while keeping the name.
+As for QuestionSet, I had encounted a problem where the list of questions were carrying over from one test to another. This was because I had set the default value of QuestionSet.questions to an empty list. This was a mutable default, meaning that after an instance was called with that default value once, all the following tests referred to that same list object. So any Questions appended to it would persist across tests.

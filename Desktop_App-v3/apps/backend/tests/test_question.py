@@ -1,5 +1,5 @@
 import pytest
-from ..src.model.model import Question, QuestionType, AnswerType, AnswerPart
+from ..src.model.question import Question, QuestionType, AnswerType, AnswerPart
 
 def test_question_can_return_its_prompt():
     q = Question(
@@ -117,33 +117,3 @@ class TestAttributeCombinations:
                 answ_part=AnswerPart("base"),
                 base_id=1
             )
-
-    
-
-
-# def test_addon_question_references_base_question():
-#     base_q = Question(
-#         id=0,
-#         text="What is your expected salary?",
-#         q_type="open-ended",
-#         answ_type="two-part",
-#         answ_part="base"
-#     )
-#     addon_q = Question(
-#         id=1,
-#         text="Is that per year or per hour?",
-#         q_type="multiple-choice",
-#         answ_type="two-part",
-#         answ_part="addon",
-#         base_id="q1"
-#     )
-    
-
-# def test_can_answer_question_and_move_to_next():
-#     #GIVEN
-#     question_1 = Question(id=0, text="What is the job title?", q_type="open-ended", answ_type="one-part")
-#     question_2 = Question(id=1, text="What is the company?", q_type="open-ended", answ_type="one-part")
-#     qset = QuestionSet([question_1, question_2])
-#     formsession = FormSession(qset)
-
-#     #WHEN
