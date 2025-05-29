@@ -1,4 +1,4 @@
-from classes.linked_list import LinkedList
+from ..classes.linked_list import LinkedList
 
 def init_ll(app):
     app.linked_list = LinkedList()

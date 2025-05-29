@@ -3,8 +3,8 @@ another form
 """
 import os
 from flask import Blueprint, request, current_app
-from utils.export_data_handler import get_exportdata
-from routes.blueprints import answer_form
+from ...utils.export_data_handler import get_exportdata
+from ..blueprints import answer_form
 
 export_bp = Blueprint("export", __name__)
 

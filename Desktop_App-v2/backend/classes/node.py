@@ -1,4 +1,4 @@
-from classes.question import Question
+from .question import Question
 
 class Node:
     def __init__(self,question):

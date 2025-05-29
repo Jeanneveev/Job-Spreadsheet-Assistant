@@ -1,8 +1,8 @@
 """Blueprints for routes related to the 'Answer Questions' form"""
 from datetime import date
-from classes import Question, Node
+from ...classes import Question, Node
 from flask import Blueprint, request, session, jsonify, current_app
-from utils.linked_list_handler import get_ll
+from ...utils.linked_list_handler import get_ll
 
 answ_bp = Blueprint("answer", __name__)
 

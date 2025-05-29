@@ -1,7 +1,7 @@
 """Blueprints for routes related to the set of q_details"""
 import json
 from flask import Blueprint, session, current_app, request
-from utils.linked_list_handler import get_ll
+from ...utils.linked_list_handler import get_ll
 from urllib.parse import unquote
 
 detail_bp = Blueprint("details", __name__)

@@ -1,8 +1,8 @@
 """Blueprints for routes related to CRUD functionality for questions in a question group"""
 import json
 from flask import Blueprint, request, session, current_app
-from classes import Question, QTypeOptions, ATypeOptions, Node, LinkedList
-from utils.linked_list_handler import init_ll, get_ll, override_ll
+from ...classes import Question, QTypeOptions, ATypeOptions, Node, LinkedList
+from ...utils.linked_list_handler import init_ll, get_ll, override_ll
 
 q_crud_bp = Blueprint("q_crud", __name__)
 

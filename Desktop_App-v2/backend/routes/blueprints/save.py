@@ -4,7 +4,7 @@ import re
 import json
 import sqlite3
 from flask import Blueprint, session, request, current_app
-from utils.linked_list_handler import get_ll
+from ...utils.linked_list_handler import get_ll
 from werkzeug.utils import secure_filename
 from ..shared_func import get_preexisting_filenames
 

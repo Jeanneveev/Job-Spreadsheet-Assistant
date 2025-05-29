@@ -8,7 +8,7 @@ from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 ## Config
-from config.config import sheetsConfig, basedir
+from ..config.config import sheetsConfig, basedir
 ## NOTE: If modifying this scope, delete the file token.json.
 SPREADSHEET_ID=sheetsConfig.SPREADSHEET_ID
 
