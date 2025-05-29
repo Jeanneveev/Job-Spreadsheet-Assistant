@@ -20,7 +20,7 @@ class Config:
     #Session
     SESSION_PERMANENT=False
     
-class TestConfig:
+class TestConfig(Config):
     """Sets test config variables"""
     #General
     SECRET_KEY=os.environ.get("SECRET_KEY")
@@ -34,5 +34,5 @@ class TestConfig:
     #Testing
     TESTING: True
 
-class sheetsConfig:
+class DevelopmentConfig(Config):
     SPREADSHEET_ID=os.environ.get("SPREADSHEET_ID")

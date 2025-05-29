@@ -4,14 +4,13 @@ from flask import Flask
 from flask_cors import CORS
 ## Blueprint Imports
 from .blueprints import q_crud_bp, detail_bp, choice_bp, save_bp, load_bp, answ_bp, export_bp, shutdown_bp, bp
-
 ## Util Imports
 from ..utils.linked_list_handler import init_ll
 from ..utils.export_data_handler import init_exportdata
 from ..utils.shutdown_manager import ShutdownManager
 
 
-def create_app(shutdown_manager:ShutdownManager = None)->Flask:
+def create_app(config_obj:str, shutdown_manager:ShutdownManager = None)->Flask:
     """App factory
 
     Parameters:
@@ -21,6 +20,9 @@ def create_app(shutdown_manager:ShutdownManager = None)->Flask:
         to track whether or not the app has been called to be shut down
     """
     app = Flask(__name__)
+
+    # Configure App
+    app.config.from_object(config_obj)
 
     # Initialize App Context Objects
     app.shutdown_manager = shutdown_manager

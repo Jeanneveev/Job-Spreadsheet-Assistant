@@ -8,7 +8,8 @@ from ..utils.shutdown_manager import ShutdownManager
 
 def run_flask_app(shutdown_event):
     shutdown_manager = ShutdownManager(event=shutdown_event)
-    app = create_app(shutdown_manager)
+    config_path = "backend.config.config.DevelopmentConfig"
+    app = create_app(config_path, shutdown_manager)
         
     app.run(debug=True, use_reloader=False)
 
