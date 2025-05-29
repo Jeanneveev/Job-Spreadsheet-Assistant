@@ -17,7 +17,7 @@ const SERVER_URL = "http://127.0.0.1:5000";
 let flaskProc = null;
 const createFlaskProc = () => {
     //dev
-    const scriptPath = "apps.backend.flask_app.run"
+    const scriptPath = "apps.backend.src.app.run"
     let activateVenv;
     let command;
     let args;

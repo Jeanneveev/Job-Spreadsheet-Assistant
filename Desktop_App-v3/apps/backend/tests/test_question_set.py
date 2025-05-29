@@ -1,18 +1,7 @@
 import pytest
 from ..src.model.question import Question, QuestionType, AnswerType, AnswerPart
 from ..src.model.question_set import QuestionSet
-
-def make_open_onepart_questions(count:int):
-    if count == 1:
-        return Question(0, f"example_0", QuestionType("open-ended"), AnswerType("one-part"))
-    return [Question(x, f"example_{x}", QuestionType("open-ended"), AnswerType("one-part"))
-            for x in range(count)]
-def make_open_twopart_questions(count:int):
-    if count == 1:
-        return Question(0, f"example_0", QuestionType("open-ended"), AnswerType("two-part"))
-    return [Question(x, f"example_{x}", QuestionType("open-ended"), AnswerType("two-part"))
-            for x in range(count)]
-
+from .functions import make_open_onepart_questions
 
 class TestCRUD:
     def test_can_create_question_set_with_one_questions(self):
