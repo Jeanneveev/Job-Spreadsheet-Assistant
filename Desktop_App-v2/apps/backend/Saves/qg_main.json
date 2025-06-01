@@ -1,0 +1,106 @@
+[
+    {
+        "question": {
+            "q_str": "Please enter the JOB NAME",
+            "q_detail": "Name",
+            "q_type": "singular",
+            "a_type": "open-ended"
+        }
+    },
+    {
+        "question": {
+            "q_str": "Please enter the EMPLOYER'S NAME",
+            "q_detail": "Employer",
+            "q_type": "singular",
+            "a_type": "open-ended"
+        }
+    },
+    {
+        "question": {
+            "q_str": "Please enter the JOB TYPE (e.g.: contract, full-time, part-time)",
+            "q_detail": "Employment Type",
+            "q_type": "singular",
+            "a_type": "open-ended"
+        }
+    },
+    {
+        "question": {
+            "q_str": "Please enter the JOB LOCATION",
+            "q_detail": "Location",
+            "q_type": "base",
+            "a_type": "open-ended"
+        },
+        "addon": {
+            "q_str": "Please note if this job is HYBRID, ON-SITE, REMOTE, or N/A:",
+            "q_detail": "Location-Addon",
+            "q_type": "add-on",
+            "a_type": "multiple-choice",
+            "choices": [
+                "Hybrid",
+                "On-Site",
+                "Remote",
+                "N/A"
+            ]
+        }
+    },
+    {
+        "question": {
+            "q_str": "Please enter the SALARY",
+            "q_detail": "Salary",
+            "q_type": "base",
+            "a_type": "open-ended"
+        },
+        "addon": {
+            "q_str": "Please note if this is a YEARLY, MONTHLY, HOURLY, or N/A salary",
+            "q_detail": "Salary-Addon",
+            "q_type": "add-on",
+            "a_type": "multiple-choice",
+            "choices": [
+                "Yearly",
+                "Monthly",
+                "Hourly",
+                "N/A"
+            ]
+        }
+    },
+    {
+        "question": {
+            "q_str": "appDate",
+            "q_detail": "Application Date",
+            "q_type": "singular",
+            "a_type": "preset"
+        }
+    },
+    {
+        "question": {
+            "q_str": "empty",
+            "q_detail": "Empty-0",
+            "q_type": "singular",
+            "a_type": "preset"
+        }
+    },
+    {
+        "question": {
+            "q_str": "empty",
+            "q_detail": "Empty-1",
+            "q_type": "singular",
+            "a_type": "preset"
+        }
+    },
+    {
+        "question": {
+            "q_str": "Please enter the NAME OF THE SITE THE JOB WAS FOUND ON",
+            "q_detail": "Source",
+            "q_type": "singular",
+            "a_type": "open-ended"
+        }
+    },
+    {
+        "question": {
+            "q_str": "Please enter the LINK TO WHERE THE JOB WAS FOUND",
+            "q_detail": "Link",
+            "q_type": "singular",
+            "a_type": "open-ended"
+        }
+    }
+]
