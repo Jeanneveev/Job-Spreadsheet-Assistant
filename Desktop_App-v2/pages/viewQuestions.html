@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <style>
+            table, td, th {  
+                border: 1px solid #ddd;
+                text-align: left;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+
+            th, td {
+                padding: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <p id="message"></p>
+        <button onclick="window.location.href='addQuestion.html'">Add Manual Questions</button>
+        <button onclick="window.location.href='addPreset.html'">Add Preset Questions</button>
+        <table id="table">
+            <thead>
+                <tr>
+                    <th scope="col">Order</th>
+                    <th scope="col">Question</th>
+                    <th scope="col">Detail</th>
+                    <th scope="col">Q. Type</th>
+                    <th scope="col">A. Type</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <!-- Table details get inserted here -->
+        </table>
+        <button onclick="window.location.href='selectQuestionGroup.html'">Back</button>
+        <button id="save">Save Questions</button>
+        <input type="file" id="load_q_file" style="display: none;" accept=".json" />
+        <input type="button" id="load_q_btn" value="Load Questions" />
+        <button type="button" id="reorder">Reorder Rows</button>
+        <script>
+            const SERVER_URL = window.electron.SERVER_URL;
+            const table=document.getElementById("table");
+
+            /* Get the JSON of all the questions
+                NOTE: Format is: list[dict[Node]]
+            */
+            async function getJSON(){
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_ll_json`,{
+                        method: "GET"
+                    });
+                    const ll_json=await response.json();
+                    console.log("ll_json is",ll_json.result);
+                    return ll_json.result;
+                }catch(error){
+                    console.error(error);
+                }
+            }
+
+            /* Make a table row based off of a dict of a Node */
+            function createQuestionRow(node){
+                const tr=document.createElement("tr");
+                const td_qstr=document.createElement("td");
+                const qstr=document.createTextNode(node.question.q_str);
+                const td_detail=document.createElement("td");
+                const qdetail=document.createTextNode(node.question.q_detail);
+                const td_qtype=document.createElement("td");
+                const qtype=document.createTextNode(node.question.q_type);
+                const td_atype=document.createElement("td");
+                const atype=document.createTextNode(node.question.a_type);
+                const td_btn=document.createElement("td");
+                const btn=document.createElement("button");
+                btn.type="button";
+                btn.innerText="Delete";
+                btn.addEventListener("click",()=>{
+                    console.log("Deleting",qdetail,"...");
+                    deleteQuestion(node.question.q_detail);
+                });
+
+                td_qstr.appendChild(qstr);
+                td_detail.appendChild(qdetail);
+                td_qtype.appendChild(qtype);
+                td_atype.appendChild(atype);
+                td_btn.appendChild(btn);
+                tr.appendChild(td_qstr);
+                tr.appendChild(td_detail);
+                tr.appendChild(td_qtype);
+                tr.appendChild(td_atype);
+                tr.appendChild(td_btn);
+                
+                return tr;
+            }
+            function createAddonRow(node){
+                const tr=document.createElement("tr");
+                const td_qstr=document.createElement("td");
+                const qstr=document.createTextNode(node.addon.q_str);
+                const td_detail=document.createElement("td");
+                const qdetail=document.createTextNode(node.addon.q_detail);
+                const td_qtype=document.createElement("td");
+                const qtype=document.createTextNode(node.addon.q_type);
+                const td_atype=document.createElement("td");
+                const atype=document.createTextNode(node.addon.a_type);
+                const td_btn=document.createElement("td");
+                const btn=document.createElement("button");
+                btn.type="button";
+                btn.innerText="Delete";
+                btn.addEventListener("click",()=>{
+                    deleteQuestion(node.addon.q_detail, true);
+                });
+
+                td_qstr.appendChild(qstr);
+                td_detail.appendChild(qdetail);
+                td_qtype.appendChild(qtype);
+                td_atype.appendChild(atype);
+                td_btn.appendChild(btn);
+                tr.appendChild(td_qstr);
+                tr.appendChild(td_detail);
+                tr.appendChild(td_qtype);
+                tr.appendChild(td_atype);
+                tr.appendChild(td_btn);
+                
+                return tr;
+            }
+            /**
+             * Given a row and an optional tbody, add an "order" column to the start of that row
+             * If the tbody is passed, it's a tbody with a base and addon question and the "order" column should span 2 rows
+            */
+            function createOrderColumn(row,tbody=null){
+                if(tbody){
+                    const td_order=document.createElement("td");
+                    const select=document.createElement("select");
+                    select.classList.add("order-select");
+                    td_order.appendChild(select);
+                    td_order.setAttribute("rowspan","2");
+                    row.prepend(td_order);
+                }else{
+                    const td_order=document.createElement("td");
+                    const select=document.createElement("select");
+                    select.classList.add("order-select");
+                    td_order.appendChild(select);
+                    row.prepend(td_order);
+                }
+            }
+            function populateOrderDropdown(table){
+                const order_dropdowns=table.querySelectorAll(".order-select");
+                const dropdownNum=order_dropdowns.length;
+                console.log("There are",dropdownNum,"dropdowns");
+
+                let a=0;
+                order_dropdowns.forEach(dropdown=>{
+                    a+=1;
+                    for(let i=0; i<=dropdownNum; i++){
+                        const option=document.createElement("option");
+                        option.value, option.textContent=i;
+                        if(i==0){
+                            option.value, option.textContent=a;
+                        }
+                        dropdown.appendChild(option);
+                    }
+                });
+            }
+            function appendToTable(node_list){
+                /* Add the nodes to the table
+                    NOTE: node includes "question" and maybe "addon" dicts
+                */
+                let tbody=document.createElement("tbody");
+                let question_row;
+                let addon_row;
+                console.log("Node list is:",node_list);
+                node_list.forEach(node => {
+                    // console.log("node is type",typeof(node));
+                    // console.log("question is type",typeof(node.question));
+                    // console.log("q_str is of type",typeof(node.question.q_str));
+                    if(!("addon" in node)){
+                        // console.log("addon not in row",node);
+                        question_row=createQuestionRow(node);
+                        createOrderColumn(question_row);
+                        tbody.appendChild(question_row);
+                    }else{
+                        /* Append the current tbody and any singular questions in it to the table */
+                        table.appendChild(tbody);
+                        /* Make a new tbody with only the base and addon questions */
+                        new_tbody=document.createElement("tbody");
+                        new_tbody.classList.add("grouped");
+                        question_row=createQuestionRow(node);
+                        addon_row=createAddonRow(node);
+                        new_tbody.appendChild(question_row);
+                        new_tbody.appendChild(addon_row);
+                        createOrderColumn(question_row,new_tbody);
+                        
+                        table.appendChild(new_tbody);
+                        tbody=document.createElement("tbody");
+                    }
+                });
+                table.appendChild(tbody);
+                populateOrderDropdown(table);
+            }
+            function clearTable(){
+                const tbodies=Array.from(table.querySelectorAll("tbody"));
+                tbodies.forEach(tbody => {
+                    table.removeChild(tbody);
+                });
+            }
+            window.addEventListener("load", (event) => {
+                console.log("page is fully loaded");
+                getJSON().then((result)=>{
+                    appendToTable(result);
+                });
+            });
+            
+            /* EDIT QUESTIONS */
+            function reorderTable(){
+                /* Send the ordered list of q_details to the backend */
+                order_detail_dict={};
+                rows=Array.from(document.getElementsByTagName("tr"));
+                rows.forEach(row => {
+                    //if the row has a dropdown in it (all rows but headers and addons)
+                    if(row.querySelector(".order-select")){
+                        const order=row.querySelector(".order-select").value;
+                        const detail=row.querySelector("td:nth-child(3)").innerText;
+                        // console.log("select found. order is",order);
+                        // console.log("detail is",detail);
+                        if(Object.keys(order_detail_dict).includes(order)){
+                            window.electron.send("open-alert","ERROR: Two questions cannot share the same order number.");
+                            return;
+                        }else{
+                            order_detail_dict[order]=detail;
+                        }
+                    }
+                });
+                //order the dictionary by its keys
+                const ordered_dict={};
+                const keys=Object.keys(order_detail_dict).sort();
+                keys.forEach(key=>{ ordered_dict[key]= order_detail_dict[key] });
+
+                console.log("The new order of q_details is:",order_detail_dict);
+                fetch(`${SERVER_URL}/reorder_questions`,{
+                    method: "POST",
+                    headers:{
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({order:ordered_dict})
+                })
+                .then(response=>response.text())
+                .then(data=>console.log(data))
+                .then(()=>{
+                    //clear the table and append the reordered nodes
+                    clearTable();
+                    getJSON().then((result)=>{
+                        appendToTable(result);
+                    });
+                })
+                .catch(error=>console.error(error));
+            }
+            const reorderBtn=document.getElementById("reorder");
+            reorderBtn.addEventListener("click",(event)=>{
+                reorderTable();
+            });
+
+            /* DELETE QUESTIONS */
+            /**
+             * Summary: Delete a question from the question group and its detail from the
+             * list of existing details
+            */
+            function deleteQuestion(q_detail,is_addon=false){
+                console.log("Q_detail to delete is",q_detail,"and its type is", typeof q_detail);
+                window.electron.send("open-confirm","Are you sure you want to delete this question?");
+                window.electron.on("confirm-box-confirmed",()=>{
+                    if(is_addon){
+                        fetch(`${SERVER_URL}/delete_question`,{
+                            method: "DELETE",
+                            headers:{
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({q_detail:q_detail, is_addon:true})
+                        })
+                        .then(response=>response.text())
+                        .then(data=>console.log(data));
+                    }else{
+                        fetch(`${SERVER_URL}/delete_question`,{
+                            method: "DELETE",
+                            headers:{
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({q_detail:q_detail})
+                        })
+                        .then(response=>response.text())
+                        .then(data=>console.log(data))
+                        .then(()=>{
+                            fetch(`${SERVER_URL}/delete_detail`, {
+                                method: "DELETE",
+                                headers: {
+                                    "Content-Type": "text/plain"
+                                },
+                                body: q_detail
+                            })
+                            .then(response=>response.text())
+                            .then(data=>console.log(data))
+                            .catch(err=>console.error(err))
+                        })
+                        .catch(err=>console.error(err));
+                    }
+                    //reload the page
+                    window.location.href="viewQuestions.html";
+                });
+            }
+
+            /* SAVE QUESTIONS */
+            const saveBtn=document.getElementById("save");
+            saveBtn.addEventListener("click", (event)=>{
+                window.electron.send("open-prompt");
+            });
+            /* LOAD QUESTIONS */
+            /**
+             * Summary: Load questions from a file
+             * Description: When the user presses the "Load Questions" button, open the file input
+             *  Upon selection, pass that file to the backend to be uploaded
+             *  If the file was successfully uploaded, get the JSON from that file and append it to the table
+             */
+            const message=document.getElementById("message");
+            const loadBtn=document.getElementById("load_q_btn");
+            const fileInput=document.getElementById("load_q_file");
+            loadBtn.addEventListener("click",()=>{
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', (event) => {
+                /* Get the file and append it to a new FormData to be POSTed */
+                const selectedFile = event.target.files[0];
+                if (selectedFile) {
+                    console.log(`Selected file: ${selectedFile.name}`)
+                } else {
+                    console.log('No file selected');
+                }
+                const fileFormData=new FormData();
+                fileFormData.append("file",selectedFile, selectedFile.name);
+                console.log(Array.from(fileFormData.entries()));
+
+                fetch(`${SERVER_URL}/upload_file`,{
+                    method: "POST",
+                    body: fileFormData
+                }).then(response=>{
+                    //201 is the status we pass back if the file was saved
+                    //  and should, then, also be saved as a new linked list we can get the JSON of
+                    if(response.status===201){
+                        getJSON().then((result)=>{
+                            //clear table if there's anything in it
+                            if(table.querySelector("tbody")){
+                                clearTable();
+                            }
+                            appendToTable(result);
+                        });
+                    }
+                    return response.text();
+                }).then(data=>{
+                    console.log(data);
+                    message.innerText=data;
+                }).catch(error=>console.error("An error was recieved: ",error));
+            });
+
+            
+        </script>
+    </body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <title>Job Spreadsheet Assistant</title>
+    </head>
+    <body>
+        <h2 id="question"></h2>
+        <p id="test"></p>
+        <form id="form">
+            <input type="text" id="user_input" placeholder="" />
+            <button type="submit" id="next">Skip</button>
+            <button type="submit" id="previous">Previous</button>
+            <button type="reset" id="reset">Reset</button>
+        </form>
+        <button onclick="window.location.href='index.html'">Back to Home</button>
+        <!-- Include all the shared functions from JS file -->
+        <script src="answerQuestion.js"></script>
+        <!-- open-ended.html specific JS -->
+        <script>
+            const input=document.getElementById("user_input");
+
+            /* SETUP */
+            loadQuestion();
+            addFormListener(true);
+            
+            // When an input is entered, change button text
+            input.addEventListener('input', e => {
+                nextBtn.innerHTML="Next";
+            });
+
+            
+        </script>
+    </body>
+</html>

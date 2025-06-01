@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <style>
+            label{
+                display: block;
+            }
+            .inline{
+                display: inline;
+            }
+            .addon-label{
+                padding-right: 4rem;
+            }
+            .q-type-2{
+                padding-left: 2rem;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Add Question</h1>
+        <p id="message"></p>
+        <form id="form">
+            <label>* Question:<input type="text" name="question" id="question" placeholder="Please enter the JOB NAME" required /></label>
+            <label>** Detail:<input type="text" name="detail" id="detail" placeholder="Job Name" required /></label>
+            
+            <fieldset>
+                <legend>* Question Type:</legend>
+                <label><input type="radio" name="q_type" id="singular_q" value="singular" required />Singular</label>
+                <label><input type="radio" name="q_type" id="two_part_q" value="two-part" required />Two-Part</label>
+                <label class="q-type-2"><input type="radio" name="q_type_2" id="base_q" value="base" disabled />Base</label>
+                <label class="inline q-type-2 addon-label"><input type="radio" name="q_type_2" id="addon_q" value="add-on" disabled />Add-On</label>
+                <label for="addon_to" class="inline">To:</label>
+                <select name="addon_to" class="inline" id="addon_to" disabled>
+                    <option value="" disabled selected>Select a Base Question</option>
+                </select>
+            </fieldset>
+            <fieldset>
+                <legend>* Answer Type:</legend>
+                <label><input type="radio" name="a_type" id="open" value="open-ended" required />Open-Ended</label>
+                <label><input type="radio" name="a_type" class="inline" id="mult" value="multiple-choice" required />Multiple-Choice</label>
+                <button type="button" class="inline" id="choices" onclick="openChoices();" disabled>Add Choice Options</button>
+            </fieldset>
+            <button type="button" onclick="window.location.href='viewQuestions.html'">Finish</button>
+            <button type="submit" id="submit">Continue</button>
+        </form>
+        <p>*: Required</p>
+        <p>**: Must be unique</p>
+        <script>
+            const SERVER_URL = window.electron.SERVER_URL;
+            const form=document.getElementById("form");
+
+            /** FORM CONTROLS **/
+            /* If Two-Part is selected, enable base and add-on, and re-disable when it isn't */
+            const twopart=document.getElementById("two_part_q");
+            const base=document.getElementById("base_q");
+            const addon=document.getElementById("addon_q");
+            const dropdown=document.getElementById("addon_to");
+            const qTypeRadios=document.querySelectorAll('input[name="q_type"]'); // Select all radios with name q_type
+            // NOTE: The event listener has to be added to ALL radio buttons in the group
+            qTypeRadios.forEach(radio => {
+                radio.addEventListener("change", () => {
+                    if(twopart.checked) {
+                        base.disabled = false;
+                        addon.disabled = false;
+                        base.required=true;
+                        addon.required=true;
+                    } else {
+                        base.disabled = true;
+                        addon.disabled = true;
+                        dropdown.disabled=true;
+                        base.required=false;
+                        addon.required=false;
+                        /* If you selected one before disabling, this will uncheck it */
+                        base.checked=false;
+                        addon.checked=false;
+                    }
+                });
+            });
+            /* If add-on is selected, enable the addon_to dropdown */
+            const qType2Radios=document.querySelectorAll('input[name="q_type_2"]');
+            qType2Radios.forEach(radio => {
+                radio.addEventListener("change", () => {
+                    if(addon.checked){
+                        getBaseNodes();         //fill the dropdown
+                        dropdown.disabled=false;
+                        dropdown.required=true; //if a question is an add-on, it must be linked to a base
+                    } else {
+                        dropdown.disabled=true;
+                        dropdown.required=false;
+                    }
+                });
+            });
+            /* If multiple-choice is selected, enable the choices button */
+            const aTypeRadios=document.querySelectorAll('input[name="a_type"]');
+            const mult=document.getElementById("mult");
+            const choicesBtn=document.getElementById("choices");
+            aTypeRadios.forEach(radio => {
+                radio.addEventListener("change", () => {
+                    if(mult.checked){
+                        choices.disabled=false;
+                    }else{
+                        choices.disabled=true;
+                    }
+                })
+            });
+
+            async function getBaseNodes(){
+                /* Populate the addon_to dropdown with all the base questions' q_details */
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_base_details`,{
+                        method: "GET"
+                    });
+                    const baseNodesJSON=await response.text();
+                    const baseNodes=JSON.parse(baseNodesJSON);
+                    baseNodes.forEach(node => {
+                        //append node as an option in the select
+                        const option=document.createElement("option");
+                        option.innerText=node;
+                        dropdown.appendChild(option);
+                    });
+                }catch(e){
+                    console.error(e);
+                }
+            }
+            function openChoices(){
+                /* Send the message to open the choices popup */
+                window.electron.send("open-choices-window");
+            }
+
+            /** FORM VERIFICATION **/
+            /* 
+                Check that the q_detail of the question being added doesn't already exist
+            */
+            /* On form submit, pass the detail to a list to be easily accessed by checkDetail */
+            async function checkUniqueDetail(detail_to_add){
+                try{
+                    const response=await fetch(`${SERVER_URL}/check_detail/${detail_to_add}`,{ method: "GET" });
+                    const data=await response.json();
+                    console.log("Check unique detail response:", data);
+                    const already_exists=data.result==="True"
+                    if(already_exists){
+                        console.log("Question's q_detail is not unique");
+                        return false;
+                    }else{
+                        console.log("Question's q_detail is unique");
+                        return true;
+                    }
+                }catch(e){
+                    console.error(e);
+                    return false;
+                }
+            }
+            async function validateChoices(){
+                let validated=false;
+                try{
+                    const response=await fetch(`${SERVER_URL}/get_current_choices`, { method: "GET" })
+                    const data=await response.json()
+                    const res=data.result
+                    // console.log("Current choices are:",res,". Length is",res.length)
+                    if(res.length!=0){
+                        // console.log("Reached if statement")
+                        validated=true;
+                    }
+                }catch(e){console.error(e)}
+                console.log("Validated is:",validated)
+                return validated;
+            }
+            async function sendDetail(detail) {
+                try{
+                    const response=await fetch(`${SERVER_URL}/add_detail`,{
+                        method: "POST",
+                        credentials: 'include',
+                        headers: {
+                            "Content-Type": "text/plain",
+                        },
+                        body: detail
+                    });
+                    const data=await response.json();
+                    const details=data.result;
+                    console.log("Added detail. Details are now:", details);
+                }catch(e){
+                    console.error(e);
+                }
+            }
+
+            /* FORM SUBMISSION */
+            /* 
+                On form submit, pass the data to the backend, but don't redirect to it,
+                just give a success notification
+            */
+            async function sendForm() {
+                const formData=new FormData(form);
+                let link="";
+                //if the question is an add-on, go to add_question/addon instead
+                if(formData.get("q_type_2")=="add-on"){
+                    link=`${SERVER_URL}/add_question/addon`;
+                    console.log("adding addon question");
+                }else{
+                    link=`${SERVER_URL}/add_question`;
+                }
+                //if the question is multiple-choice, add the choices to the form data
+                if(formData.get("a_type")=="multiple-choice"){
+                    /* using await here so the code outside the if statement only runs after the Promise is fulfilled */
+                    try{
+                        const response=await fetch(`${SERVER_URL}/get_current_choices`, { method: "GET" });
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data=await response.json();
+                        choices=data.result;
+                        console.log("choices are:",choices);
+                        formData.append("choices",JSON.stringify(choices));
+                    }catch(e){
+                        console.error(e);
+                    }
+                }
+                console.log("FormData is",Array.from(formData));
+                fetch(`${link}`,{
+                    method: "POST",
+                    body: formData
+                }).then(response=>response.json()).then((data)=>{
+                    if(data.mult_response){
+                        fetch(`${SERVER_URL}/clear_current_choices`,{method: "DELETE"})
+                        .then(response=>response.text()).then(data=>console.log(data))
+                        .catch(err=>console.error(err));
+                    }
+                })
+                .catch(e=>console.error(e));
+            }
+
+            /* Confirm user wants to submit form. If so, run form checking and submission functions */
+            window.electron.on("confirm-box-confirmed",()=>{
+                const formData = new FormData(form);
+                const qd=formData.get("detail");
+                console.log("q_detail is",qd);
+                /* Form validation */
+                checkUniqueDetail(qd).then(result=>{
+                    isUniqueDetail=result;
+                    console.log("unique: ",isUniqueDetail);
+                    /* If validated, send info */
+                    if(isUniqueDetail==true){
+                        sendForm();
+                        sendDetail(qd);
+                        message.innerText="Question added!"
+                    }else{
+                        message.innerText="A question with this detail already exists. Please try again"
+                    }
+                });
+            });
+            const message=document.getElementById("message");
+            form.addEventListener("submit", async (event)=>{
+                event.preventDefault();
+                
+                const fData = new FormData(form);
+                console.log(fData.get('q_type'));
+                if (fData.get('q_type_2')){
+                    console.log("QType2 is",fData.get('q_type_2'));
+                }
+                                
+                if(fData.get("a_type")=="multiple-choice"){
+                    /* TODO: Validate that choices were added, else, error */
+                    validateChoices().then((validated)=>{
+                        if(validated){
+                            //send message to main.js to create confirm popup box
+                        window.electron.send("open-confirm","Are you sure you want to submit?");
+                        }else{
+                            window.electron.send("open-alert","Multiple-choice questions must have choices set. Please add choices");
+                        }
+                    })
+                }else{
+                    //send message to main.js to create confirm popup box
+                    window.electron.send("open-confirm","Are you sure you want to submit?");
+                }
+            });
+        </script>
+    </body>
+</html>

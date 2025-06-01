@@ -9,7 +9,7 @@ process.once("loaded", ()=>{
             send: (eventName, data) => ipcRenderer.send(eventName,data),
             currDir: () => process.cwd(),
             getPath: (filename) => {
-                const completePath=path.join(process.cwd(),filename);
+                const completePath=path.join(process.cwd(), "pages", filename);
                 return completePath;
             },
             SERVER_URL: "http://127.0.0.1:5000",

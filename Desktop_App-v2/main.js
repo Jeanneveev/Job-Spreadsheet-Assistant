@@ -5,6 +5,7 @@ const path=require("path");
 const { electron } = require('process');
 //Paths
 const rootDirectory = __dirname;
+const pagesDirectory = path.join(rootDirectory, "pages")
 const backendPath = path.join(rootDirectory, "backend")
 //Other
 const SERVER_URL = "http://127.0.0.1:5000";
@@ -208,7 +209,7 @@ const createWindow = () => {
     });
     win.setAlwaysOnTop("true","main-menu", 1);
 
-    win.loadFile('index.html');
+    win.loadFile(path.join(pagesDirectory, "index.html"));
 
     win.on('close', (evt) => {
         if(!isAppQuitting){
@@ -285,10 +286,10 @@ ipcMain.on("open-question-window",(event)=>{
     win.setAlwaysOnTop("false"); //remove parent's always on top
     questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
 
-    questionWindow.loadFile('selectQuestionGroup.html');
+    questionWindow.loadFile(path.join(pagesDirectory, 'selectQuestionGroup.html'));
 
     questionWindow.on("closed",()=>{
-        win.loadFile("index.html"); //reload main page to activate buttons
+        win.loadFile(path.join(pagesDirectory, "index.html")); //reload main page to activate buttons
         questionWindow=null;
     });
 });
@@ -388,7 +389,7 @@ ipcMain.on("open-prompt", (event)=>{
     
     questionWindow.setAlwaysOnTop("false"); //remove parent's always on top
     promptWindow.setAlwaysOnTop("true",'pop-up-menu', 1);
-    promptWindow.loadFile("requestSaveName.html");
+    promptWindow.loadFile(path.join(pagesDirectory, "requestSaveName.html"));
 
     promptWindow.on("closed",()=>{
         promptWindow=null;
@@ -418,7 +419,7 @@ ipcMain.on("open-choices-window",(event)=>{
         },
     });
     choiceWindow.setAlwaysOnTop("true",'pop-up-menu', 1)
-    choiceWindow.loadFile('addChoices.html');
+    choiceWindow.loadFile(path.join(pagesDirectory, 'addChoices.html'));
 
     choiceWindow.on("closed",()=>{
         choiceWindow=null;
