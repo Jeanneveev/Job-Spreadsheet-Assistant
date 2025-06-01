@@ -1,13 +1,3 @@
-Terminal_Program/sheets_credentials.json
-Terminal_Program/token.json
-Terminal_Program/Testing/
-Terminal_Program/config.py
-Desktop_App/node_modules/
-Desktop_App-v2/node_modules/
-Desktop_App-v2/py/testing/
-Desktop_App-v2/testing/
-Terminal_Program/__pycache__/
-Desktop_App-v2/py/.env
-Desktop_App-v2/py/.venv
-Desktop_App-v2/py/sheets_credentials.json
-Desktop_App-v2/py/token.json
+Terminal_Program/
+Desktop_App/
+Desktop_App-v3/
