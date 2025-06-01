@@ -1,3 +1,13 @@
 Terminal_Program/
 Desktop_App/
 Desktop_App-v3/
+Desktop_App-v2/.venv/
+Desktop_App-v2/node_modules/
+Desktop_App-v2/backend/.env
+Desktop_App-v2/backend/sheets_credentials.json
+Desktop_App-v2/backend/token.json
+Desktop_App-v2/backend/database/
+
+**/__pycache__/
+**/.pytest_cache/
+
