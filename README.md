@@ -17,8 +17,9 @@ You'll need:
 To export to a Google Sheets spreadsheet, do the following:
 
 4. Create a credentials JSON file for your Google Cloud project ([steps found here](https://developers.google.com/sheets/api/quickstart/python#authorize_credentials_for_a_desktop_application))
+5. Copy its contents into "empty_sheets_credentials.json" file and rename it to "sheets_credentials.json"
 
-5. In the terminal, navigate to the folder you downloaded Desktop_App-v2 into and run the program with:
+6. In the terminal, navigate to the folder you downloaded Desktop_App-v2 into and run the program with:
    ```sh
    npm start
    ```
