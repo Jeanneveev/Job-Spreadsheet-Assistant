@@ -230,6 +230,7 @@ function submitLastQuestion(){
     .then(response=>response.text()).then(data=>{
         console.log("Export method is: ",data);
         if(data=="sheets"){
+            //NOTE: keeping this fetch in case the app is left open so long the token expires
             return fetch(`${SERVER_URL}/get_auth_url`,{method: "GET"});
         }
     })  //end of get_export_method chain, start of get_auth_url chain
@@ -253,29 +254,6 @@ function submitLastQuestion(){
  * Once it is, just pass it to the backend
  */
 window.electron.on("auth-code-recieved", (event, code)=>{
-    // console.log("renderer trigger recieved");
-    // fetch(`${SERVER_URL}/receive_auth_code`,{
-    //     method: "POST",
-    //     headers:{
-    //         "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({code:code}),
-    // })
-    // .then(response=>{
-    //     console.log("Authentification complete");
-    //     return response.json();
-    // }).then(data=>{
-    //     if(data.success_message){
-    //         console.log(data.success_message);
-    //         fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
-    //         .then(response=>response.text()).then(data=>alert(data));
-    //     }else{
-    //         //there was an error
-    //         console.error(data.error);
-    //     }
-    // })
-    // .catch(err=>console.error("Authentification failed: ",err));
-    
     //Since the user is already logged in and the sheet has been validated, you can just directly export
     fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
     .then(response=>response.text()).then(data=>alert(data));
