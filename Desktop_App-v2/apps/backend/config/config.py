@@ -35,4 +35,4 @@ class TestConfig(Config):
     TESTING: True
 
 class DevelopmentConfig(Config):
-    SPREADSHEET_ID=os.environ.get("SPREADSHEET_ID")
+    ...
