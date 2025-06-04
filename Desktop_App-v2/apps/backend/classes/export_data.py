@@ -1,6 +1,7 @@
 import os
 from typing import Any
 ## Google Sheets Imports
+### TODO: Figure out why these aren't installing
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -8,9 +9,7 @@ from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 ## Config
-from ..config.config import DevelopmentConfig, basedir
-## NOTE: If modifying this scope, delete the file token.json.
-SPREADSHEET_ID=DevelopmentConfig.SPREADSHEET_ID
+from ..config.config import basedir
 
 class ExportDataError(Exception):
     """ A base class for ExportData-related exceptions """
@@ -20,6 +19,8 @@ class TokenFetchError(ExportDataError):
     """Exception raised for errors fetching a token"""
 class ServiceBuildError(ExportDataError):
     """Exception raised for errors building the Google API service"""
+class SheetsConnectionError(ExportDataError):
+    """Exception raised for errors connecting to a Google Sheets file"""
 
 class ExportData:
     """
@@ -39,12 +40,14 @@ class ExportData:
         self.method:str=None
         self.service=None
         self.loc=None
+        self.sheet_id=None
     # CSV
     def export_to_CSV(self):
         if self.loc==None:
             raise FileNotFoundError
         pass
     # GOOGLE SHEETS
+    ## CONNECTION
     def get_auth_url(self)->str|None:
         """A function to send the URL of the log-in page for the frontend to open,
             allow for user certification, and send back that certification via another route
@@ -60,7 +63,7 @@ class ExportData:
                 try:
                     creds.refresh(Request())
                 except RefreshError as e:   #creds.refresh_token is also expired
-                    print(f"Refresh error: {e}")
+                    print(f"Refresh error: {e}; attempting login...")
                     #delete token.json and re-run function so the if statement fails
                     if os.path.exists(token_path):
                         os.remove(token_path)
@@ -98,7 +101,7 @@ class ExportData:
                 try:
                     creds.refresh(Request())
                 except RefreshError as e:   #creds.refresh_token is also expired
-                    print(f"Refresh error: {e}")
+                    print(f"Refresh error: {e}. Trying again...")
                     #delete token.json and re-run function so the if statement fails
                     if os.path.exists(token_path):
                         os.remove(token_path)
@@ -136,7 +139,33 @@ class ExportData:
         except AuthenticationError as error:
             print(f"An Authentication error occurred: {error}")
             raise ServiceBuildError(f"Authentication error: {error}")
-    
+   
+    def _validate_sheet_id(self, id)->tuple[bool,str]:
+        """A function that checks if the given Google Sheets id exists by
+        attempting to open it."""
+        try:
+            service = self.get_service()
+            sheet_connection = service.spreadsheets().get(spreadsheetId=id).execute()
+
+            return True, "Sheet exists and is accessible"
+        except HttpError as error:
+            status_code = error.response.status_code
+            if status_code == 403:
+                return False, "Access denied: User does not have permission to access this sheet"
+            elif status_code == 404:
+                return False, "Access denied: The given ID does not match to any Google Sheets file"
+            else:
+                return False, f"Unexpected error: {error}"
+    def set_sheet_id(self, id)->str|SheetsConnectionError:
+        """Sets the sheet_id variable of the ExportData instance if the id is valid"""
+        is_valid, msg = self._validate_sheet_id(id)
+        if is_valid:
+            self.sheet_id = id
+            return msg
+        else:
+            raise SheetsConnectionError(msg)
+
+    ## EXPORTING
     def length_to_col_letter(self,length:int):
         num2char={1:"A",2:"B",3:"C",4:"D",5:"E",
                   6:"F",7:"G",8:"H",9:"I",10:"J",
@@ -189,7 +218,7 @@ class ExportData:
                 self.service.spreadsheets()
                 .values()
                 .append(
-                    spreadsheetId=SPREADSHEET_ID,
+                    spreadsheetId=self.sheet_id,
                     range=rnge,
                     valueInputOption="USER_ENTERED",
                     body=body,

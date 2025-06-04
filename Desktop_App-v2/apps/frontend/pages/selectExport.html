@@ -13,6 +13,9 @@
             <!-- TODO: Add file selector input -->
             <input type="radio" name="exportOpt" id="sheets" value="sheets" required />
             <label for="sheets">Google Sheets</label>
+            <br />
+            <label for="sheets_id">Google Sheets ID</label>
+            <input type="text" name="sheet_id" id="sheet_id" />
             <button type="submit">Submit</button>
         </form>
         <button onclick="window.location.href='index.html'">Back to Home</button>
@@ -26,6 +29,8 @@
                 const selectedOpt=selectedEl.value;
                 const optText=selectedEl.labels[0].textContent;
                 result.innerText=optText;
+                const sheet_id = document.getElementById("sheet_id").value;
+                //set the export method
                 fetch(`${SERVER_URL}/set_export_method`,{
                     method: "POST",
                     headers: {
@@ -34,7 +39,32 @@
                     body: selectedOpt
                 })
                 .then(response=>response.text())
-                .then(data=>console.log("set result:",data));
+                .then(data=>console.log("set result:",data))
+                //if the export method is Google Sheets, login the user and set the given id
+                if(selectedOpt == "sheets"){
+                    fetch(`${SERVER_URL}/get_auth_url`,{method: "GET"})
+                    .then(response=>response.json()).then(data=>{
+                        /* Sheets */
+                        if(data.auth_url){
+                            //send message to ipcMain to open popup and get code
+                            window.electron.send("open-auth-window", data.auth_url);
+                        }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
+                            console.log(data.message);
+                        }
+                    })
+                    .then(()=>{
+                        return fetch(`${SERVER_URL}/set_sheet_id`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "text/plain"
+                            },
+                            body: sheet_id
+                        })
+                    })
+                    .then(response=>response.text())
+                    .then(data=>console.log(data))
+                    .catch(error=>console.error(error))
+                }
                 // fetch(`${SERVER_URL}/set_export_loc`,{method: "POST"})
                 // .then(response=>response.text())
                 // .then(data=>console.log("set filepath:",data));

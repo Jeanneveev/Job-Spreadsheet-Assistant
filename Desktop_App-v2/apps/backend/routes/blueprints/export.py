@@ -2,9 +2,19 @@
 another form
 """
 import os
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request, current_app, session
+from urllib.parse import parse_qs, urlparse
 from ...utils.export_data_handler import get_exportdata
-from ..blueprints import answer_form
+from . import answer_form
+from ...config.config import basedir
+## Google Sheets Imports
+### TODO: Figure out why these aren't installing
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.exceptions import RefreshError
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 export_bp = Blueprint("export", __name__)
 
@@ -13,7 +23,7 @@ def set_export_method():
     method:str = request.data.decode("utf-8")
     exportData = get_exportdata(current_app)
     exportData.method=method
-    return f"Method {exportData.method} set"
+    return f"Method: {exportData.method} set"
 @export_bp.route("/set_export_loc",methods=["POST"])
 def set_export_loc():
     exportData = get_exportdata(current_app)
@@ -35,7 +45,18 @@ def add_all_answers():
     print(f"Answers {exportData.data} added")
     return f"Answers {exportData.data} added"
 
-@export_bp.route("/get_auth_url",methods=["GET"])
+@export_bp.route("/set_sheet_id", methods=["POST"])
+def set_sheets_id():
+    sheet_id:str = request.data.decode("utf-8")
+    exportData = get_exportdata(current_app)
+    try:
+        message = exportData.set_sheet_id(sheet_id)
+        return message  #"Sheet exists and is accessible"
+    except Exception as e:
+        return f"{e}", 401
+        # return an error the frontend catch statement can catch
+
+@export_bp.route("/get_auth_url", methods=["GET"])
 def get_auth_url():
     exportData = get_exportdata(current_app)
     url=exportData.get_auth_url()
@@ -49,20 +70,30 @@ def get_auth_url():
 @export_bp.route("/auth_landing_page/",methods=["GET"])
 def auth_landing_page():
     """The page the Google Sheets authorization process lands on after
-        a successful login. Includes the auth_code in its parameters
+        a successful login. Includes the auth_code in its parameters.
     """
-    return "You reached the landing page! You can close this window now."
-
-@export_bp.route("/receive_auth_code",methods=["POST"])
-def receive_auth_code():
+    url_str:str = request.url   #get the full url, params included
+    url = urlparse(url_str)
+    code = parse_qs(url.query)["code"][0]
+    # Use the code to get credentials to write to token.json
     exportData = get_exportdata(current_app)
-    code=request.get_json()["code"]
     service=exportData.get_service(code)
     print(f"service is: {service}")
     if type(service)==dict: #it's an error
-        return service  #return that error message
+        print("Error: ",service)  #print that error message
     else:
-        return {"success_message":"Authentification successful and connection built"}
+        print("Authentification successful and connection built")
+
+    return "You reached the landing page! You can close this window now."
+
+# def receive_auth_code(code):
+#     exportData = get_exportdata(current_app)
+#     service=exportData.get_service(code)
+#     print(f"service is: {service}")
+#     if type(service)==dict: #it's an error
+#         print("Error: ",service)  #print that error message
+#     else:
+#         print("Authentification successful and connection built")
 
 @export_bp.route("/export_data/sheets",methods=["POST"])
 def export_data_sheets():
