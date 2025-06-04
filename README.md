@@ -8,6 +8,7 @@ You'll need:
 - A Google account
 - [A Google Cloud project](https://developers.google.com/workspace/guides/create-project)
 - A Google Sheets file
+
 ## Installation - Desktop App (v2)
 1. Create a ".env" file within the "backend" folder
 2. Set `SECRET_KEY="some_secret_key"`, where some_secret_key is your secret key
@@ -21,7 +22,7 @@ To export to a Google Sheets spreadsheet, do the following:
    ```sh
    npm start
    ```
-
+   
 ## Using the App
 1. Create your group of questions using the "Create Question Group" button on the "Select Question Group" page
    a. Or load a previously saved group on the "Select Question Group" page by clicking on it
