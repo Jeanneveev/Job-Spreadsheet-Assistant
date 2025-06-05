@@ -334,7 +334,6 @@ ipcMain.on("open-auth-window", (event,authURL)=>{
 
             if(codeParam!=null){
                 // console.log("Code is:", codeParam);
-                //TODO: Comment out
                 event.sender.send("auth-code-recieved",codeParam);
                 authWindow.close();
                 authWindow=null;
