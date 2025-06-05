@@ -1,5 +1,6 @@
 """Blueprints for routes related to CRUD functionality for questions in a question group"""
 import json
+import logging
 from flask import Blueprint, request, session, current_app
 from ...classes import Question, QTypeOptions, ATypeOptions, Node, LinkedList
 from ...utils.linked_list_handler import init_ll, get_ll, override_ll
@@ -100,6 +101,8 @@ def all_to_json():
 
 @q_crud_bp.route("/get_questions_exist", methods=["GET"])
 def check_ll_exists():
+    current_app.logger.info("API /get_questions_exist called")
+
     ll:LinkedList = get_ll(current_app)
     if ll.head == None: #if nothing's in the LinkedList
         return "false"
@@ -110,6 +113,8 @@ def check_ll_exists():
 @q_crud_bp.route("/reorder_questions", methods=["POST"])
 def reorder_nodes():
     """Upon being given an ordered list of node details, reorder the linked list to be in that order"""
+    current_app.logger.info("API /reorder_questions called")
+
     ll = get_ll(current_app)
     ordered_dict:dict=request.get_json()["order"]
     print(f"The ordered dict is {ordered_dict}. It is of type {type(ordered_dict)}")

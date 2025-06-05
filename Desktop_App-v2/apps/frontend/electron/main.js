@@ -62,7 +62,7 @@ const waitForFlaskRunning = (flaskProc=null, timeoutMS) => {
             const output = data.toString('utf8');
             console.log("FLASK RUNNING!");
             /* Wait until Flask server is running to create the window */
-            if(output.includes("Serving Flask")){
+            if(output.includes("INFO in wasyncore: Serving on")){
                 clearTimeout(timer);
                 flaskProc.stdout.off("data", dataListener); //remove listener
                 setTimeout(resolve, 500); //wait a bit to complete startup

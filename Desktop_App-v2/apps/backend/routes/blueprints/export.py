@@ -2,6 +2,7 @@
 another form
 """
 import os
+import logging
 from flask import Blueprint, request, current_app, session
 from urllib.parse import parse_qs, urlparse
 from ...utils.export_data_handler import get_exportdata
@@ -11,6 +12,8 @@ export_bp = Blueprint("export", __name__)
 
 @export_bp.route("/set_export_method",methods=["POST"])
 def set_export_method():
+    current_app.logger.info("API /set_export_method called")
+
     method:str = request.data.decode("utf-8")
     exportData = get_exportdata(current_app)
     exportData.method=method
@@ -38,6 +41,8 @@ def add_all_answers():
 
 @export_bp.route("/set_sheet_id", methods=["POST"])
 def set_sheets_id():
+    current_app.logger.info("API /set_sheets_id called")
+
     sheet_id:str = request.data.decode("utf-8")
     exportData = get_exportdata(current_app)
     try:
@@ -48,6 +53,8 @@ def set_sheets_id():
 
 @export_bp.route("/get_auth_url", methods=["GET"])
 def get_auth_url():
+    current_app.logger.info("API /get_auth_url called")
+
     exportData = get_exportdata(current_app)
     url=exportData.get_auth_url()
     if url:
@@ -64,6 +71,8 @@ def auth_landing_page():
         This code is then passed to the ExportData instance to generate a token.json file
         if one doesn't already exist.
     """
+    current_app.logger.info("API /auth_landing_page called")
+
     url_str:str = request.url   #get the full url, params included
     url = urlparse(url_str)
     code = parse_qs(url.query)["code"][0]

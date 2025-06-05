@@ -214,6 +214,8 @@ def get_files_display_info()->Generator[list,Any,None]:
 def format_preexisting_qgs_display_info():
     """Format the display of all valid question group file in the
     upload folder"""
+    current_app.logger.info("API /load_all_files called")
+
     all_results=get_files_display_info()
     formatted=[]
     for result in all_results:
