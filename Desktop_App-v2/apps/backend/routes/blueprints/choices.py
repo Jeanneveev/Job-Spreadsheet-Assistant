@@ -1,6 +1,8 @@
 """Blueprints for routes related to the choices of a Question"""
+import logging
 from flask import Blueprint, session, request, jsonify
 
+logger = logging.getLogger(__name__)
 choice_bp = Blueprint("choices", __name__)
 
 @choice_bp.route("/set_curr_choices", methods=["POST"])
@@ -17,23 +19,23 @@ def set_curr_choices():
 def add_choices_to_list():
     """Add any number of passed options to the overall list of options"""
     options=request.get_json()["choices"]
-    # print("Options are", options)
+    # logger.info("Options are", options)
     # Initialize the lists if they don't exist
     if 'all_opt_lst' not in session:
-        # print("Session variable not found. Initializing...")
+        # logger.info("Session variable not found. Initializing...")
         session['all_opt_lst'] = []
         session.modified = True
     # Append to the list
     all_opt_lst:list[str]=session['all_opt_lst']
-    # print("Before appending:",all_opt_lst,curr_opt_lst)
+    # logger.info("Before appending:",all_opt_lst,curr_opt_lst)
     all_opt_lst.extend(options)
-    # print("Before setting:",all_opt_lst,curr_opt_lst)
+    # logger.info("Before setting:",all_opt_lst,curr_opt_lst)
     # Remove duplicates NOTE: Can't use set because it's unordered
     all_opts=list(dict.fromkeys(all_opt_lst))
-    # print("After setting:",all_opts,curr_opts)
+    # logger.info("After setting:",all_opts,curr_opts)
     # Turn back into lists in order to be serializable
     all_opt_lst=list(all_opts)
-    # print("After appending:",all_opt_lst,curr_opt_lst)
+    # logger.info("After appending:",all_opt_lst,curr_opt_lst)
     session['all_opt_lst'] = all_opt_lst
     session.modified = True
     return "Options added to all list"
@@ -51,7 +53,7 @@ def get_curr_options():
 def clear_current_choices():
     """Clear the curr_options session variable"""
     if 'curr_opt_lst' in session:
-        print("Now clearing curr_opt_lst")
+        logger.info("Now clearing curr_opt_lst")
         session['curr_opt_lst'] = []
         session.modified = True
     options:list[str]=session.get("curr_opt_lst")

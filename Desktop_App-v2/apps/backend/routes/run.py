@@ -34,16 +34,16 @@ if __name__=="__main__":
         shutdown_event = multiprocessing.Event()
         flask_proc = multiprocessing.Process(target=run_flask_app, args=(shutdown_event,))
         flask_proc.start()
-        print("flask_proc started")
+        logger.info("flask_proc started")
         shutdown_event.wait()
-        print("Shutdown event triggered")
+        logger.info("Shutdown event triggered")
         flask_proc.terminate()
         flask_proc.join()
-        print("Flask app ended")
+        logger.info("Flask app ended")
     except KeyboardInterrupt as exc:
-        print(f"Caught KeyboardInterrupt {exc}")
+        logger.info(f"Caught KeyboardInterrupt {exc}")
     except Exception as exc:
-        print(f"Caught exception {exc.__class__.__name__}: {exc}")
+        logger.info(f"Caught exception {exc.__class__.__name__}: {exc}")
 
-    print("Exiting with code 0")
+    logger.info("Exiting with code 0")
     sys.exit(0)

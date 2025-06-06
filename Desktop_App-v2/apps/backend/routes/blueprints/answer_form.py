@@ -1,9 +1,11 @@
 """Blueprints for routes related to the 'Answer Questions' form"""
+import logging
 from datetime import date
 from ...classes import Question, Node
 from flask import Blueprint, request, session, jsonify, current_app
 from ...utils.linked_list_handler import get_ll
 
+logger = logging.getLogger(__name__)
 answ_bp = Blueprint("answer", __name__)
 
 def get_first_non_preset_node()->Node|None:
@@ -179,7 +181,7 @@ def add_answer():
     #get the node from the detail
     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
     curr_node.answer=answ
-    print(f"Answer {answ} set")
+    logger.info(f"Answer {answ} set")
     return f"Answer {answ} set"
 @answ_bp.route("/add_addon_answer",methods=["POST"])
 def add_addon_answer():
@@ -189,10 +191,10 @@ def add_addon_answer():
     curr_node_dict:dict=session["curr_node"]
     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])
     curr_node_answ=curr_node.answer
-    print(f"curr_node_anw is {curr_node_answ}")
+    logger.info(f"curr_node_anw is {curr_node_answ}")
     curr_node_answ+=answer
     curr_node.answer=curr_node_answ
-    print(f"Answer appended to. Answer is now {curr_node_answ}")
+    logger.info(f"Answer appended to. Answer is now {curr_node_answ}")
     return f"Answer appended to. Answer is now {curr_node_answ}"
 
 ## PRESETS

@@ -3,6 +3,7 @@ question groups
 """
 from typing import Generator, Any
 import os
+import logging
 from jsonschema import validate
 from flask import Blueprint, request, current_app, session
 from ...classes import Question, QTypeOptions, ATypeOptions, Node, LinkedList
@@ -13,6 +14,7 @@ import json
 import time
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
 load_bp = Blueprint("load", __name__)
 
 ## LOAD INDIVIDUAL
@@ -20,12 +22,12 @@ load_bp = Blueprint("load", __name__)
 def check_allowed_extension(filename):
     ALLOWED_EXTENSIONS=[".json"]
     extension=os.path.splitext(filename)[1]
-    # print(f"Extension is: {extension}")
+    # logger.info(f"Extension is: {extension}")
     if extension in ALLOWED_EXTENSIONS:
-        print("File's extension allowed")
+        logger.info("File's extension allowed")
         return True
     else:
-        print("Incorrect file extension")
+        logger.info("Incorrect file extension")
         return False
     
 def validate_upload(file_json):
@@ -68,7 +70,7 @@ def validate_upload(file_json):
         validate(instance=file_json, schema=schema)
     except:
         return False
-    print("file validated")
+    logger.info("file validated")
     return True
 
 def load_details_from_file(file_json:list[dict]):
@@ -80,7 +82,7 @@ def load_details_from_file(file_json:list[dict]):
     for obj in file_json:
         q_info:dict = obj["question"]
         q_detail:str = q_info["q_detail"]
-        print(f"loading q_detail: {q_detail}")
+        logger.info(f"loading q_detail: {q_detail}")
         detail_lst.append(q_detail)
     session['detail_lst'] = json.dumps(detail_lst)
     session.modified = True
@@ -128,7 +130,7 @@ def upload_file():
         
         file_json:list[dict]=json.load(file)   #this puts the file stream pointer at the end
         file.seek(0)    #reset file pointer to the start
-        # print(f"File is: {file_json}. Filename is: {file.filename}")
+        # logger.info(f"File is: {file_json}. Filename is: {file.filename}")
         # if the file exists and it's of the right extension in the right format
         if file and check_allowed_extension(file.filename):
             if validate_upload(file_json):
@@ -219,7 +221,7 @@ def format_preexisting_qgs_display_info():
     all_results=get_files_display_info()
     formatted=[]
     for result in all_results:
-        print(f"qg display details is: {result}")
+        logger.info(f"qg display details is: {result}")
         formatted.append(result)
     return json.dumps(formatted)
 

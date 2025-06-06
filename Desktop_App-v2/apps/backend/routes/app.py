@@ -2,6 +2,7 @@
 ## Routes Imports
 from flask import Flask
 from flask_cors import CORS
+import logging
 ## Blueprint Imports
 from .blueprints import q_crud_bp, detail_bp, choice_bp, save_bp, load_bp, answ_bp, export_bp, shutdown_bp, bp
 ## Util Imports
@@ -9,6 +10,7 @@ from ..utils.linked_list_handler import init_ll
 from ..utils.export_data_handler import init_exportdata
 from ..utils.shutdown_manager import ShutdownManager
 
+logger = logging.getLogger(__name__)
 
 def create_app(config_obj:str, shutdown_manager:ShutdownManager = None)->Flask:
     """App factory
@@ -46,7 +48,7 @@ def create_app(config_obj:str, shutdown_manager:ShutdownManager = None)->Flask:
     @app.after_request
     def check_if_shutting_down(response):
         if shutdown_manager.is_shutting_down():
-            print("Shutdown event set")
+            logger.info("Shutdown event set")
 
         return response
 

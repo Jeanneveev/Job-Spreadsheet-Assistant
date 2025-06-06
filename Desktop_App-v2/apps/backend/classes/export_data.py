@@ -1,5 +1,6 @@
 import os
 from typing import Any
+import logging
 ## Google Sheets Imports
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -9,6 +10,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 ## Config
 from ..config.config import basedir
+
+logger = logging.getLogger(__name__)
 
 class ExportDataError(Exception):
     """ A base class for ExportData-related exceptions """
@@ -62,7 +65,7 @@ class ExportData:
                 try:
                     creds.refresh(Request())
                 except RefreshError as e:   #creds.refresh_token is also expired
-                    print(f"Refresh error: {e}; attempting login...")
+                    logger.info(f"Refresh error: {e}; attempting login...")
                     #delete token.json and re-run function so the if statement fails
                     if os.path.exists(token_path):
                         os.remove(token_path)
@@ -93,14 +96,14 @@ class ExportData:
         token_path=os.path.join(basedir,"token.json")
         if os.path.exists(token_path):
             creds=Credentials.from_authorized_user_file(token_path, SCOPES)
-            print(f"Credentials from token.json: {creds}")
+            logger.info(f"Credentials from token.json: {creds}")
         #if there isn't or the credentials aren't valid
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 try:
                     creds.refresh(Request())
                 except RefreshError as e:   #creds.refresh_token is also expired
-                    print(f"Refresh error: {e}. Trying again...")
+                    logger.info(f"Refresh error: {e}. Trying again...")
                     #delete token.json and re-run function so the if statement fails
                     if os.path.exists(token_path):
                         os.remove(token_path)
@@ -117,7 +120,7 @@ class ExportData:
                     with open(token_path, "w") as token:
                         token.write(creds.to_json())
                 except Exception as e:
-                    print(f"ERROR!! Error fetching token: {e}")
+                    logger.info(f"ERROR!! Error fetching token: {e}")
                     raise TokenFetchError("Error authenticating via code") from e
             else:   #no creds or code
                raise AuthenticationError("No valid credits or code. User could not be authenticated")
@@ -128,15 +131,15 @@ class ExportData:
                 raise AuthenticationError("Credentials are None")
             if not creds.valid:
                 raise AuthenticationError("Credentials are invalid")
-            # print(f"Credentials are: {creds}")
+            # logger.info(f"Credentials are: {creds}")
             self.service = build("sheets", "v4", credentials=creds)
-            # print("service gotten")
+            # logger.info("service gotten")
             return self.service
         except HttpError as error:
-            print(f"An error occurred: {error}")
+            logger.info(f"An error occurred: {error}")
             raise ServiceBuildError(f"Some error occured with Google Sheets' API: {error}")
         except AuthenticationError as error:
-            print(f"An Authentication error occurred: {error}")
+            logger.info(f"An Authentication error occurred: {error}")
             raise ServiceBuildError(f"Authentication error: {error}")
    
     def _validate_sheet_id(self, id)->tuple[bool,str]:
@@ -189,22 +192,22 @@ class ExportData:
         """
         try:
             if self.service is None:
-                # print("Check 1, self.service is None")
+                # logger.info("Check 1, self.service is None")
                 self.get_service()  #ensure self.service is set
             if self.service is None:    #check again
-                # print("Check 2: self.service is still None")
+                # logger.info("Check 2: self.service is still None")
                 raise ServiceBuildError("Google Sheets service could not be obtained.")
         except AuthenticationError as e:
-            print(f"Authentication error: {e}")
+            logger.info(f"Authentication error: {e}")
             return {"error": f"{e}"}, 400
         except TokenFetchError as e:
-            print(f"TokenFetch error: {e}")
+            logger.info(f"TokenFetch error: {e}")
             return {"error": f"{e}"}, 404
         except ServiceBuildError as e:
-            print(f"ServiceBuild error: {e}")
+            logger.info(f"ServiceBuild error: {e}")
             return {"error": f"{e}"}, 501
         except Exception as e:
-            print(f"An error has occured: {e}")
+            logger.info(f"An error has occured: {e}")
             return {"error": f"{e}"}, 404
         data=self.data
         end_col=self.length_to_col_letter(len(data))
@@ -224,8 +227,8 @@ class ExportData:
                 )
                 .execute()
             )
-            # print(f"{(result.get('updates').get('updatedCells'))} cells appended.")
+            # logger.info(f"{(result.get('updates').get('updatedCells'))} cells appended.")
             return result
         except HttpError as error:
-            print(f"An error occurred: {error}")
+            logger.info(f"An error occurred: {error}")
             return {"error": f"{error}"}

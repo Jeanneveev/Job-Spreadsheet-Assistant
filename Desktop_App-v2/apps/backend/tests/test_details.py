@@ -1,8 +1,11 @@
 from flask.testing import FlaskClient   #for type hint
 import json
 import pytest
+import logging
 from utils.linked_list_handler import override_ll
 from classes import LinkedList
+
+logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def clear_details(test_client: FlaskClient):
@@ -20,7 +23,7 @@ class TestAddDetail:
         """
         response = test_client.post("/add_detail", data="test1")
         assert response.status_code == 200
-        print("singular response is",json.loads(response.data))
+        logger.info("singular response is",json.loads(response.data))
         res = json.loads(response.data)["result"]
         assert json.loads(res) == ["test1"]
 
@@ -35,7 +38,7 @@ class TestAddDetail:
         response = test_client.post("/add_detail", data="1")
         response = test_client.post("/add_detail", data="!")
         assert response.status_code == 200
-        print("mult response is: ",json.loads(response.data))
+        logger.info("mult response is: ",json.loads(response.data))
         res = json.loads(response.data)["result"]
         assert json.loads(res) == ["test","1","!"]
 
@@ -85,14 +88,14 @@ class TestDeleteDetail:
         that 'detail_lst' is now an empty list
         """
         response_add = test_client.post("/add_detail", data="test")
-        print("added detail. Details are:",json.loads(response_add.data))
+        logger.info("added detail. Details are:",json.loads(response_add.data))
         assert json.loads(json.loads(response_add.data)["result"]) == ["test"]
         
         response = test_client.delete("/delete_detail", data="test")
         assert response.status_code == 200
         assert response.content_type == "text/html; charset=utf-8"
         res = response.data.decode("utf-8")
-        print("deleted detail. Details is now:",res)
+        logger.info("deleted detail. Details is now:",res)
         assert res == "Detail test deleted. Detail_lst is now: []"
 
     def test_delete_one_of_many_details(self, test_client: FlaskClient, clear_details):

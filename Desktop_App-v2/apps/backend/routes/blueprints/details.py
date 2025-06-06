@@ -1,9 +1,11 @@
 """Blueprints for routes related to the set of q_details"""
 import json
+import logging
 from flask import Blueprint, session, current_app, request
 from ...utils.linked_list_handler import get_ll
 from urllib.parse import unquote
 
+logger = logging.getLogger(__name__)
 detail_bp = Blueprint("details", __name__)
 
 @detail_bp.route("/add_detail",methods=["POST"])
@@ -15,14 +17,14 @@ def add_detail_to_list():
         return "No detail was given", 404
     # Initialize the list if it doesn't exist
     if 'detail_lst' not in session:
-        print("Session variable not found. Initializing...")
+        logger.info("Session variable not found. Initializing...")
         session['detail_lst'] = json.dumps([])
         session.modified = True
     # Append to the list
     detail_lst:list[str]=json.loads(session['detail_lst'])
-    # print("Before appending:",detail_lst)
+    # logger.info("Before appending:",detail_lst)
     detail_lst.append(detail)
-    # print("After appending:",detail_lst)
+    # logger.info("After appending:",detail_lst)
     session['detail_lst'] = json.dumps(detail_lst)
     session.modified = True
 
@@ -41,9 +43,9 @@ def delete_detail_from_list():
     if detail not in detail_lst:
         return "Detail is not in detail_lst", 400
     #else, remove the given detail
-    # print(f"before removal, detail_lst is: {detail_lst}")
+    # logger.info(f"before removal, detail_lst is: {detail_lst}")
     detail_lst.remove(detail)
-    # print(f"after removal, detail_lst is: {detail_lst}")
+    # logger.info(f"after removal, detail_lst is: {detail_lst}")
     session['detail_lst'] = json.dumps(detail_lst)
     session.modified = True
     return f"Detail {detail} deleted. Detail_lst is now: {json.dumps(detail_lst)}"

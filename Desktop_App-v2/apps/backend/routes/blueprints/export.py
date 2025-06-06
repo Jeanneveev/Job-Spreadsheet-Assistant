@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urlparse
 from ...utils.export_data_handler import get_exportdata
 from . import answer_form
 
+logger = logging.getLogger(__name__)
 export_bp = Blueprint("export", __name__)
 
 @export_bp.route("/set_export_method",methods=["POST"])
@@ -36,7 +37,7 @@ def add_all_answers():
     exportData = get_exportdata(current_app)
     answs=answer_form.get_all_answers_handler(by_route=False)
     exportData.data=answs
-    print(f"Answers {exportData.data} added")
+    logger.info(f"Answers {exportData.data} added")
     return f"Answers {exportData.data} added"
 
 @export_bp.route("/set_sheet_id", methods=["POST"])
@@ -58,10 +59,10 @@ def get_auth_url():
     exportData = get_exportdata(current_app)
     url=exportData.get_auth_url()
     if url:
-        print("auth_url is ",url)
+        logger.info("auth_url is ",url)
         return {"auth_url":url}
     else:
-        print("Credentials are already validated")
+        logger.info("Credentials are already validated")
         return {"message": "Credentials are already validated"}, 200
 
 @export_bp.route("/auth_landing_page/",methods=["GET"])
@@ -79,11 +80,11 @@ def auth_landing_page():
     # Use the code to get credentials to write to token.json
     exportData = get_exportdata(current_app)
     service=exportData.get_service(code)
-    print(f"service is: {service}")
+    logger.info(f"service is: {service}")
     if type(service)==dict: #it's an error
-        print("Error: ",service)  #print that error message
+        logger.info("Error: ",service)  #print that error message
     else:
-        print("Authentification successful and connection built")
+        logger.info("Authentification successful and connection built")
 
     return "You reached the landing page! You can close this window now."
 
@@ -91,7 +92,7 @@ def auth_landing_page():
 def export_data_sheets():
     exportData = get_exportdata(current_app)
     export_result=exportData.export_to_sheets()
-    print("export_result is",export_result)
+    logger.info("export_result is",export_result)
     if type(export_result) is tuple:
         error_code=export_result[1]
         export_result=export_result[0]

@@ -5,6 +5,7 @@ from flask import Blueprint, request, session, current_app
 from ...classes import Question, QTypeOptions, ATypeOptions, Node, LinkedList
 from ...utils.linked_list_handler import init_ll, get_ll, override_ll
 
+logger = logging.getLogger(__name__)
 q_crud_bp = Blueprint("q_crud", __name__)
 
 ## CREATE
@@ -13,7 +14,7 @@ def add_question():
     """Add a new question to the question group with the info passed"""
     ll = get_ll(current_app)
     result=request.form
-    print("Form is", result)
+    logger.info("Form is", result)
     #all of the form sections are required, so we don't need to check for NULLs
     # however, we do need to check if base or add-on was selected because they're in their own group
     if "q_type_2" in result:
@@ -23,16 +24,16 @@ def add_question():
     a_type=ATypeOptions(result["a_type"])
     #if it's a multiple-choice question, get the choices
     if a_type.value=="multiple-choice":
-        print("Creating new multiple-choice question")
+        logger.info("Creating new multiple-choice question")
         choices:list[str]=json.loads(result["choices"])
-        print("Choices are:",choices)
+        logger.info("Choices are:",choices)
         new_question=Question(result["question"],result["detail"],q_type,a_type,choices)
     elif a_type.value==None:
         return {"response":"A_type not found"}, 404
     else:
-        print("Creating new open-ended question")
+        logger.info("Creating new open-ended question")
         new_question=Question(result["question"],result["detail"],q_type,a_type)
-    print("Created question:",new_question.q_str)
+    logger.info("Created question:",new_question.q_str)
     new_node=Node(new_question)
     ll.append(new_node)
     ll.printLL()
@@ -48,9 +49,9 @@ def add_addon():
     q_type=QTypeOptions(result["q_type_2"])
     a_type=ATypeOptions(result["a_type"])
     if a_type.value=="multiple-choice":
-        print("Creating new multiple-choice question")
+        logger.info("Creating new multiple-choice question")
         choices:list[str]=json.loads(result["choices"])
-        print("Choices are:",choices)
+        logger.info("Choices are:",choices)
         new_question=Question(result["question"],result["detail"],q_type,a_type,choices)
     else:
         new_question=Question(result["question"],result["detail"],q_type,a_type)
@@ -59,7 +60,7 @@ def add_addon():
     base_node=ll.getByDetail(base_detail)
     #set the base's addon value to the addon Question
     base_node.addon=new_question
-    print(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
+    logger.info(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
     if a_type.value=="multiple-choice":
         return {"mult_response": "added multiple-choice addon question"}
     else:
@@ -71,14 +72,14 @@ def add_application_date():
     new_q=Question("appDate","Application Date",QTypeOptions("singular"),ATypeOptions("preset"))
     new_node=Node(new_q)
     ll.append(new_node)
-    print("New preset node appended")
+    logger.info("New preset node appended")
 def add_empty_question(i):
     ll = get_ll(current_app)
     #create a preset Question with an empty value for empty columns
     new_q=Question("empty",f"Empty-{i}",QTypeOptions("singular"),ATypeOptions("preset"))
     new_node=Node(new_q)
     ll.append(new_node)
-    print("New preset node appended")
+    logger.info("New preset node appended")
 @q_crud_bp.route("/add_question/preset", methods=["POST"])
 def add_preset():
     value:str=request.get_json()["preset"]
@@ -96,7 +97,7 @@ def add_preset():
 def all_to_json():
     """Get every node in the linked list and return them as json"""
     ll:LinkedList = get_ll(current_app)
-    # print("Get_ll_json called. Linked list JSON is: ",ll.getAll())
+    # logger.info("Get_ll_json called. Linked list JSON is: ",ll.getAll())
     return {"result":ll.getAll()}
 
 @q_crud_bp.route("/get_questions_exist", methods=["GET"])
@@ -117,13 +118,13 @@ def reorder_nodes():
 
     ll = get_ll(current_app)
     ordered_dict:dict=request.get_json()["order"]
-    print(f"The ordered dict is {ordered_dict}. It is of type {type(ordered_dict)}")
-    print(f"Before reordering, the ll looks like: {ll.returnLL()}")
+    logger.info(f"The ordered dict is {ordered_dict}. It is of type {type(ordered_dict)}")
+    logger.info(f"Before reordering, the ll looks like: {ll.returnLL()}")
     new_ll=LinkedList()
 
     reordered_nodes:list[Node]=[]
     for k,v in ordered_dict.items():
-        print("Reordering",v)
+        logger.info("Reordering",v)
         node:Node=ll.getByDetail(v)
         if node is None:
             return "ERROR: Node not found", 404
@@ -134,10 +135,10 @@ def reorder_nodes():
         node.next=None
         node.prev=None
         new_ll.append(node)
-    print(f"new_ll is now {new_ll.returnLL()}")
+    logger.info(f"new_ll is now {new_ll.returnLL()}")
     # override both local and global ll
     ll=override_ll(current_app, new_ll)
-    print(f"After reordering, the ll looks like: {ll.returnLL()}")
+    logger.info(f"After reordering, the ll looks like: {ll.returnLL()}")
 
     return "Linked List reordered",200
 
@@ -152,7 +153,7 @@ def del_node():
     else:
         is_addon=False
     del_detail:str=request.get_json()["q_detail"]
-    print(f"del_detail is {del_detail}")
+    logger.info(f"del_detail is {del_detail}")
     if is_addon:
         del_node:Node=ll.getByAddonDetail(del_detail)
     else:

@@ -1,5 +1,8 @@
+import logging
 from .question import QTypeOptions
 from .node import Node
+
+logger = logging.getLogger(__name__)
 
 class LinkedList:
     def __init__(self):
@@ -35,9 +38,9 @@ class LinkedList:
         """Print all of the linked list's node's details"""
         curr = self.head
         while curr:
-            print(curr.question,end="->")
+            logger.info(curr.question,end="->")
             curr=  curr.next
-        print("null")
+        logger.info("null")
     def returnLL(self):
         """Return a string of all the ll's node's details"""
         curr = self.head
@@ -56,9 +59,9 @@ class LinkedList:
         found:list[str] = []
         curr:Node = self.head
         while curr:
-            # print("loop started")
+            # logger.info("loop started")
             if curr.question.q_type==QTypeOptions(val):
-                # print("matched")
+                # logger.info("matched")
                 found.append(curr.question.q_detail)
             curr = curr.next
         return found
@@ -69,7 +72,7 @@ class LinkedList:
         curr:Node = self.head
         while curr:
             if curr.question.q_detail==val:
-                print(f"matched {val}")
+                logger.info(f"matched {val}")
                 return curr
             curr=curr.next
         return None
