@@ -59,7 +59,7 @@ def get_auth_url():
     exportData = get_exportdata(current_app)
     url=exportData.get_auth_url()
     if url:
-        logger.info("auth_url is ",url)
+        logger.info(f"auth_url is {url}")
         return {"auth_url":url}
     else:
         logger.info("Credentials are already validated")

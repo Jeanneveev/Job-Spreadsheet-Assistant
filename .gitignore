@@ -7,6 +7,7 @@ Desktop_App-v2/apps/backend/.env
 Desktop_App-v2/apps/backend/sheets_credentials.json
 Desktop_App-v2/apps/backend/token.json
 Desktop_App-v2/apps/backend/database/
+Desktop_App-v2/apps/backend/logs/app.log
 
 **/__pycache__/
 **/.pytest_cache/
