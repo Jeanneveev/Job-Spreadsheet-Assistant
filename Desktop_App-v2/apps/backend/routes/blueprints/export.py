@@ -42,12 +42,13 @@ def add_all_answers():
 
 @export_bp.route("/set_sheet_id", methods=["POST"])
 def set_sheets_id():
-    current_app.logger.info("API /set_sheets_id called")
+    current_app.logger.info("API /set_sheet_id called")
 
     sheet_id:str = request.data.decode("utf-8")
     exportData = get_exportdata(current_app)
     try:
         message = exportData.set_sheet_id(sheet_id)
+        current_app.logger.info(f"sheet id is: {exportData.sheet_id}")
         return message  #"Sheet exists and is accessible"
     except Exception as e:
         return f"{e}", 401

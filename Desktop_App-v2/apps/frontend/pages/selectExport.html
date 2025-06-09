@@ -17,19 +17,25 @@
             <label for="sheets_id">Google Sheets ID</label>
             <input type="text" name="sheet_id" id="sheet_id" />
             <br />
-            <button type="submit">Submit</button>
+            <button id="submit" type="submit">Submit</button>
         </form>
-        <button onclick="window.location.href='index.html'">Back to Home</button>
+        <button id="back" onclick="window.location.href='index.html'">Back to Home</button>
         <script>
             const SERVER_URL = "http://127.0.0.1:5000";
             const result=document.getElementById("result");
             const form=document.getElementById("form");
+            const submitBtn = document.getElementById("submit");
+            const backBtn = document.getElementById("back");
             form.addEventListener("submit", (event)=>{
                 event.preventDefault();
                 const selectedEl=document.querySelector('input[name="exportOpt"]:checked');  //get the checked option
                 const selectedOpt=selectedEl.value;
                 const optText=selectedEl.labels[0].textContent;
-                result.innerText=optText;
+                result.innerText="...";
+                //disable the submit and back button so that the user can't leave the page before the id's been set
+                submitBtn.disabled=true;
+                backBtn.disabled=true;
+
                 const sheet_id = document.getElementById("sheet_id").value;
                 //set the export method
                 fetch(`${SERVER_URL}/set_export_method`,{
@@ -63,7 +69,12 @@
                         })
                     })
                     .then(response=>response.text())
-                    .then(data=>console.log(data))
+                    .then(data=>{
+                        console.log(data);
+                        result.innerText=optText;
+                        submitBtn.disabled=false;
+                        backBtn.disabled=false;
+                    })
                     .catch(error=>console.error(error))
                 }
                 // fetch(`${SERVER_URL}/set_export_loc`,{method: "POST"})
