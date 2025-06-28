@@ -7,6 +7,8 @@ const questionHeader=document.getElementById("question");
 const form=document.getElementById("form");
 const nextBtn=document.getElementById("next");
 const prevBtn=document.getElementById("previous");
+const resetBtn=document.getElementById("reset");
+const homeBtn=document.getElementById("home");
 
 /* GET QUESTION */
 /**
@@ -220,6 +222,12 @@ window.electron.on("confirm-box-denied",()=>{
 /* EXPORTING ANSWERS */
 function submitLastQuestion(){
     console.log("Answer submission confirmed");
+    /* Temporarily turn off buttons to prevent repeat calls */
+    nextBtn.disabled=true;
+    prevBtn.disabled=true;
+    resetBtn.disabled=true;
+    homeBtn.disabled=true;
+
     /* Add all the answers to be exported */
     fetch(`${SERVER_URL}/add_all_answers`,{ method:"POST" })
     .then(response=>response.text())
@@ -245,6 +253,12 @@ function submitLastQuestion(){
             .then(response=>response.text()).then(data=>window.electron.send("open-alert",data));
         }
         /* CSV */
+    }).then(()=>{
+        //enable all the buttons
+        nextBtn.disabled=false;
+        prevBtn.disabled=false;
+        resetBtn.disabled=false;
+        homeBtn.disabled=false;
     })
     .catch(err=>console.error("Export request failed",err));
 }

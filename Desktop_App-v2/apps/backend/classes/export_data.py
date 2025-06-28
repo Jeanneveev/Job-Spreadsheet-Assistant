@@ -160,6 +160,7 @@ class ExportData:
                 return False, f"Unexpected error: {error}"
     def set_sheet_id(self, id)->str|SheetsConnectionError:
         """Sets the sheet_id variable of the ExportData instance if the id is valid"""
+        print("Setting sheet id")
         is_valid, msg = self._validate_sheet_id(id)
         if is_valid:
             self.sheet_id = id

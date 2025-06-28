@@ -8,6 +8,17 @@ from waitress import serve
 from .app import create_app
 from ..utils.shutdown_manager import ShutdownManager
 
+def resource_path(relative_path):
+    """Translate relative paths into absolute paths
+    for the sake of agreeance with PyInstaller"""
+    try:    # prod mode, base is the path of the executable
+        base_path = sys._MEIPASS
+    except AttributeError:  # dev mode, not using executable, use project root instead
+        base_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../../../")
+        )
+    return os.path.join(base_path, relative_path)
+
 # Logging Setup
 LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
 LOG_FILE =os.path.join(LOG_DIR, "app.log")
