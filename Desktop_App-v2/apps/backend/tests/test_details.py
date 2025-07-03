@@ -2,8 +2,8 @@ from flask.testing import FlaskClient   #for type hint
 import json
 import pytest
 import logging
-from utils.linked_list_handler import override_ll
-from classes import LinkedList
+from app.utils.linked_list_handler import override_ll
+from app.classes import LinkedList
 
 logger = logging.getLogger(__name__)
 

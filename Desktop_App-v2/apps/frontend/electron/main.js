@@ -8,7 +8,7 @@ const rootDirectory = path.resolve(__dirname, "..", "..", "..");
 console.log("Root directory is", rootDirectory)
 const appsDirectory = path.join(rootDirectory, "apps");
 const pagesDirectory = path.join(appsDirectory, "frontend", "pages");
-const backendDirectory = path.resolve(rootDirectory, "..", "..", "backend");
+const backendDirectory = path.resolve(appsDirectory, "backend");
 //Other
 const SERVER_URL = "http://127.0.0.1:5000";
 
@@ -18,7 +18,7 @@ const SERVER_URL = "http://127.0.0.1:5000";
 let flaskProc=null;
 const createFlaskProc = () => {
     //dev
-    const scriptPath = "backend.routes.run"
+    const scriptPath = "backend.run"
     let activateVenv;
     let command;
     let args;
@@ -44,6 +44,10 @@ const createFlaskProc = () => {
         },
         shell: true  // required for "&&" to work on Windows
     });
+    // console.log("backend directory is:",backendDirectory);
+    // const exePath = path.join(rootDirectory, "dist", "run.exe");
+    // console.log("executable path is:",exePath);
+    // return require("child_process").spawn(exePath)
 }
 
 const waitForFlaskRunning = (flaskProc=null, timeoutMS) => {
