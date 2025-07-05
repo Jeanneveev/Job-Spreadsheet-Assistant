@@ -1,4 +1,4 @@
-from ..classes import ExportData
+from ..models import ExportData
 
 def init_exportdata(app):
     app.exportdata = ExportData()

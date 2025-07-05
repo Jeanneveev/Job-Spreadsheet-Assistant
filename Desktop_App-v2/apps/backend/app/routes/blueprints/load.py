@@ -6,7 +6,7 @@ import os
 import logging
 from jsonschema import validate
 from flask import Blueprint, request, current_app, session
-from ...classes import Question, QTypeOptions, ATypeOptions, Node, LinkedList
+from ...models import Question, QTypeOptions, ATypeOptions, Node, LinkedList
 from ..shared_func import get_preexisting_filenames
 from ...utils.linked_list_handler import get_ll
 from werkzeug.utils import secure_filename

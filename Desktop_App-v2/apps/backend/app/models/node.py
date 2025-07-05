@@ -1,9 +1,9 @@
 from .question import Question
 
 class Node:
-    def __init__(self,question):
-        self.question:Question=question
-        self.addon:Question=None
+    def __init__(self, question:Question, addon:Question=None):
+        self.question=question
+        self.addon=addon
         self.answer:str=None
         self.next:Node=None
         self.prev:Node=None

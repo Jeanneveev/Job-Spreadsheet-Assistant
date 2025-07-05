@@ -9,7 +9,7 @@ from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 ## Config
-from ...config.config import basedir
+from config.config import basedir
 
 logger = logging.getLogger(__name__)
 

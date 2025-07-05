@@ -2,8 +2,8 @@
 import json
 import logging
 from flask import Blueprint, request, session, current_app
-from ...classes import Question, QTypeOptions, ATypeOptions, Node, LinkedList
-from ...utils.linked_list_handler import init_ll, get_ll, override_ll
+from app.models import Question, QTypeOptions, ATypeOptions, Node, LinkedList
+from app.utils.linked_list_handler import init_ll, get_ll, override_ll
 
 logger = logging.getLogger(__name__)
 q_crud_bp = Blueprint("q_crud", __name__)

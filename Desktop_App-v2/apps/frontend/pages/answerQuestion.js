@@ -157,7 +157,7 @@ function loadNextQuestion(){
         /* Set all the session variables */
         sessionStorage.setItem("next_q_str",data.q_str);
         sessionStorage.setItem("next_a_type",data.next_question_a_type);
-        if(data.is_addon){
+        if(data.is_addon.includes("true")){
             sessionStorage.setItem("is_addon","true");
             window.electron.send("print-to-main-terminal","The next question is an addon");
         }else{

@@ -26,7 +26,7 @@ def resource_path(relative_path:str):
         )
     return os.path.join(base_path, relative_path)
 # Add apps/ to the sys.path to allow for below imports
-sys.path.insert(0, resource_path("apps"))
+# sys.path.insert(0, resource_path("apps"))
 # print("sys.path:")
 # for p in sys.path:
 #     print("  ", p)
