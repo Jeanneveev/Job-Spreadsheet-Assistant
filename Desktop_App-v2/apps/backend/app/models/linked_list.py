@@ -39,7 +39,7 @@ class LinkedList:
         curr = self.head
         while curr:
             logger.info(curr.question,end="->")
-            curr=  curr.next
+            curr = curr.next
         logger.info("null")
     def returnLL(self):
         """Return a string of all the ll's node's details"""

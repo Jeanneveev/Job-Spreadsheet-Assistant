@@ -1,30 +1,13 @@
 import pytest
 from pytest_mock import MockerFixture
 from app.models import QTypeOptions, ATypeOptions, Question, Node
+from tests.helpers import generate_node, generate_question
 from app.service.service import *
-
-## HELPER FUNCTIONS
-def generate_question(q_str="test", q_detail="test", q_type="singular", a_type="open-ended") -> Question:
-    return Question(
-        q_str = q_str,
-        q_detail = q_detail,
-        q_type = QTypeOptions("singular"),
-        a_type = ATypeOptions("open-ended")
-    )
-def generate_node(add_addon:bool, question:Question=None) -> Node:
-    if question:
-        q = question
-    else:
-        q = generate_question()
-    if add_addon:
-        return Node(question=q, addon=generate_question())
-    else:
-        return Node(q)
 
 ## TESTS
 @pytest.mark.parametrize("is_last, is_addon", [(True, True), (True, False), (False, True), (False, False)])
 def test_get_current_question_display_info_returns_display_info(mocker:MockerFixture, is_last, is_addon):
-    test_node:Node = generate_node(False)
+    test_node:Node = generate_node()
     if is_addon:
         test_node.addon = generate_question(q_str="test-addon")
         test_question:Question = test_node.addon
@@ -33,7 +16,7 @@ def test_get_current_question_display_info_returns_display_info(mocker:MockerFix
     
     mocker.patch("app.service.service.is_last_question", return_value=is_last)
     if not is_last:
-        test_node.next = generate_node(False)
+        test_node.next = generate_node()
         if is_addon:
             assert get_current_question_display_info(test_node, test_question) == {
                 "q_str": "test-addon",
@@ -62,6 +45,66 @@ def test_get_current_question_display_info_returns_display_info(mocker:MockerFix
                 "is_addon": "false"
             }
 
-def test_get_next_question_display_info_returns_display_info(mocker:MockerFixture):
-    test_curr_node:Node = generate_node(False)
-    test_next_node:Node = generate_node
+@pytest.mark.parametrize("next_is_addon", [True, False])
+def test_get_next_question_display_info_returns_display_info(mocker:MockerFixture, next_is_addon):
+    if next_is_addon:
+        curr_question:Question = generate_question("test curr question")
+        next_question:Question = generate_question("test next question")
+        curr_node:Node = generate_node(curr_question, next_question)
+        next_next_question:Question = generate_question(a_type="multiple-choice")
+        next_node:Node = generate_node(next_next_question)
+    else:
+        curr_question:Question = generate_question("test curr question")
+        curr_node:Node = generate_node(curr_question)
+        next_question:Question = generate_question("test next question")
+        next_next_question:Question = generate_question(a_type="multiple-choice")
+        next_node:Node = generate_node(next_question, next_next_question)
+    curr_node.next = next_node
+
+    # patch over session variables
+    mock_session = {}
+    mocker.patch("app.service.service.session", mock_session)
+    
+    expected = {
+        "q_str": "test next question",
+        "next_question_a_type": "mulitple-choice",
+        "is_last": "false",
+        "is_addon": str(next_is_addon).lower()
+    }
+    mocker.patch("app.service.service.get_current_question_display_info", return_value=expected)
+    assert get_next_question_display_info(curr_node, curr_question) == expected
+
+@pytest.mark.parametrize("curr_is_addon, prev_is_addon", [(True, False), (False, True), (False, False)])
+def test_get_prev_question_display_info_returns_display_info(mocker:MockerFixture, curr_is_addon, prev_is_addon):
+    expected = {}
+
+    if curr_is_addon:
+        curr_question:Question = generate_question("addon curr question")
+        prev_question:Question = generate_question("prev question")
+        curr_node:Node = generate_node(prev_question, curr_question)
+    elif prev_is_addon:
+        curr_question:Question = generate_question("addon curr question")
+        curr_node:Node = generate_node(curr_question)
+        prev_question:Question = generate_question("prev question")
+        prev_node:Node = generate_node(generate_question(), prev_question)
+        curr_node.prev = prev_node
+    else:
+        curr_question:Question = generate_question("test curr question", a_type="multiple-choice")
+        curr_node:Node = generate_node(curr_question)
+        prev_question:Question = generate_question("test previous question")
+        prev_node:Node = generate_node(prev_question)
+        curr_node.prev = prev_node
+
+    # patch over session variables
+    mock_session = {}
+    mocker.patch("app.service.service.session", mock_session)
+
+    expected = {
+        "q_str": prev_question.q_str,
+        "next_question_a_type": curr_question.a_type,
+        "is_last": "false",
+        "is_addon": str(prev_is_addon).lower()
+    }
+    mocker.patch("app.service.service.get_current_question_display_info", return_value=expected)
+    assert get_prev_question_display_info(curr_node, curr_question) == expected
+

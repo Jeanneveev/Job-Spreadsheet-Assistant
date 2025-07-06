@@ -119,7 +119,7 @@ def get_current_question_display_info(curr_node:Node, curr_question:Question):
         Returns:
         res: dict - A dictionary with the following keys:
             "q_str": str - The q_str of the current question
-            "next_question_a_type": str (optional) - The value of the a_type of the next question
+            "next_question_a_type": str - (optional) The value of the a_type of the next question
             "is_last": str - Whether or not the current question is the last question
             "is_addon": str - Whether or not the current question is an addon question
     """
@@ -134,12 +134,14 @@ def get_current_question_display_info(curr_node:Node, curr_question:Question):
     else:
         res["is_addon"] = "false"
         next_question = curr_node.next.question if curr_node.next else None
+    # print(f"next question is {next_question}.")
 
     is_last = is_last_question(curr_question)
     if is_last:
         res["is_last"] = "true"
     else:
         res["is_last"] = "false"
+        # print(f"Next question's a_type is: {next_question.a_type.value}")
         res["next_question_a_type"] = next_question.a_type.value
 
     return res
@@ -153,8 +155,8 @@ def get_next_question_display_info(curr_node:Node, curr_question:Question):
         Returns:
         res: dict - A dictionary with the following keys:
             "q_str": str - The q_str of the next question
-            "next_question_a_type": str (optional) - The value of the a_type of the question after the next question
-            "is_last": str - Whether or not the nexy question is the last question
+            "next_question_a_type": str - (optional) The value of the a_type of the question after the next question
+            "is_last": str - Whether or not the next question is the last question
             "is_addon": str - Whether or not the next question is an addon question
     """
     curr_is_addon = False
@@ -164,18 +166,50 @@ def get_next_question_display_info(curr_node:Node, curr_question:Question):
 
     if curr_is_addon or not curr_node.addon:
         #the next question is the next node's question
-        next_question:Question=curr_node.next.question
         next_node:Node=curr_node.next
+        next_question:Question=curr_node.next.question
     else:
         # the current question has an addon, which will be the next question
-        next_question:Question=curr_node.addon
         next_node:Node=curr_node
+        next_question:Question=curr_node.addon
 
     session["curr_question"] = next_question.as_dict()
     session["curr_node"] = next_node.as_dict()
 
-    res = get_current_question_display_info(next_node, next_question)
+    return get_current_question_display_info(next_node, next_question)
+
+def get_prev_question_display_info(curr_node:Node, curr_question:Question):
+    """Returns the display info of the question before the given question
+        Parameters:
+            curr_node: Node - The Node of the current question
+            curr_question: Question - The current question
+        
+        Returns:
+        res: dict - A dictionary with the following keys:
+            "q_str": str - The q_str of the previous question
+            "next_question_a_type": str - The value of the a_type of the current question
+            "is_addon": str - Whether or not the next question is an addon question
+    """
+    curr_is_addon = False
+    
+    if curr_node.addon:
+        if curr_question == curr_node.addon:
+            curr_is_addon = True
+
+    if curr_is_addon:
+        prev_node = curr_node
+        prev_question = curr_node.question
+    else:
+        prev_node = curr_node.prev
+        if prev_node.addon:
+            prev_question = prev_node.addon
+        else:
+            prev_question = prev_node.question
+        
+    session["curr_question"] = prev_question.as_dict()
+    session["curr_node"] = prev_node.as_dict()
+
+    res = get_current_question_display_info(prev_node, prev_question)
+    del res["is_last"]  # always false, so no need to include
     return res
 
-
-    

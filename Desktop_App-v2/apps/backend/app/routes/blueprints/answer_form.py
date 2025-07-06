@@ -6,7 +6,9 @@ from ...utils.linked_list_handler import get_ll
 from ...service.service import (
     get_first_non_preset_node, answer_leading_presets,
     is_last_question, answer_application_date, get_all_answers_handler, answer_empty,
-    get_next_node_and_question
+    get_next_node_and_question,
+
+    get_current_question_display_info
 )
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ def get_first_a_type():
         a_type_val=head.question.a_type.value
         return a_type_val
     
+## DISPLAY INFO
 @answ_bp.route("/get_first_question")
 def get_first_question_display_info()->dict:
     """Get the display info of the first non-preset Question in the LinkedList
@@ -28,20 +31,14 @@ def get_first_question_display_info()->dict:
     Returns:
         A dictionary with the following keys:
             "q_str": str - The q_str of the requested question
-            "next_question_a_type": str - The value of the a_type of the next question
+            "next_question_a_type": str - (optional) The value of the a_type of the next question
             "is_last": str - Whether or not the requested question is the last question
     """
     first_valid:Node=get_first_non_preset_node()
     answer_leading_presets()    # answer any leading preset questions
-    # Set session variables
-    session["curr_node"]=first_valid.as_dict()
-    session["curr_question"]=first_valid.question.as_dict()
-
-    if is_last_question(first_valid.question):
-        fv_display_info:dict=first_valid.display_info(False,True)
-    else:
-        fv_display_info:dict=first_valid.display_info(False,False)
-    return fv_display_info
+    res = get_current_question_display_info(first_valid, first_valid.question)
+    del res["is_addon"]
+    return res
 
 @answ_bp.route("/get_next_question")
 def get_next_question_display_info()->dict:
