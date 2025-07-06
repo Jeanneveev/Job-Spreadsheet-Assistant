@@ -3,8 +3,6 @@ from flask import jsonify, current_app, session
 from ..models import Question, Node, LinkedList
 from ..utils.linked_list_handler import get_ll
 
-
-
 ## NAVIGATE PRESETS
 def get_first_non_preset_node()->Node|None:
     """Returns the first Node whose question's a_type is not preset, if any"""
