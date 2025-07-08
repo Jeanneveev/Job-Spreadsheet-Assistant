@@ -6,9 +6,9 @@ from ...utils.linked_list_handler import get_ll
 from ...service.service import (
     get_first_non_preset_node, answer_leading_presets,
     is_last_question, answer_application_date, get_all_answers_handler, answer_empty,
-    get_next_node_and_question,
 
-    get_current_question_display_info
+    get_question, get_current_question_display_info, get_next_question_display_info,
+    get_prev_question_display_info
 )
 
 logger = logging.getLogger(__name__)
@@ -37,17 +37,17 @@ def get_first_question_display_info()->dict:
     first_valid:Node=get_first_non_preset_node()
     answer_leading_presets()    # answer any leading preset questions
     res = get_current_question_display_info(first_valid, first_valid.question)
-    del res["is_addon"]
-    return res
+    del res["is_addon"] #it's impossible to be anything but "false", so just remove it
+    return jsonify(res)
 
 @answ_bp.route("/get_next_question")
-def get_next_question_display_info()->dict:
+def get_next_question()->dict:
     """Get the display info of the next question
 
     Returns:
         res: dict - A dictionary with the following keys:
             "q_str": str - The q_str of the next question
-            "next_question_a_type": str - The value of the a_type of the question after the next question
+            "next_question_a_type": str - (optional) The value of the a_type of the question after the next question
             "is_last": str - Whether or not the next question is the last question
             "is_addon": str - Whether or not the next question is an addon question
     """
@@ -56,66 +56,30 @@ def get_next_question_display_info()->dict:
     curr_node_dict:dict = session["curr_node"]
     curr_node:Node = ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the current node by the detail
     curr_question_dict:dict = session["curr_question"]
+    curr_question = get_question(curr_node, curr_question_dict)
 
-    (next_node, next_question, next_is_addon) = get_next_node_and_question(curr_node, curr_question_dict)
-    
-    session["curr_question"] = next_question.as_dict()
-    session["curr_node"] = next_node.as_dict()
-
-    if is_last_question(next_question):
-        res=next_node.display_info(next_is_addon,True)
-    else:
-        res=next_node.display_info(next_is_addon,False)
-    #append "is_addon" to the dictionary if the next question is one
-    if next_is_addon:
-        res["is_addon"] = "true"
-    else:
-        res["is_addon"] = "false"
-    return res
+    return jsonify(get_next_question_display_info(curr_node, curr_question))
     
 @answ_bp.route("/get_prev_question")
-def get_prev_question_display_info():
+def get_prev_question():
     """Get the display info of the previous question
     
      Returns:
         A dictionary with the following keys:
             "q_str": str - The q_str of the previous question
             "next_question_a_type": str - The value of the a_type of the current question
-            "is_last": str - Whether or not the previous question is the last question (should always be false)
             "is_first": str - Wheter or not the previous question is the first question
-            "is_addon": str - Whether or not the next question is an addon question
+            "is_addon": str - Whether or not the previous question is an addon question
     """
     ll = get_ll(current_app)
     #Get the current node and question
     curr_node_dict:dict=session["curr_node"]
     curr_node:Node=ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the current node by the detail
     curr_question_dict:dict=session["curr_question"]
-    on_addon=False
-    prev_is_addon=False
-    if not curr_question_dict==curr_node.question.as_dict():    #the current question is the node's addon question
-        on_addon=True
+    curr_question = get_question(curr_node, curr_question_dict)
 
-    #Get the previous question
-    if on_addon:    #the current question is an addon and the previous question is its base
-        prev_node:Node=curr_node
-        prev_question:Question=curr_node.question
-    else:   #the previous question is in the previous node
-        prev_node:Node=curr_node.prev
-        if prev_node.addon is not None:
-            prev_question:Question=prev_node.addon
-            prev_is_addon=True
-        else:
-            prev_question:Question=prev_node.question
-    session["curr_question"]=prev_question.as_dict()
-    session["curr_node"]=prev_node.as_dict()
+    return jsonify(get_prev_question_display_info(curr_node, curr_question))
     
-    res=prev_node.display_info(prev_is_addon,False)
-    first_q:Question=ll.head.question
-    if prev_question==first_q:
-        res["is_first"]="true"
-    if prev_is_addon:
-        res["is_addon"]="true"
-    return res
 
 @answ_bp.route("/add_answer",methods=["POST"])
 def add_answer():

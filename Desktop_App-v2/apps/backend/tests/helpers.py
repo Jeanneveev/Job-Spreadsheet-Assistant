@@ -17,9 +17,21 @@ def generate_node(question:Question=None, addon:Question=None) -> Node:
         return Node(q)
     
 def build_test_ll(test_client:FlaskClient, nodes:list[Node]):
+    """Builds a LinkedList in the test client's app context, allowing it to be interacted
+        with by functions being tested.
+
+        Parameters:
+            test_client: FlaskClient - The tester Flask app's Flask client
+            nodes: list[Node] - A list of nodes, in order, to be added to the linked list
+    """
     app = test_client.application  # The Flask app instance
     with app.app_context():
         app.linked_list = LinkedList()
         
         for node in nodes:
             app.linked_list.append(node)
+
+def build_test_session(test_client:FlaskClient, sess_vars:dict):
+    with test_client.session_transaction() as session:
+        for name, value in sess_vars.items():
+            session[name] = value

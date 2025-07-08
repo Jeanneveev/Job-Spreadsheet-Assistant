@@ -82,8 +82,8 @@ def test_get_next_question_display_info_returns_display_info(mocker:MockerFixtur
     else:
         spy.assert_called_once_with(next_node, next_question)
 
-@pytest.mark.parametrize("curr_is_addon, prev_is_addon", [(True, False), (False, True), (False, False)])
-def test_get_prev_question_display_info_returns_display_info(mocker:MockerFixture, curr_is_addon, prev_is_addon):
+@pytest.mark.parametrize("prev_is_first, curr_is_addon, prev_is_addon", [(True, True, False), (False, True, False), (False, False, True), (True, False, False), (False, False, False)])
+def test_get_prev_question_display_info_returns_display_info(mocker:MockerFixture, prev_is_first, curr_is_addon, prev_is_addon):
     expected = {}
 
     if curr_is_addon:
@@ -108,14 +108,17 @@ def test_get_prev_question_display_info_returns_display_info(mocker:MockerFixtur
     # patch over session variables
     mock_session = {}
     mocker.patch("app.service.service.session", mock_session)
-    # patch over is_last_question to avoid having to init ll
+    # patch over is_first_question and is_last_question to avoid having to init ll
+    mocker.patch("app.service.service.is_first_question", return_value=prev_is_first)
     mocker.patch("app.service.service.is_last_question", return_value=False)
+    
 
     spy = mocker.spy(service, "get_current_question_display_info")
 
     expected = {
         "q_str": prev_question.q_str,
         "next_question_a_type": curr_question.a_type.value,
+        "is_first": str(prev_is_first).lower(),
         "is_addon": str(prev_is_addon).lower()
     }
     assert get_prev_question_display_info(curr_node, curr_question) == expected
