@@ -22,7 +22,7 @@ def resource_path(relative_path:str):
         base_path = sys._MEIPASS
     except AttributeError:  # dev mode, not using executable, use project root instead
         base_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../../")
+            os.path.join(os.path.dirname(__file__), "../../")
         )
     return os.path.join(base_path, relative_path)
 # Add apps/ to the sys.path to allow for below imports
@@ -35,7 +35,7 @@ from .app.utils.shutdown_manager import ShutdownManager
 
 
 # Logging Setup
-LOG_DIR = resource_path("apps/backend/logs")
+LOG_DIR = resource_path("apps/backend/app/logs")
 os.makedirs(LOG_DIR, exist_ok=True) # create the directory if it doesn't already exist
 LOG_FILE = os.path.join(LOG_DIR, "app.log")
 

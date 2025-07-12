@@ -1,7 +1,10 @@
+import logging
 from datetime import date
 from flask import jsonify, current_app, session
 from ..models import Question, Node, LinkedList
 from ..utils.linked_list_handler import get_ll
+
+logger = logging.getLogger(__name__)
 
 def is_first_question(q:Question) -> bool:
     """Checks if the given question is the first question in the linked list"""
@@ -23,6 +26,55 @@ def get_question(node:Node, q_dict:dict):
         return node.question
     elif node.addon.q_detail == q_dict["q_detail"]:
         return node.addon
+    
+def get_first_non_preset_node()->Node|None:
+    """Returns the first Node whose question's a_type is not preset, if any"""
+    ll = get_ll(current_app)
+    curr:Node=ll.head
+    result_node:Node=curr
+    a_type_val=curr.question.a_type.value
+    if a_type_val!="preset":
+        return result_node
+    
+    while a_type_val=="preset" and curr is not None:
+        a_type_val=curr.question.a_type.value
+        result_node=curr
+        curr=curr.next
+    if a_type_val=="preset":    #all questions are preset questions
+        return None
+    return result_node
+
+# def get_next_non_preset_question(forwards:bool)->Node|None:
+#     """Return the first question before or after the current question whose a_type is not preset, if any"""
+#     #NOTE: It should be impossible for one to go back into a series of preset questions that start the ll
+#     # because the button would be disabled on the frontend, however, it is possible to go forwards into a series of presets that end it
+
+def get_current_node() -> Node:
+    ll = get_ll(current_app)
+    if "curr_node" in session:
+        curr_node_dict:dict = session["curr_node"]
+        curr_node:Node = ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the current node by the detail
+    else:
+        curr_node:Node = ll.head
+    return curr_node
+def get_current_question(curr_node:Node) -> Question:
+    if "curr_question" in session:
+        print("session variable found!")
+        curr_question_dict:dict = session["curr_question"]
+        curr_question:Question = get_question(curr_node, curr_question_dict)
+    else:
+        ll = get_ll(current_app)
+        if curr_node == ll.head:
+            curr_question:Question=curr_node.question
+        else:
+            raise LookupError("Current question not found")
+    print(f"curr_question is {curr_question}")
+    return curr_question
+def get_current_node_and_question():
+    curr_node:Node = get_current_node()
+    curr_question:Question = get_current_question(curr_node)
+    return (curr_node, curr_question)
+
 
 def get_current_question_display_info(curr_node:Node, curr_question:Question):
     """Returns the display info of the given question
@@ -136,34 +188,15 @@ def get_prev_question_display_info(curr_node:Node, curr_question:Question):
 
 
 
-
-
-
-
-## NAVIGATE PRESETS
-def get_first_non_preset_node()->Node|None:
-    """Returns the first Node whose question's a_type is not preset, if any"""
-    ll = get_ll(current_app)
-    head:Node=ll.head
-    result_node:Node=head
-    a_type_val=head.question.a_type.value
-    if a_type_val!="preset":
-        return result_node
-    
-    while a_type_val=="preset" and head is not None:
-        a_type_val=head.question.a_type.value
-        result_node=head
-        head=head.next
-    if a_type_val=="preset":    #all questions are preset questions
-        return None
-    return result_node
-
-# def get_next_non_preset_question(forwards:bool)->Node|None:
-#     """Return the first question before or after the current question whose a_type is not preset, if any"""
-#     #NOTE: It should be impossible for one to go back into a series of preset questions that start the ll
-#     # because the button would be disabled on the frontend, however, it is possible to go forwards into a series of presets that end it
-    
 # ANSWER QUESTIONS
+def append_addon_answer(addon_answer:str) -> str:
+    curr_node:Node = get_current_node()
+    answer = curr_node.answer
+    answer += addon_answer
+    curr_node.answer = answer
+    logger.info(f"Answer appended to. Answer is now {answer}")
+    return answer
+
 ## ANSWER PRESETS
 def answer_application_date():
     return date.today().strftime("%m/%d/%Y")
@@ -186,25 +219,19 @@ def answer_leading_presets():
                     answ=answer_empty()
             curr.answer=answ
 
-def get_all_answers_handler(by_route:bool):
-    """
-    A handler function for get_all_answers
+def answer_preset_node(node:Node, p_type:str):
+    answ=""
+    match p_type:
+        case "appDate":
+            answ=answer_application_date()
+        case "empty":
+            answ=answer_empty()
+        case _:
+            raise ValueError(f"Unidentified preset type {p_type}")
+    node.answer = answ
+    return answ
+    
 
-    Description: This function gets and returns all of the answers set in
-    the linked list and returns it as a list.
-    Depending on the value of the by_route parameter, it will return a
-    jsonified response or a regular list, to be used by routes and Python
-    functions respectively.
-    """
+def get_all_answers():
     ll = get_ll(current_app)
-    all_nodes_dict=ll.getAll()
-    res=[]
-    for node_dict in all_nodes_dict:
-        if "answer" in node_dict:
-            res.append(node_dict["answer"])
-    
-    if by_route==True:
-        return jsonify(res)
-    else:
-        return res
-    
+    return ll.getAllAnswers()

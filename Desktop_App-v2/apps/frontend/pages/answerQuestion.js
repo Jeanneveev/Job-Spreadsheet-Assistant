@@ -65,7 +65,7 @@ function submitAnswer(answer){
         answer=" "
     }
     if(is_addon==false){  //if the question is a base or singular question
-        fetch(`${SERVER_URL}/add_answer`, {
+        fetch(`${SERVER_URL}/set_answer`, {
             method:"POST",
             headers: {
                 "Content-Type": "text/plain"
@@ -91,7 +91,7 @@ function submitAnswer(answer){
 function fillPresetQuestion(preset=null,forwards) {
     console.log("fill preset reached")
     if(forwards){   //if called be loadNext
-        fetch(`${SERVER_URL}/add_preset_answer`,{
+        fetch(`${SERVER_URL}/set_preset_answer`,{
             method: "POST",
             headers:{
                 "Content-Type": "application/json",

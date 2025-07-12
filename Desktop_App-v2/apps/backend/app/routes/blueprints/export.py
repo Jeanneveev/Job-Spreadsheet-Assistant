@@ -6,7 +6,7 @@ import logging
 from flask import Blueprint, request, current_app, session
 from urllib.parse import parse_qs, urlparse
 from ...utils.export_data_handler import get_exportdata
-from .answer_form import get_all_answers_handler
+from .answer_form import get_all_answers
 
 logger = logging.getLogger(__name__)
 export_bp = Blueprint("export", __name__)
@@ -35,7 +35,7 @@ def get_export_method():
 @export_bp.route("/add_all_answers",methods=["POST"])
 def add_all_answers():
     exportData = get_exportdata(current_app)
-    answs=get_all_answers_handler(by_route=False)
+    answs=get_all_answers()
     exportData.data=answs
     logger.info(f"Answers {exportData.data} added")
     return f"Answers {exportData.data} added"

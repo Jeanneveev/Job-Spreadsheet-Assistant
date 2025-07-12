@@ -10,3 +10,14 @@ def test_client():
         with app.app_context():
             yield test_client
 
+@pytest.fixture
+def test_session(test_client):
+    def setter(test_client, sess_vars:dict):
+        with test_client.session_transaction() as sess:
+            sess.update(sess_vars)
+
+    yield setter    # let test run with the ability to use the setter function via test_session
+
+    # after test is done, clear the session
+    with test_client.session_transaction() as sess:
+        sess.clear()

@@ -30,8 +30,3 @@ def build_test_ll(test_client:FlaskClient, nodes:list[Node]):
         
         for node in nodes:
             app.linked_list.append(node)
-
-def build_test_session(test_client:FlaskClient, sess_vars:dict):
-    with test_client.session_transaction() as session:
-        for name, value in sess_vars.items():
-            session[name] = value

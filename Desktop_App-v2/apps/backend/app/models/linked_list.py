@@ -103,6 +103,14 @@ class LinkedList:
             res.append(curr.as_dict())
             curr=curr.next
         return res
+    def getAllAnswers(self) -> list[str]:
+        """Returns a list of all answers of all nodes in the linked list"""
+        res = []
+        curr:Node = self.head
+        while curr:
+            res.append(curr.answer)
+            curr=curr.next
+        return res
     def getQNum(self)->int:
         """Get the number of questions in the linked list"""
         count = 0
