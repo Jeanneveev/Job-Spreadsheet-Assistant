@@ -57,18 +57,21 @@ def get_current_node() -> Node:
     else:
         curr_node:Node = ll.head
     return curr_node
-def get_current_question(curr_node:Node) -> Question:
-    if "curr_question" in session:
-        print("session variable found!")
+def get_current_question(curr_node:Node=None) -> Question:
+    if not curr_node:   # if curr_node isn't passed, get it from ll
+        curr_node = get_current_node()
+
+    if "curr_question" in session:  # get via session variable if possible
+        # logger.debug("question session variable found!")
         curr_question_dict:dict = session["curr_question"]
         curr_question:Question = get_question(curr_node, curr_question_dict)
-    else:
+    else:   # no curr_question has been set, assume this is the first question being called
         ll = get_ll(current_app)
         if curr_node == ll.head:
             curr_question:Question=curr_node.question
         else:
             raise LookupError("Current question not found")
-    print(f"curr_question is {curr_question}")
+    logging.debug(f"curr_question is {curr_question}")
     return curr_question
 def get_current_node_and_question():
     curr_node:Node = get_current_node()
@@ -100,14 +103,14 @@ def get_current_question_display_info(curr_node:Node, curr_question:Question):
     else:
         res["is_addon"] = "false"
         next_question = curr_node.next.question if curr_node.next else None
-    # print(f"next question is {next_question}.")
+    # logger.debug(f"next question is {next_question}.")
 
     is_last = is_last_question(curr_question)
     if is_last:
         res["is_last"] = "true"
     else:
         res["is_last"] = "false"
-        # print(f"Next question's a_type is: {next_question.a_type.value}")
+        # logger.debug(f"Next question's a_type is: {next_question.a_type.value}")
         res["next_question_a_type"] = next_question.a_type.value
 
     return res

@@ -19,10 +19,10 @@
         </style>
     </head>
     <body>
-        <h1>Add Choices</h1>
+        <h1>Add Options</h1>
         <p id="message"></p>
         <form id="form">
-            <div class="choices-container" id="choices">
+            <div class="options-container" id="options">
 
             </div>
             <a href="javascript:;" onclick="addChoice();">+ Add Another Choice</a>
@@ -33,21 +33,21 @@
             const SERVER_URL = window.electron.SERVER_URL;
             const message=document.getElementById("message");
             const form=document.getElementById("form");
-            const choiceContainer=document.getElementById("choices");
+            const choiceContainer=document.getElementById("options");
             let datalistID="";
 
             /**
-             * Get all the already submitted choices as autofill options for the textbox
+             * Get all the already submitted options as autofill options for the textbox
              */
              function fillAutofill(){
                 const datalist=document.createElement("datalist");
                 datalist.id="preexistingOptList";
                 datalistID=datalist.id;
-                fetch(`${SERVER_URL}/get_all_choices`,{ method: "GET" })
+                fetch(`${SERVER_URL}/get_all_options`,{ method: "GET" })
                 .then(response=>response.json()).then((data)=>{
-                    const previous_choices=data.result;
-                    console.log("Previous choices are", previous_choices);
-                    previous_choices.forEach(optVal => {
+                    const previous_options=data.result;
+                    console.log("Previous options are", previous_options);
+                    previous_options.forEach(optVal => {
                         const opt=document.createElement("option");
                         opt.setAttribute("value",optVal);
                     });
@@ -87,16 +87,16 @@
                 choiceContainer.removeChild(div);
             }
             /**
-             * Load currently selected choices for this question
-             * To allow for the user to go back and add more choices
+             * Load currently selected options for this question
+             * To allow for the user to go back and add more options
              * before submitting the question
             */
-            function loadChoices(){
-                fetch(`${SERVER_URL}/get_current_choices`,{ method: "GET" })
+            function loadOptions(){
+                fetch(`${SERVER_URL}/get_current_options`,{ method: "GET" })
                 .then(response=>response.json()).then((data)=>{
-                    const existing_choices=data.result;
-                    console.log("Existing choices are",existing_choices);
-                    existing_choices.forEach(choice=>{
+                    const existing_options=data.result;
+                    console.log("Existing options are",existing_options);
+                    existing_options.forEach(choice=>{
                         addChoice(choice);
                     });
                     addChoice();    //add a blank choice regardless at the end for onwindowload
@@ -104,7 +104,7 @@
             }
             window.addEventListener("load", (event)=>{
                 fillAutofill();
-                loadChoices();
+                loadOptions();
             });
 
             form.addEventListener("submit",(event)=>{
@@ -112,29 +112,29 @@
                 const formData=new FormData(form);
                 const formDict=Object.fromEntries(formData);
                 console.log(formDict);
-                let choicesLst=[]
+                let optionsLst=[]
                 Object.entries(formDict).forEach(([key,value])=>{
                     if(value!=""){
-                        choicesLst.push(value);
+                        optionsLst.push(value);
                     }
                 });
-                console.log(choicesLst);
+                console.log(optionsLst);
 
-                fetch(`${SERVER_URL}/set_curr_choices`,{
+                fetch(`${SERVER_URL}/set_curr_options`,{
                     method: "POST",
                     headers:{
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({choices:choicesLst}),
+                    body: JSON.stringify({options:optionsLst}),
                 }).then((response)=>{
                     if(response.ok){
-                        message.innerText="Choices added!";
-                        return fetch(`${SERVER_URL}/add_choices`,{
+                        message.innerText="Options added!";
+                        return fetch(`${SERVER_URL}/add_options`,{
                             method: "POST",
                             headers:{
                                 "Content-Type": "application/json",
                             },
-                            body: JSON.stringify({choices:choicesLst}),
+                            body: JSON.stringify({options:optionsLst}),
                         });
                     }
                 }).then(response=>response.text()).then(data=>console.log(data))
@@ -143,7 +143,7 @@
 
             function closePopup() {
                 if (window.electron && window.electron.send) {
-                    window.electron.send("close-choices");
+                    window.electron.send("close-options");
                 } else {
                     console.error("window.electron or window.electron.send is not defined.");
                 }

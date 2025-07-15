@@ -4,8 +4,8 @@ from flask.testing import FlaskClient   #for type hint
 from pytest_mock import MockerFixture   #for type hint
 from app.models import Question, Node
 from tests.helpers import generate_node, generate_question, build_test_ll
-import app.service.service as service
-from app.service.service import *
+import app.services.answer_form as service
+from app.services.answer_form import *
 
 class TestGetNodesAndQuestions:
     def test_get_first_non_preset_node_returns_first_non_preset_node_or_none(self, test_client:FlaskClient):
@@ -42,6 +42,7 @@ class TestGetNodesAndQuestions:
     
         test_client.get("/")    # throwaway call to establish session
         assert get_current_node() == first_node
+        assert get_current_question() == second_q
         assert get_current_question(first_node) == second_q
         assert get_current_node_and_question() == (first_node, second_q)
         
@@ -87,7 +88,7 @@ class TestGetDisplayInfo:
         else:
             test_question:Question = test_node.question
         
-        mocker.patch("app.service.service.is_last_question", return_value=is_last)
+        mocker.patch("app.services.answer_form.is_last_question", return_value=is_last)
         if not is_last:
             test_node.next = generate_node()
             if is_addon:
@@ -136,9 +137,9 @@ class TestGetDisplayInfo:
 
         # patch over session variables
         mock_session = {}
-        mocker.patch("app.service.service.session", mock_session)
+        mocker.patch("app.services.answer_form.session", mock_session)
         # patch over is_last_question to avoid having to init ll
-        mocker.patch("app.service.service.is_last_question", return_value=False)
+        mocker.patch("app.services.answer_form.is_last_question", return_value=False)
         
         spy = mocker.spy(service, "get_current_question_display_info")
 
@@ -179,10 +180,10 @@ class TestGetDisplayInfo:
 
         # patch over session variables
         mock_session = {}
-        mocker.patch("app.service.service.session", mock_session)
+        mocker.patch("app.services.answer_form.session", mock_session)
         # patch over is_first_question and is_last_question to avoid having to init ll
-        mocker.patch("app.service.service.is_first_question", return_value=prev_is_first)
-        mocker.patch("app.service.service.is_last_question", return_value=False)
+        mocker.patch("app.services.answer_form.is_first_question", return_value=prev_is_first)
+        mocker.patch("app.services.answer_form.is_last_question", return_value=False)
         
 
         spy = mocker.spy(service, "get_current_question_display_info")
@@ -204,7 +205,7 @@ class TestAnswerQuestion:
     def test_append_addon_answer(self, mocker:MockerFixture):
         curr_node:Node = generate_node(generate_question())
         # patch over get_current_node
-        mocker.patch("app.service.service.get_current_node", return_value=curr_node)
+        mocker.patch("app.services.answer_form.get_current_node", return_value=curr_node)
         curr_node.answer = "test base answ"
 
         assert append_addon_answer(" (addon)") == "test base answ (addon)"

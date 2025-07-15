@@ -1,10 +1,10 @@
 """App Factory. Creates instances of a configured Flask app."""
 
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 import logging
 ## Blueprint Imports
-from app.routes.blueprints import q_crud_bp, detail_bp, choice_bp, save_bp, load_bp, answ_bp, export_bp, shutdown_bp, bp
+from app.routes.blueprints import q_crud_bp, detail_bp, opt_bp, save_bp, load_bp, answ_bp, export_bp, shutdown_bp, bp
 ## Util Imports
 from app.utils.linked_list_handler import init_ll
 from app.utils.export_data_handler import init_exportdata
@@ -38,12 +38,16 @@ def create_app(config_obj:str, shutdown_manager:ShutdownManager = None)->Flask:
     app.register_blueprint(bp)
     app.register_blueprint(q_crud_bp)
     app.register_blueprint(detail_bp)
-    app.register_blueprint(choice_bp)
+    app.register_blueprint(opt_bp)
     app.register_blueprint(save_bp)
     app.register_blueprint(load_bp)
     app.register_blueprint(answ_bp)
     app.register_blueprint(export_bp)
     app.register_blueprint(shutdown_bp)
+
+    @app.before_request
+    def log_endpoint_call():
+        logger.info(f"Endpoint {request.endpoint} called")
 
     if shutdown_manager:    #if not testing
         @app.after_request

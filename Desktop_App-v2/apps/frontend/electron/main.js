@@ -416,7 +416,7 @@ ipcMain.on("close-prompt",(event)=>{
 })
 
 let choiceWindow=null;
-ipcMain.on("open-choices-window",(event)=>{
+ipcMain.on("open-options-window",(event)=>{
     choiceWindow=new BrowserWindow({
         width: 400,
         height: 500,
@@ -428,13 +428,13 @@ ipcMain.on("open-choices-window",(event)=>{
         },
     });
     choiceWindow.setAlwaysOnTop("true",'pop-up-menu', 1)
-    choiceWindow.loadFile(path.join(pagesDirectory, 'addChoices.html'));
+    choiceWindow.loadFile(path.join(pagesDirectory, 'addoptions.html'));
 
     choiceWindow.on("closed",()=>{
         choiceWindow=null;
     });
 });
-ipcMain.on("close-choices",(event)=>{
+ipcMain.on("close-options",(event)=>{
     if(choiceWindow){
         choiceWindow.close();
         choiceWindow=null;

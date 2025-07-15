@@ -22,12 +22,12 @@ def add_question():
     else:
         q_type=QTypeOptions(result["q_type"])
     a_type=ATypeOptions(result["a_type"])
-    #if it's a multiple-choice question, get the choices
+    #if it's a multiple-choice question, get the options
     if a_type.value=="multiple-choice":
         logger.info("Creating new multiple-choice question")
-        choices:list[str]=json.loads(result["choices"])
-        logger.info("Choices are:",choices)
-        new_question=Question(result["question"],result["detail"],q_type,a_type,choices)
+        options:list[str]=json.loads(result["options"])
+        logger.info("options are:",options)
+        new_question=Question(result["question"],result["detail"],q_type,a_type,options)
     elif a_type.value==None:
         return {"response":"A_type not found"}, 404
     else:
@@ -50,9 +50,9 @@ def add_addon():
     a_type=ATypeOptions(result["a_type"])
     if a_type.value=="multiple-choice":
         logger.info("Creating new multiple-choice question")
-        choices:list[str]=json.loads(result["choices"])
-        logger.info("Choices are:",choices)
-        new_question=Question(result["question"],result["detail"],q_type,a_type,choices)
+        options:list[str]=json.loads(result["options"])
+        logger.info("options are:",options)
+        new_question=Question(result["question"],result["detail"],q_type,a_type,options)
     else:
         new_question=Question(result["question"],result["detail"],q_type,a_type)
     #get the node of the question this one is adding onto

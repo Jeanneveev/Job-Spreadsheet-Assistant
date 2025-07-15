@@ -44,7 +44,7 @@ def validate_upload(file_json):
                         "q_detail": {"type":"string"},
                         "q_type": {"type":"string"},
                         "a_type": {"type":"string"},
-                        "choices": {"type":"array"}
+                        "options": {"type":"array"}
                     },
                     "required":["q_str","q_detail","q_type","a_type"]
                 },
@@ -55,7 +55,7 @@ def validate_upload(file_json):
                         "q_detail": {"type":"string"},
                         "q_type": {"type":"string"},
                         "a_type": {"type":"string"},
-                        "choices": {"type":"array"}
+                        "options": {"type":"array"}
                     },
                     "required":["q_str","q_detail","q_type","a_type"]
                 },
@@ -98,8 +98,8 @@ def load_ll_from_file_json(file_json:list[dict]):
         q_type=QTypeOptions(question["q_type"])
         a_type=ATypeOptions(question["a_type"])
         new_question=None
-        if "choices" in question:
-            new_question=Question(question["q_str"],question["q_detail"],q_type,a_type,question["choices"])
+        if "options" in question:
+            new_question=Question(question["q_str"],question["q_detail"],q_type,a_type,question["options"])
         else:
             new_question=Question(question["q_str"],question["q_detail"],q_type,a_type)
         new_node=Node(new_question)
@@ -109,8 +109,8 @@ def load_ll_from_file_json(file_json:list[dict]):
             addon_q_type=QTypeOptions(addon["q_type"])
             addon_a_type=ATypeOptions(addon["a_type"])
             new_addon=None
-            if "choices" in addon:
-                new_addon=Question(addon["q_str"],addon["q_detail"],addon_q_type,addon_a_type,addon["choices"])
+            if "options" in addon:
+                new_addon=Question(addon["q_str"],addon["q_detail"],addon_q_type,addon_a_type,addon["options"])
             else:
                 new_addon=Question(addon["q_str"],addon["q_detail"],addon_q_type,addon_a_type)
             new_node.addon=new_addon

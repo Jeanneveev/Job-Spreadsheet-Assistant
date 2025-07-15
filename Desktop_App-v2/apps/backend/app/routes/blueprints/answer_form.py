@@ -3,7 +3,7 @@ import logging
 from ...models import Question, Node
 from flask import Blueprint, request, session, jsonify, current_app
 from ...utils.linked_list_handler import get_ll
-from ...service.service import (
+from ...services.answer_form import (
     get_first_non_preset_node, answer_leading_presets, get_all_answers, get_current_node,
     get_current_node_and_question, get_current_question_display_info,
     get_next_question_display_info,  get_prev_question_display_info,
@@ -98,7 +98,7 @@ def add_preset_answer():
 @answ_bp.route("/get_answer_options", methods=["GET"])
 def get_answer_options():
     (_, curr_question) = get_current_node_and_question()
-    return jsonify(curr_question.choices)
+    return jsonify(curr_question.options)
 
 @answ_bp.route("/get_all_answers",methods=["GET"])
 def get_all_answers_endpoint():

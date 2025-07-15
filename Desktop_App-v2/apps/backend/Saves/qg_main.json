@@ -35,7 +35,7 @@
             "q_detail": "Location-Addon",
             "q_type": "add-on",
             "a_type": "multiple-choice",
-            "choices": [
+            "options": [
                 "Hybrid",
                 "On-Site",
                 "Remote",
@@ -55,7 +55,7 @@
             "q_detail": "Salary-Addon",
             "q_type": "add-on",
             "a_type": "multiple-choice",
-            "choices": [
+            "options": [
                 "Yearly",
                 "Monthly",
                 "Hourly",

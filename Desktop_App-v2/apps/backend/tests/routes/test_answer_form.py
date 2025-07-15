@@ -1,4 +1,5 @@
 import pytest
+import logging
 from flask.testing import FlaskClient   #for type hint
 from pytest_mock import MockerFixture   #for type hints
 from app.models import LinkedList, Node, Question
@@ -138,16 +139,19 @@ class TestDisplayInfo():
 
 
 class TestAnswers:
-    def test_set_answer_adds_answer_to_current_node(self, test_client:FlaskClient, test_session):
+    def test_set_answer_adds_answer_to_current_node(self, test_client:FlaskClient, test_session, caplog):
         node:Node = generate_node(generate_question())
         build_test_ll(test_client, [node])
         sess_var = {"curr_node": node.as_dict()}
         test_session(test_client, sess_var)
 
-        response = test_client.post("/set_answer", data="test answer")
+        with caplog.at_level(logging.INFO):
+            response = test_client.post("/set_answer", data="test answer")
         assert response.status_code == 200
         assert response.text == "Answer test answer set"
         assert node.answer == "test answer"
+        assert "Answer test answer set" in caplog.text
+
 
     def test_add_addon_answer_appends_to_preexisting_answer(self, test_client:FlaskClient, test_session):
         node:Node = generate_node(generate_question())
@@ -176,16 +180,16 @@ class TestAnswers:
             assert response.status_code == 404
             assert node.answer == None
 
-    def test_get_answer_options_returns_choices_if_any(self, test_client:FlaskClient, test_session):
+    def test_get_answer_options_returns_options_if_any(self, test_client:FlaskClient, test_session):
         node:Node = generate_node(generate_question())
-        node.question.choices == ["first opt", "second opt", "third opt"]
+        node.question.options == ["first opt", "second opt", "third opt"]
         build_test_ll(test_client, [node])
         sess_var = {"curr_node": node.as_dict(), "curr_question": node.question.as_dict()}
         test_session(test_client, sess_var)
 
         response = test_client.get("/get_answer_options")
         assert response.status_code == 200
-        assert response.get_json() == node.question.choices
+        assert response.get_json() == node.question.options
 
     def test_get_all_answers_gets_all_answers(self, test_client:FlaskClient):
         first_q:Question = generate_question(q_detail="first")
