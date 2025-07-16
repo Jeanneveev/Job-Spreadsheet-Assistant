@@ -1,11 +1,11 @@
 from ..models import ExportData
 
-def init_exportdata(app):
+def init_export_data(app):
     app.exportdata = ExportData()
 
-def get_exportdata(app)->ExportData:
+def get_export_data(app)->ExportData:
     return app.exportdata
 
-def override_exportdata(app, new_ed)->ExportData:
+def override_export_data(app, new_ed)->ExportData:
     app.exportdata=new_ed
     return app.exportdata

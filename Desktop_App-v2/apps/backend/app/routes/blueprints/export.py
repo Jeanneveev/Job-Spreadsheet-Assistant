@@ -5,7 +5,7 @@ import os
 import logging
 from flask import Blueprint, request, current_app, session
 from urllib.parse import parse_qs, urlparse
-from ...utils.export_data_handler import get_exportdata
+from ...utils.export_data_handler import get_export_data
 from .answer_form import get_all_answers
 
 logger = logging.getLogger(__name__)
@@ -13,28 +13,26 @@ export_bp = Blueprint("export", __name__)
 
 @export_bp.route("/set_export_method",methods=["POST"])
 def set_export_method():
-    current_app.logger.info("API /set_export_method called")
-
     method:str = request.data.decode("utf-8")
-    exportData = get_exportdata(current_app)
-    exportData.method=method
-    return f"Method: {exportData.method} set"
+    export_data = get_export_data(current_app)
+    export_data.method=method
+    return f"Method: {export_data.method} set"
 @export_bp.route("/set_export_loc",methods=["POST"])
 def set_export_loc():
-    exportData = get_exportdata(current_app)
+    export_data = get_export_data(current_app)
     upload_folder=current_app.config.get("UPLOAD_FOLDER")
     file_path=os.path.join(upload_folder,"CSV")
     ### TODO: Replace with the passed filename later
     full_file_path=os.path.join(file_path,"example.csv")
-    exportData.loc=full_file_path
+    export_data.loc=full_file_path
     return f"Filepath set as {full_file_path}"
 @export_bp.route("/get_export_method",methods=["GET"])
 def get_export_method():
-    exportData = get_exportdata(current_app)
-    return f"{exportData.method}"
+    export_data = get_export_data(current_app)
+    return f"{export_data.method}"
 @export_bp.route("/add_all_answers",methods=["POST"])
 def add_all_answers():
-    exportData = get_exportdata(current_app)
+    exportData = get_export_data(current_app)
     answs=get_all_answers()
     exportData.data=answs
     logger.info(f"Answers {exportData.data} added")
@@ -45,7 +43,7 @@ def set_sheets_id():
     current_app.logger.info("API /set_sheet_id called")
 
     sheet_id:str = request.data.decode("utf-8")
-    exportData = get_exportdata(current_app)
+    exportData = get_export_data(current_app)
     try:
         message = exportData.set_sheet_id(sheet_id)
         current_app.logger.info(f"sheet id is: {exportData.sheet_id}")
@@ -57,7 +55,7 @@ def set_sheets_id():
 def get_auth_url():
     current_app.logger.info("API /get_auth_url called")
 
-    exportData = get_exportdata(current_app)
+    exportData = get_export_data(current_app)
     url=exportData.get_auth_url()
     if url:
         logger.info(f"auth_url is {url}")
@@ -79,7 +77,7 @@ def auth_landing_page():
     url = urlparse(url_str)
     code = parse_qs(url.query)["code"][0]
     # Use the code to get credentials to write to token.json
-    exportData = get_exportdata(current_app)
+    exportData = get_export_data(current_app)
     service=exportData.get_service(code)
     logger.info(f"service is: {service}")
     if type(service)==dict: #it's an error
@@ -91,7 +89,7 @@ def auth_landing_page():
 
 @export_bp.route("/export_data/sheets",methods=["POST"])
 def export_data_sheets():
-    exportData = get_exportdata(current_app)
+    exportData = get_export_data(current_app)
     export_result=exportData.export_to_sheets()
     logger.info("export_result is",export_result)
     if type(export_result) is tuple:

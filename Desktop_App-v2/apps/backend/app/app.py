@@ -7,7 +7,7 @@ import logging
 from app.routes.blueprints import q_crud_bp, detail_bp, opt_bp, save_bp, load_bp, answ_bp, export_bp, shutdown_bp, bp
 ## Util Imports
 from app.utils.linked_list_handler import init_ll
-from app.utils.export_data_handler import init_exportdata
+from app.utils.export_data_handler import init_export_data
 from app.utils.shutdown_manager import ShutdownManager
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def create_app(config_obj:str, shutdown_manager:ShutdownManager = None)->Flask:
     # Initialize Plugins
     CORS(app,supports_credentials=True)
     init_ll(app)
-    init_exportdata(app)
+    init_export_data(app)
 
     # Blueprints
     app.register_blueprint(bp)

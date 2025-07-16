@@ -1,8 +1,9 @@
 """Blueprints for routes related to the set of q_details"""
 import json
 import logging
-from flask import Blueprint, session, current_app, request
+from flask import Blueprint, session, current_app, request, jsonify
 from ...utils.linked_list_handler import get_ll
+from ...services import (add_detail_to_all_details, remove_detail_from_all_details)
 from urllib.parse import unquote
 
 logger = logging.getLogger(__name__)
@@ -10,67 +11,44 @@ detail_bp = Blueprint("details", __name__)
 
 @detail_bp.route("/add_detail",methods=["POST"])
 def add_detail_to_list():
-    """Add a q_detail to a persistent list of q_details"""
+    """Add a unique q_detail to the all_details session variable"""
     detail:str = request.data.decode("utf-8")
-    # Validate that something was passed
-    if detail == "":
-        return "No detail was given", 404
-    # Initialize the list if it doesn't exist
-    if 'detail_lst' not in session:
-        logger.info("Session variable not found. Initializing...")
-        session['detail_lst'] = json.dumps([])
-        session.modified = True
-    # Append to the list
-    detail_lst:list[str]=json.loads(session['detail_lst'])
-    # logger.info("Before appending:",detail_lst)
-    detail_lst.append(detail)
-    # logger.info("After appending:",detail_lst)
-    session['detail_lst'] = json.dumps(detail_lst)
-    session.modified = True
-
-    return {"result":json.dumps(detail_lst)}
+    try:
+        all_details = add_detail_to_all_details(detail)
+    except ValueError as e:
+        if str(e) == "Empty detail was passed":
+            return "No detail was given", 404
+        elif str(e) == "This detail already exists":
+            return str(e), 409
+        
+    return jsonify({"all_details": all_details})
 
 @detail_bp.route("/delete_detail", methods=["DELETE"])
 def delete_detail_from_list():
-    """Delete a given q_detail from the list of details"""
+    """Delete a given q_detail from the all_details session variable"""
     detail:str = request.data.decode("utf-8")
-    detail_lst=session.get("detail_lst",json.dumps([]))
-    detail_lst:list|list[str]=json.loads(detail_lst)
-    #if detail_lst hasn't been initialized yet or its empty, return error
-    if detail_lst == []:
-        return "No details to delete", 404
-    #if the given detail isn't in detail_lst
-    if detail not in detail_lst:
-        return "Detail is not in detail_lst", 400
-    #else, remove the given detail
-    # logger.info(f"before removal, detail_lst is: {detail_lst}")
-    detail_lst.remove(detail)
-    # logger.info(f"after removal, detail_lst is: {detail_lst}")
-    session['detail_lst'] = json.dumps(detail_lst)
-    session.modified = True
-    return f"Detail {detail} deleted. Detail_lst is now: {json.dumps(detail_lst)}"
+    try:
+        all_details = remove_detail_from_all_details(detail)
+    except ValueError as e:
+        if str(e) == "Empty detail was passed":
+            return "No detail was given", 404
+        elif str(e) == "This detail does not exist":
+            return f"Detail {detail} does not exist", 409
+        
+    return jsonify({"all_details": all_details})
 
 @detail_bp.route("/clear_details", methods=["DELETE"])
-def clear_all_details():
-    """Clear all details from the list of details"""
-    detail_lst=session.get("detail_lst",json.dumps([]))
-    detail_lst:list|list[str]=json.loads(detail_lst)
-    #reset detail_lst to "[]"
-    detail_lst_str:str = json.dumps([])
-    session["detail_lst"]=detail_lst_str
-    return f"Any if all details deleted. Detail_lst is now: {detail_lst_str}"
-
-# @detail_bp.route("/get_details",methods=["GET"])
-# def get_all_details():
-#     details:list[str]=session.get("detail_lst",json.dumps([]))
-#     return details
+def clear_details():
+    """Clear all details from the all_details session variable"""
+    session["all_details"] = []
+    return f"All, if any, details deleted. all_details is now {session["all_details"]}"
 
 @detail_bp.route("/get_base_details", methods=["GET"])
 def get_all_base_details():
-    """Get the details of all nodes with the q_type 'base'"""
+    """Get the q_details of all nodes with the q_type 'base'"""
     ll = get_ll(current_app)
     base_list=ll.getByQType("base")
-    return json.dumps(base_list)
+    return jsonify({"base_q_details": base_list})
 
 @detail_bp.route("/check_detail/<detail>", methods=["GET"])
 def check_detail(detail:str):
@@ -78,9 +56,9 @@ def check_detail(detail:str):
     details
     """
     detail:str = unquote(detail)
-    details:list[str]=session.get("detail_lst",[])
+    details:list[str]=session.get("all_details",[])
     if detail in details:
-        return {"result":"True","detail_list":details}
+        return jsonify({"exists":"True","all_details":details})
     else:
-        return {"result":"False","detail_list":details}
+        return jsonify({"exists":"False","all_details":details})
 

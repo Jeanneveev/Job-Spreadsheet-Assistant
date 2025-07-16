@@ -1,5 +1,5 @@
 from flask.testing import FlaskClient   #for type hints
-from app.models import QTypeOptions, ATypeOptions, Question, Node, LinkedList
+from app.models import QTypeOptions, ATypeOptions, Question, Node, LinkedList, ExportData
 
 def generate_question(q_str="test", q_detail="test", q_type="singular", a_type="open-ended") -> Question:
     return Question(
@@ -30,3 +30,8 @@ def build_test_ll(test_client:FlaskClient, nodes:list[Node]):
         
         for node in nodes:
             app.linked_list.append(node)
+
+def build_test_export_data(test_client:FlaskClient):
+    app = test_client.application  # The Flask app instance
+    with app.app_context():
+        app.exportdata = ExportData()
