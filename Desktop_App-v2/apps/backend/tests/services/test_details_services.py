@@ -1,9 +1,5 @@
 import pytest
 from flask.testing import FlaskClient   #for type hint
-from pytest_mock import MockerFixture   #for type hint
-from app.models import Question, Node
-from tests.helpers import generate_node, generate_question, build_test_ll
-import app.services.details as service
 from app.services.details import *
 
 class TestAddDetail:

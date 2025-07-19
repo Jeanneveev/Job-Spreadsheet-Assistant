@@ -31,7 +31,29 @@ def build_test_ll(test_client:FlaskClient, nodes:list[Node]):
         for node in nodes:
             app.linked_list.append(node)
 
-def build_test_export_data(test_client:FlaskClient):
+def build_test_export_data(test_client:FlaskClient, args:dict=None):
     app = test_client.application  # The Flask app instance
+    export_params = ["data", "method", "service", "loc", "sheet_id"]
     with app.app_context():
-        app.exportdata = ExportData()
+        app.export_data = ExportData()
+        # add arguments if any
+        if args:
+            for k, v in args.items():
+                match k:
+                    case "data":
+                        app.export_data.data = v
+                        break
+                    case "method":
+                        app.export_data.method = v
+                        break
+                    case "service":
+                        app.export_data.service = v
+                        break
+                    case "loc":
+                        app.export_data.loc = v
+                        break
+                    case "sheet_id":
+                        app.export_data.sheet_id = v
+                        break
+                    case _:
+                        break

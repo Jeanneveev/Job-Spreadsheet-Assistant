@@ -3,58 +3,58 @@ another form
 """
 import os
 import logging
-from flask import Blueprint, request, current_app, session
-from urllib.parse import parse_qs, urlparse
+from flask import Blueprint, request, current_app
 from ...utils.export_data_handler import get_export_data
-from .answer_form import get_all_answers
+from ...services import (get_all_answers, set_export_method,
+    get_service_from_auth_url_str, export_data_to_sheets)
 
 logger = logging.getLogger(__name__)
 export_bp = Blueprint("export", __name__)
 
 @export_bp.route("/set_export_method",methods=["POST"])
-def set_export_method():
+def set_export_data_method():
     method:str = request.data.decode("utf-8")
-    export_data = get_export_data(current_app)
-    export_data.method=method
-    return f"Method: {export_data.method} set"
-@export_bp.route("/set_export_loc",methods=["POST"])
-def set_export_loc():
-    export_data = get_export_data(current_app)
-    upload_folder=current_app.config.get("UPLOAD_FOLDER")
-    file_path=os.path.join(upload_folder,"CSV")
-    ### TODO: Replace with the passed filename later
-    full_file_path=os.path.join(file_path,"example.csv")
-    export_data.loc=full_file_path
-    return f"Filepath set as {full_file_path}"
+    try:
+        set_method = set_export_method(method)
+    except ValueError as e:
+        return str(e), 409
+    
+    return f"Method: {set_method} set"
+# @export_bp.route("/set_export_loc",methods=["POST"])
+# def set_export_loc():
+#     filename:str = request.data.decode("utf-8")
+#     try:
+#         ...
+#     except:
+#         ...
+#     return f"Filepath set as {full_file_path}"
 @export_bp.route("/get_export_method",methods=["GET"])
 def get_export_method():
     export_data = get_export_data(current_app)
     return f"{export_data.method}"
-@export_bp.route("/add_all_answers",methods=["POST"])
-def add_all_answers():
+
+@export_bp.route("/set_answers_to_export",methods=["POST"])
+def set_answers_to_export():
     exportData = get_export_data(current_app)
-    answs=get_all_answers()
+    answs = get_all_answers()
     exportData.data=answs
     logger.info(f"Answers {exportData.data} added")
     return f"Answers {exportData.data} added"
 
 @export_bp.route("/set_sheet_id", methods=["POST"])
 def set_sheets_id():
-    current_app.logger.info("API /set_sheet_id called")
-
     sheet_id:str = request.data.decode("utf-8")
     exportData = get_export_data(current_app)
     try:
         message = exportData.set_sheet_id(sheet_id)
         current_app.logger.info(f"sheet id is: {exportData.sheet_id}")
-        return message  #"Sheet exists and is accessible"
+        return message  # "Sheet exists and is accessible"
     except Exception as e:
-        return f"{e}", 401
+        print(str(e))
+        return str(e), 409
 
 @export_bp.route("/get_auth_url", methods=["GET"])
 def get_auth_url():
-    current_app.logger.info("API /get_auth_url called")
-
     exportData = get_export_data(current_app)
     url=exportData.get_auth_url()
     if url:
@@ -74,29 +74,18 @@ def auth_landing_page():
     current_app.logger.info("API /auth_landing_page called")
 
     url_str:str = request.url   #get the full url, params included
-    url = urlparse(url_str)
-    code = parse_qs(url.query)["code"][0]
-    # Use the code to get credentials to write to token.json
-    exportData = get_export_data(current_app)
-    service=exportData.get_service(code)
-    logger.info(f"service is: {service}")
-    if type(service)==dict: #it's an error
-        logger.info("Error: ",service)  #print that error message
-    else:
-        logger.info("Authentification successful and connection built")
+    try:
+        get_service_from_auth_url_str(url_str)
+    except ValueError as e:
+        return "Could not get service from url", 409
 
     return "You reached the landing page! You can close this window now."
 
 @export_bp.route("/export_data/sheets",methods=["POST"])
 def export_data_sheets():
-    exportData = get_export_data(current_app)
-    export_result=exportData.export_to_sheets()
-    logger.info("export_result is",export_result)
-    if type(export_result) is tuple:
-        error_code=export_result[1]
-        export_result=export_result[0]
-    if export_result.get("error",None) is None:
-        res_msg:str=f"{(export_result.get('updates').get('updatedCells'))} cells appended."
-        return res_msg
-    else:
-        return f"ERROR!!! {export_result.get('error')}",error_code
+    try:
+        result_msg = export_data_to_sheets()
+    except Exception as e:
+        return str(e), 400
+    
+    return result_msg
