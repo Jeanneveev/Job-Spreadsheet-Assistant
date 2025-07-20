@@ -1,5 +1,6 @@
 """A file to hold all the fixtures for the pytests"""
 import pytest
+from pathlib import Path
 #the above allows the relative import to work
 from app.app import create_app
 
@@ -21,3 +22,8 @@ def test_session(test_client):
     # after test is done, clear the session
     with test_client.session_transaction() as sess:
         sess.clear()
+
+@pytest.fixture()
+def test_upload_folder():
+    print(f"save folder is {Path(__file__).parent / 'upload'}")
+    return str(Path(__file__).parent / "upload")

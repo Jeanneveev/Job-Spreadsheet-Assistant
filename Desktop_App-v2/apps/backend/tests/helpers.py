@@ -1,3 +1,4 @@
+from pathlib import Path
 from flask.testing import FlaskClient   #for type hints
 from app.models import QTypeOptions, ATypeOptions, Question, Node, LinkedList, ExportData
 
@@ -33,7 +34,7 @@ def build_test_ll(test_client:FlaskClient, nodes:list[Node]):
 
 def build_test_export_data(test_client:FlaskClient, args:dict=None):
     app = test_client.application  # The Flask app instance
-    export_params = ["data", "method", "service", "loc", "sheet_id"]
+    # export_params = ["data", "method", "service", "loc", "sheet_id"]
     with app.app_context():
         app.export_data = ExportData()
         # add arguments if any
@@ -57,3 +58,12 @@ def build_test_export_data(test_client:FlaskClient, args:dict=None):
                         break
                     case _:
                         break
+
+def set_test_config(test_client:FlaskClient, config_params:dict):
+    app = test_client.application  # The Flask app instance
+    with app.app_context():
+        for k, v in config_params.items():
+            app.config[k] = v
+
+def get_test_upload_folder():
+    return str(Path(__file__).parent / "upload")
