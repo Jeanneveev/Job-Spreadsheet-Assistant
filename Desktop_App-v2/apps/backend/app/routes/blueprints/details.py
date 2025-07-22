@@ -9,7 +9,7 @@ from urllib.parse import unquote
 logger = logging.getLogger(__name__)
 detail_bp = Blueprint("details", __name__)
 
-@detail_bp.route("/add_detail",methods=["POST"])
+@detail_bp.route("/add_detail", methods=["POST"])
 def add_detail_to_list():
     """Add a unique q_detail to the all_details session variable"""
     detail:str = request.data.decode("utf-8")

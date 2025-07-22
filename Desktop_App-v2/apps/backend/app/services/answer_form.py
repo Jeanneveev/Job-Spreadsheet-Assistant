@@ -2,15 +2,18 @@ import logging
 from datetime import date
 from flask import jsonify, current_app, session
 from ..models import Question, Node, LinkedList
+from ..utils.linked_list_handler import get_ll
 
 logger = logging.getLogger(__name__)
 
-def is_first_question(ll:LinkedList, q:Question) -> bool:
+def is_first_question(q:Question) -> bool:
     """Checks if the given question is the first question in the linked list"""
+    ll:LinkedList = get_ll(current_app)
     return q == ll.head.question
 
-def is_last_question(ll:LinkedList, q:Question) -> bool:
+def is_last_question(q:Question) -> bool:
     """Check if the given question is the last question in the linked list"""
+    ll:LinkedList = get_ll(current_app)
     if ll.tail.addon is not None:
         last_question = ll.tail.addon
     else:
@@ -186,8 +189,7 @@ def get_prev_question_display_info(curr_node:Node, curr_question:Question):
 
 
 # ANSWER QUESTIONS
-def append_addon_answer(addon_answer:str) -> str:
-    curr_node:Node = get_current_node()
+def append_addon_answer(addon_answer:str, curr_node:Node) -> str:
     answer = curr_node.answer
     answer += addon_answer
     curr_node.answer = answer

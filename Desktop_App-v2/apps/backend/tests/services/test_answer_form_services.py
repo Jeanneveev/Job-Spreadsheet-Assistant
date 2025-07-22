@@ -63,20 +63,20 @@ class TestCheckQuestionOrder:
         second_q:Question = generate_question(q_detail="second")
         first_node:Node = generate_node(first_q)
         second_node:Node = generate_node(second_q)
-        ll = build_test_ll(test_client, nodes=[first_node, second_node])
+        _ = build_test_ll(test_client, nodes=[first_node, second_node])
 
-        assert is_first_question(ll, first_q) == True
-        assert is_first_question(ll, second_q) == False
+        assert is_first_question(first_q) == True
+        assert is_first_question(second_q) == False
 
     def test_is_last_question(self, test_client:FlaskClient):
         first_q:Question = generate_question(q_detail="first")
         last_q:Question = generate_question(q_detail="second")
         first_node:Node = generate_node(first_q)
         last_node:Node = generate_node(last_q)
-        ll = build_test_ll(test_client, nodes=[first_node, last_node])
+        _ = build_test_ll(test_client, nodes=[first_node, last_node])
 
-        assert is_last_question(ll, last_q) == True
-        assert is_last_question(ll, first_q) == False
+        assert is_last_question(last_q) == True
+        assert is_last_question(first_q) == False
 
 class TestGetDisplayInfo:
     @pytest.mark.parametrize("is_last, is_addon", [(True, True), (True, False), (False, True), (False, False)])
@@ -208,7 +208,7 @@ class TestAnswerQuestion:
         mocker.patch("app.services.answer_form.get_current_node", return_value=curr_node)
         curr_node.answer = "test base answ"
 
-        assert append_addon_answer(" (addon)") == "test base answ (addon)"
+        assert append_addon_answer(" (addon)", curr_node) == "test base answ (addon)"
 
     @pytest.mark.parametrize("p_type", ["appDate", "empty"])
     def test_answer_preset_node_answers_known_preset_types(self, p_type):

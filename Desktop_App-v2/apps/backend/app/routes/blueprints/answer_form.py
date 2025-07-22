@@ -1,6 +1,6 @@
 """Blueprints for routes related to the 'Answer Questions' form"""
 import logging
-from ...models import Question, Node
+from ...models import Question, Node, LinkedList
 from flask import Blueprint, request, session, jsonify, current_app
 from ...utils.linked_list_handler import get_ll
 from ...services.answer_form import (
@@ -15,7 +15,8 @@ answ_bp = Blueprint("answer", __name__)
 
 @answ_bp.route("/get_first_a_type")
 def get_first_a_type():
-    head:Node|None=get_first_non_preset_node()
+    ll:LinkedList = get_ll(current_app)
+    head:Node|None=get_first_non_preset_node(ll)
     if head is None:    #all questions are preset questions
         return "Please add at least one non-preset question", 404
     else:
@@ -33,7 +34,8 @@ def get_first_question_display_info()->dict:
             "next_question_a_type": str - (optional) The value of the a_type of the next question
             "is_last": str - Whether or not the requested question is the last question
     """
-    first_valid:Node=get_first_non_preset_node()
+    ll:LinkedList = get_ll(current_app)
+    first_valid:Node = get_first_non_preset_node(ll)
     answer_leading_presets()    # answer any leading preset questions
     res = get_current_question_display_info(first_valid, first_valid.question)
     del res["is_addon"] #it's impossible to be anything but "false", so just remove it
@@ -50,7 +52,8 @@ def get_next_question()->dict:
             "is_last": str - Whether or not the next question is the last question
             "is_addon": str - Whether or not the next question is an addon question
     """
-    (curr_node, curr_question) = get_current_node_and_question()
+    ll:LinkedList = get_ll(current_app)
+    (curr_node, curr_question) = get_current_node_and_question(ll)
 
     return jsonify(get_next_question_display_info(curr_node, curr_question))
     
@@ -65,28 +68,33 @@ def get_prev_question():
             "is_first": str - Wheter or not the previous question is the first question
             "is_addon": str - Whether or not the previous question is an addon question
     """
-    (curr_node, curr_question) = get_current_node_and_question()
+    ll:LinkedList = get_ll(current_app)
+    (curr_node, curr_question) = get_current_node_and_question(ll)
 
     return jsonify(get_prev_question_display_info(curr_node, curr_question))
     
 
-@answ_bp.route("/set_answer",methods=["POST"])
+@answ_bp.route("/set_answer", methods=["POST"])
 def add_answer():
     answ:str = request.data.decode("utf-8")
-    curr_node:Node = get_current_node()
+    ll:LinkedList = get_ll(current_app)
+    curr_node:Node = get_current_node(ll)
     curr_node.answer = answ
     logger.info(f"Answer {answ} set")
     return f"Answer {answ} set"
-@answ_bp.route("/add_addon_answer",methods=["POST"])
+@answ_bp.route("/add_addon_answer", methods=["POST"])
 def add_addon_answer():
     answ:str = request.data.decode("utf-8")
     answer=f" ({answ.lower()})"
-    full_answer:str = append_addon_answer(answer)
+    ll:LinkedList = get_ll(current_app)
+    curr_node:Node = get_current_node(ll)
+    full_answer:str = append_addon_answer(answer, curr_node)
     return f'Answer appended to. Answer is now "{full_answer}"'
 
-@answ_bp.route("/set_preset_answer",methods=["POST"])
+@answ_bp.route("/set_preset_answer", methods=["POST"])
 def add_preset_answer():
-    curr_node:Node = get_current_node()
+    ll:LinkedList = get_ll(current_app)
+    curr_node:Node = get_current_node(ll)
     preset_type:str=request.get_json()["preset_type"]
     try:
         answ = answer_preset_node(curr_node, preset_type)
@@ -97,12 +105,14 @@ def add_preset_answer():
 
 @answ_bp.route("/get_answer_options", methods=["GET"])
 def get_answer_options():
-    (_, curr_question) = get_current_node_and_question()
+    ll:LinkedList = get_ll(current_app)
+    (_, curr_question) = get_current_node_and_question(ll)
     return jsonify(curr_question.options)
 
-@answ_bp.route("/get_all_answers",methods=["GET"])
+@answ_bp.route("/get_all_answers", methods=["GET"])
 def get_all_answers_endpoint():
     """A route to get the jsonified list of all the answers
         NOTE: Only used for printing to console currently
     """
-    return jsonify(get_all_answers())
+    ll:LinkedList = get_ll(current_app)
+    return jsonify(get_all_answers(ll))
