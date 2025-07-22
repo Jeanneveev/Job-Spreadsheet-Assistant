@@ -2,18 +2,15 @@ import logging
 from datetime import date
 from flask import jsonify, current_app, session
 from ..models import Question, Node, LinkedList
-from ..utils.linked_list_handler import get_ll
 
 logger = logging.getLogger(__name__)
 
-def is_first_question(q:Question) -> bool:
+def is_first_question(ll:LinkedList, q:Question) -> bool:
     """Checks if the given question is the first question in the linked list"""
-    ll = get_ll(current_app)
     return q == ll.head.question
 
-def is_last_question(q:Question) -> bool:
+def is_last_question(ll:LinkedList, q:Question) -> bool:
     """Check if the given question is the last question in the linked list"""
-    ll = get_ll(current_app)
     if ll.tail.addon is not None:
         last_question = ll.tail.addon
     else:
@@ -27,9 +24,8 @@ def get_question(node:Node, q_dict:dict):
     elif node.addon.q_detail == q_dict["q_detail"]:
         return node.addon
     
-def get_first_non_preset_node()->Node|None:
+def get_first_non_preset_node(ll:LinkedList)->Node|None:
     """Returns the first Node whose question's a_type is not preset, if any"""
-    ll = get_ll(current_app)
     curr:Node=ll.head
     result_node:Node=curr
     a_type_val=curr.question.a_type.value
@@ -49,33 +45,31 @@ def get_first_non_preset_node()->Node|None:
 #     #NOTE: It should be impossible for one to go back into a series of preset questions that start the ll
 #     # because the button would be disabled on the frontend, however, it is possible to go forwards into a series of presets that end it
 
-def get_current_node() -> Node:
-    ll = get_ll(current_app)
+def get_current_node(ll:LinkedList) -> Node:
     if "curr_node" in session:
         curr_node_dict:dict = session["curr_node"]
         curr_node:Node = ll.getByDetail(curr_node_dict["question"]["q_detail"])   #get the current node by the detail
     else:
         curr_node:Node = ll.head
     return curr_node
-def get_current_question(curr_node:Node=None) -> Question:
+def get_current_question(ll:LinkedList, curr_node:Node=None) -> Question:
     if not curr_node:   # if curr_node isn't passed, get it from ll
-        curr_node = get_current_node()
+        curr_node = get_current_node(ll)
 
     if "curr_question" in session:  # get via session variable if possible
         # logger.debug("question session variable found!")
         curr_question_dict:dict = session["curr_question"]
         curr_question:Question = get_question(curr_node, curr_question_dict)
     else:   # no curr_question has been set, assume this is the first question being called
-        ll = get_ll(current_app)
         if curr_node == ll.head:
             curr_question:Question=curr_node.question
         else:
             raise LookupError("Current question not found")
     logging.debug(f"curr_question is {curr_question}")
     return curr_question
-def get_current_node_and_question():
-    curr_node:Node = get_current_node()
-    curr_question:Question = get_current_question(curr_node)
+def get_current_node_and_question(ll:LinkedList):
+    curr_node:Node = get_current_node(ll)
+    curr_question:Question = get_current_question(ll, curr_node)
     return (curr_node, curr_question)
 
 
@@ -205,22 +199,21 @@ def answer_application_date():
     return date.today().strftime("%m/%d/%Y")
 def answer_empty():
     return " "
-def answer_leading_presets():
+def answer_leading_presets(ll:LinkedList):
     """Loop backwards from the first non-preset node and answer all, if any, preset nodes before it"""
-    ll = get_ll(current_app)
-    curr:Node=get_first_non_preset_node()
-    if curr!=ll.head:
-        while curr!=ll.head: 
-            curr=curr.prev
+    curr:Node = get_first_non_preset_node()
+    if curr != ll.head:
+        while curr != ll.head: 
+            curr = curr.prev
             #Find what preset question the node contains and answer it
-            which_preset:str=curr.question.q_str
-            answ=""
+            which_preset:str = curr.question.q_str
+            answ = ""
             match which_preset:
                 case "appDate":
-                    answ=answer_application_date()
+                    answ = answer_application_date()
                 case "empty":
-                    answ=answer_empty()
-            curr.answer=answ
+                    answ = answer_empty()
+            curr.answer = answ
 
 def answer_preset_node(node:Node, p_type:str):
     answ=""
@@ -235,6 +228,5 @@ def answer_preset_node(node:Node, p_type:str):
     return answ
     
 
-def get_all_answers():
-    ll = get_ll(current_app)
+def get_all_answers(ll:LinkedList):
     return ll.getAllAnswers()

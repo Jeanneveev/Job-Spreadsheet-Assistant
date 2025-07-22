@@ -4,7 +4,7 @@ import json
 import sqlite3
 import logging
 from flask import Blueprint, session, request, current_app
-from app.utils.linked_list_handler import get_ll
+from app.models import LinkedList
 from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
@@ -63,17 +63,24 @@ def is_unique_filename(filename:str):
     else:
         return False
     
-def write_ll_to_file(name:str):
+def write_ll_to_file(ll:LinkedList, name:str):
+    """Get the data of all nodes in the linked list as and write them to a JSON file with
+    the given name
+    
+    Parameters:
+        name: str - The root name of the file
+    Returns:
+        out - A confirmation message
+    """
     root_filename = secure_filename(name) # convert the given name into a valid filename
     # logger.info(f"secured filename is {filename}")
-    ll = get_ll(current_app)
     
     if is_unique_filename(root_filename): # if the filename is unique
         logger.info(f"filename validated")
         full_filename = get_full_filename(root_filename)
         curr_dir = os.path.dirname(__file__)
         path = f"Saves/{full_filename}"
-        save_path = os.path.join(curr_dir, os.pardir, os.pardir, os.pardir, path)
+        save_path = os.path.join(curr_dir, os.pardir, os.pardir, path)
         ll_jsonable:list[dict] = ll.getAll()
 
         with open(save_path, "w+", encoding="utf-8") as file:

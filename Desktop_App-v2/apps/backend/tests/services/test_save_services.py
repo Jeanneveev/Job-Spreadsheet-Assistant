@@ -30,8 +30,39 @@ def test_is_unique_filename_only_validates_new_filenames(test_client:FlaskClient
     assert is_unique_filename("1") == False
     assert is_unique_filename("4") == True
 
-def test_write_ll_to_file_cannot_write_to_existing_filenames():
-    ...
+def test_write_ll_to_file_cannot_write_to_existing_filenames(test_client:FlaskClient, test_session):
+    existing_filenames = ["1", "2", "3"]
+    test_filename = "1"
+    sess_var = {"filenames": existing_filenames}
+    test_session(test_client, sess_var)
 
-def test_write_ll_to_file_can_write_to_unique_filenames():
-    ...
+    test_client.get("/") #throwaway call to establish session
+
+    with pytest.raises(ValueError, match="Name already exists"):
+        ll = None # not accessed this test, just a placeholder
+        write_ll_to_file(ll, test_filename)    
+
+def test_write_ll_to_file_can_write_to_unique_filenames(test_client:FlaskClient, mocker:MockerFixture, test_session, tmp_path):
+    # Make the linked list
+    node_1:Node = generate_node(generate_question(q_detail="first"))
+    node_2:Node = generate_node(generate_question(q_detail="second"))
+    ll = build_test_ll(test_client, nodes=[node_1, node_2])
+    
+    # Make the temporary Saves folder
+    test_save_dir = tmp_path / "Saves"
+    test_save_dir.mkdir(parents=True)
+    mocker.patch("app.services.save.os.path.join", return_value=str(test_save_dir / "qg_4.json"))
+
+    existing_filenames = ["1", "2", "3"]
+    test_filename = "4"
+    sess_var = {"filenames": existing_filenames}
+    test_session(test_client, sess_var)
+    test_client.get("/") #throwaway call to establish session
+
+    expected_save_path = test_save_dir / "qg_4.json"
+    assert write_ll_to_file(ll, test_filename) == f"Question group saved to {expected_save_path}"
+
+
+    
+
+    

@@ -11,13 +11,13 @@ class TestGetNodesAndQuestions:
     def test_get_first_non_preset_node_returns_first_non_preset_node_or_none(self, test_client:FlaskClient):
         first_node:Node = generate_node(generate_question(a_type="preset"))
         second_node:Node = generate_node(generate_question(a_type="multiple-choice"))
-        build_test_ll(test_client, nodes=[first_node, second_node])
+        ll = build_test_ll(test_client, nodes=[first_node, second_node])
 
-        assert get_first_non_preset_node() == second_node
+        assert get_first_non_preset_node(ll) == second_node
     def test_get_first_non_preset_node_returns_none_if_no_non_preset_nodes(self, test_client:FlaskClient):
         node:Node = generate_node(generate_question(a_type="preset"))
-        build_test_ll(test_client, nodes=[node])  # rebuild with only preset nodes
-        assert get_first_non_preset_node() == None
+        ll = build_test_ll(test_client, nodes=[node])  # rebuild with only preset nodes
+        assert get_first_non_preset_node(ll) == None
 
     @pytest.mark.parametrize("is_addon", [True, False])
     def test_get_question(self, is_addon):
@@ -34,27 +34,27 @@ class TestGetNodesAndQuestions:
         first_q:Question = generate_question(q_detail="first")
         second_q:Question = generate_question(q_detail="second")
         first_node:Node = generate_node(question=first_q, addon=second_q)
-        build_test_ll(test_client, nodes=[first_node])
+        ll = build_test_ll(test_client, nodes=[first_node])
 
         # set up session variables
         sess_vars = {"curr_node": first_node.as_dict(), "curr_question": second_q.as_dict()}
         test_session(test_client, sess_vars)
     
         test_client.get("/")    # throwaway call to establish session
-        assert get_current_node() == first_node
-        assert get_current_question() == second_q
-        assert get_current_question(first_node) == second_q
-        assert get_current_node_and_question() == (first_node, second_q)
+        assert get_current_node(ll) == first_node
+        assert get_current_question(ll) == second_q
+        assert get_current_question(ll, first_node) == second_q
+        assert get_current_node_and_question(ll) == (first_node, second_q)
         
     def test_get_current_node_without_session_variables_returns_first_node_and_question(self, test_client:FlaskClient):
         first_q:Question = generate_question(q_detail="first")
         second_q:Question = generate_question(q_detail="second")
         first_node:Node = generate_node(question=first_q, addon=second_q)
-        build_test_ll(test_client, nodes=[first_node])
+        ll = build_test_ll(test_client, nodes=[first_node])
 
         test_client.get("/")    # throwaway call to establish session
-        assert get_current_node() == first_node
-        assert get_current_question(first_node) == first_q
+        assert get_current_node(ll) == first_node
+        assert get_current_question(ll, first_node) == first_q
 
 
 class TestCheckQuestionOrder:
@@ -63,20 +63,20 @@ class TestCheckQuestionOrder:
         second_q:Question = generate_question(q_detail="second")
         first_node:Node = generate_node(first_q)
         second_node:Node = generate_node(second_q)
-        build_test_ll(test_client, nodes=[first_node, second_node])
+        ll = build_test_ll(test_client, nodes=[first_node, second_node])
 
-        assert is_first_question(first_q) == True
-        assert is_first_question(second_q) == False
+        assert is_first_question(ll, first_q) == True
+        assert is_first_question(ll, second_q) == False
 
     def test_is_last_question(self, test_client:FlaskClient):
         first_q:Question = generate_question(q_detail="first")
         last_q:Question = generate_question(q_detail="second")
         first_node:Node = generate_node(first_q)
         last_node:Node = generate_node(last_q)
-        build_test_ll(test_client, nodes=[first_node, last_node])
+        ll = build_test_ll(test_client, nodes=[first_node, last_node])
 
-        assert is_last_question(last_q) == True
-        assert is_last_question(first_q) == False
+        assert is_last_question(ll, last_q) == True
+        assert is_last_question(ll, first_q) == False
 
 class TestGetDisplayInfo:
     @pytest.mark.parametrize("is_last, is_addon", [(True, True), (True, False), (False, True), (False, False)])
@@ -233,6 +233,6 @@ class TestAnswerQuestion:
         second_node:Node = generate_node(second_q)
         first_node.answer = "answer 1"
         second_node.answer = "answer 2"
-        build_test_ll(test_client, nodes=[first_node, second_node])
+        ll = build_test_ll(test_client, nodes=[first_node, second_node])
 
-        assert get_all_answers() == ["answer 1", "answer 2"]
+        assert get_all_answers(ll) == ["answer 1", "answer 2"]

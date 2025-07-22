@@ -31,6 +31,8 @@ def build_test_ll(test_client:FlaskClient, nodes:list[Node]):
         
         for node in nodes:
             app.linked_list.append(node)
+        
+        return app.linked_list
 
 def build_test_export_data(test_client:FlaskClient, args:dict=None):
     app = test_client.application  # The Flask app instance
