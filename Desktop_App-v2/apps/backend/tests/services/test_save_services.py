@@ -53,16 +53,16 @@ def test_write_ll_to_file_can_write_to_unique_filenames(test_client:FlaskClient,
     test_save_dir.mkdir(parents=True)
     mocker.patch("app.services.save.os.path.join", return_value=str(test_save_dir / "qg_4.json"))
 
+    # Set up session
     existing_filenames = ["1", "2", "3"]
-    test_filename = "4"
     sess_var = {"filenames": existing_filenames}
     test_session(test_client, sess_var)
     test_client.get("/") #throwaway call to establish session
 
+    test_filename = "4"
     expected_save_path = test_save_dir / "qg_4.json"
     assert write_ll_to_file(ll, test_filename) == f"Question group saved to {expected_save_path}"
 
 
-    
 
     
