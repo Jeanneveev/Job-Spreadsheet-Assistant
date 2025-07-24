@@ -23,7 +23,7 @@ def test_session(test_client):
     with test_client.session_transaction() as sess:
         sess.clear()
 
-@pytest.fixture()
-def test_upload_folder():
-    print(f"save folder is {Path(__file__).parent / 'upload'}")
-    return str(Path(__file__).parent / "upload")
+# @pytest.fixture()
+# def test_upload_folder():
+#     print(f"save folder is {Path(__file__).parent / 'upload'}")
+#     return str(Path(__file__).parent / "upload")

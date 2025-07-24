@@ -13,11 +13,21 @@ def test_get_full_filename_returns_full_filename():
     root = "root"
     assert get_full_filename(root) == "qg_root.json"
 
-def test_get_preexisting_filenames_only_only_gets_valid_filenames(test_client:FlaskClient, test_upload_folder):
+def test_get_preexisting_filenames_only_only_gets_valid_filenames(test_client:FlaskClient, tmp_path):
+    test_upload_folder = tmp_path / "upload"
+    valid_1 = test_upload_folder / "qg_valid.json"
+    valid_2 = test_upload_folder / "qg_test_name.json"
+    invalid_1 = test_upload_folder / "not_qg.json"
+    invalid_2 = test_upload_folder / "wrong_filetype.csv"
+    test_upload_folder.mkdir()
+    valid_1.touch()
+    valid_2.touch()
+    invalid_1.touch()
+    invalid_2.touch()
     config_params = {"UPLOAD_FOLDER": test_upload_folder}
     set_test_config(test_client, config_params)
 
-    expected = ["valid", "wrong_format"]
+    expected = ["test_name", "valid"]
     assert get_preexisting_filenames() == expected
 
 def test_is_unique_filename_only_validates_new_filenames(test_client:FlaskClient, test_session):

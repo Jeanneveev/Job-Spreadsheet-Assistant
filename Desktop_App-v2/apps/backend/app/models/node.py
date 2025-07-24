@@ -19,35 +19,35 @@ class Node:
         if self.answer:
             res_dict["answer"]=self.answer
         return res_dict
-    def display_info(self,requesting_addon:bool,requesting_last:bool)->dict:
-        """Return only the necessary information for displaying this Node's Question in the frontend
-        Parameters:
-            self: Node - The current instance of a Node
-            requesting_addon: bool - Whether or not the question of the Node that's being requested is its addon Question
-            requesting_last: bool - Whether or not the question that's being asked for is the last Question in the linked list
+    # def display_info(self,requesting_addon:bool,requesting_last:bool)->dict:
+    #     """Return only the necessary information for displaying this Node's Question in the frontend
+    #     Parameters:
+    #         self: Node - The current instance of a Node
+    #         requesting_addon: bool - Whether or not the question of the Node that's being requested is its addon Question
+    #         requesting_last: bool - Whether or not the question that's being asked for is the last Question in the linked list
         
-        Returns:
-            A dictionary with the following keys:
-                "q_str": str - The q_str of the requested question
-                "next_question_a_type": str - The value of the a_type of the next question
-                "is_last": str - Whether or not the requested question is the last question
-        """
-        if not requesting_last:
-            if requesting_addon:
-                requested_question:Question=self.addon
-                next_question:Question=self.next.question
-            else:
-                requested_question:Question=self.question
-                #if the current question is a base question with an addon, the next question is its addon,
-                # else its the question of the next Node
-                if self.addon is not None:
-                    next_question:Question=self.addon
-                else:
-                    next_question:Question=self.next.question
-            return {"q_str":requested_question.q_str,"next_question_a_type":next_question.a_type.value,"is_last":"false"}
-        else:
-            if requesting_addon:
-                requested_question:Question=self.addon
-            else:
-                requested_question:Question=self.question
-            return {"q_str":requested_question.q_str,"is_last":"true"}
+    #     Returns:
+    #         A dictionary with the following keys:
+    #             "q_str": str - The q_str of the requested question
+    #             "next_question_a_type": str - The value of the a_type of the next question
+    #             "is_last": str - Whether or not the requested question is the last question
+    #     """
+    #     if not requesting_last:
+    #         if requesting_addon:
+    #             requested_question:Question=self.addon
+    #             next_question:Question=self.next.question
+    #         else:
+    #             requested_question:Question=self.question
+    #             #if the current question is a base question with an addon, the next question is its addon,
+    #             # else its the question of the next Node
+    #             if self.addon is not None:
+    #                 next_question:Question=self.addon
+    #             else:
+    #                 next_question:Question=self.next.question
+    #         return {"q_str":requested_question.q_str,"next_question_a_type":next_question.a_type.value,"is_last":"false"}
+    #     else:
+    #         if requesting_addon:
+    #             requested_question:Question=self.addon
+    #         else:
+    #             requested_question:Question=self.question
+    #         return {"q_str":requested_question.q_str,"is_last":"true"}
