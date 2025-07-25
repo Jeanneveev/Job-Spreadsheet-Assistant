@@ -1,5 +1,6 @@
 import pytest
 from flask.testing import FlaskClient   #for type hint
+from pytest_mock import MockerFixture   #for type hints
 from tests.helpers import generate_node, generate_question, build_test_ll, set_test_config
 from app.services.q_crud import *
 import app.services.q_crud as q_crud
@@ -63,6 +64,17 @@ def test_add_preset_can_add_valid_preset_types(test_client:FlaskClient, test_ses
     spy.assert_called_once()
     assert spy.spy_return == expected
 
+def test_get_reordered_ll_cannot_order_nonexistent_nodes(test_client:FlaskClient):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    old_ll = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    wrong_order = ["2", "4", "1"]
+
+    with pytest.raises(ValueError, match="Node not found"):
+        get_reordered_ll(old_ll, wrong_order)
+
 def test_get_reordered_ll_can_return_reordered_ll(test_client:FlaskClient):
     node_1 = generate_node(generate_question(q_detail="0"))
     node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
@@ -74,3 +86,49 @@ def test_get_reordered_ll_can_return_reordered_ll(test_client:FlaskClient):
     actual_ll = get_reordered_ll(old_ll, new_order)
     expected_ll = build_test_ll(test_client, [node_3, node_1, node_2])
     assert actual_ll == expected_ll
+
+def test_delete_question_or_node_cannot_delete_nonexistent_addon(test_client:FlaskClient, mocker:MockerFixture):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    ll = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    q_detail_to_delete = "0"
+
+    with pytest.raises(ValueError, match="Question not found"):
+        delete_question_or_node(ll, q_detail_to_delete, True)
+
+def test_delete_question_or_node_cannot_delete_nonexistent_question(test_client:FlaskClient, mocker:MockerFixture):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    ll = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    q_detail_to_delete = "4"
+
+    with pytest.raises(ValueError, match="Question not found"):
+        delete_question_or_node(ll, q_detail_to_delete, False)
+
+def test_delete_question_or_node_can_delete_addon_questions(test_client:FlaskClient, mocker:MockerFixture):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    ll = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    q_detail_to_delete = "+1"
+
+    spy = mocker.spy(ll, "getByAddonDetail")
+    assert delete_question_or_node(ll, q_detail_to_delete, True) == f'Addon question "{q_detail_to_delete}" deleted'
+    assert spy.spy_return == node_2
+
+def test_delete_question_or_node_can_delete_node(test_client:FlaskClient, mocker:MockerFixture):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    ll = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    q_detail_to_delete = "2"
+
+    spy = mocker.spy(ll, "getByDetail")
+    assert delete_question_or_node(ll, q_detail_to_delete, False) == f'Node "{q_detail_to_delete}" deleted'
+    assert spy.spy_return == node_3

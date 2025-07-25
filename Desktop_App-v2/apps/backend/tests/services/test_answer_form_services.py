@@ -27,7 +27,7 @@ class TestGetNodesAndQuestions:
             node:Node = generate_node(addon=question)
         else:
             node:Node = generate_node(question=question)
-        result = get_question(node, q_dict)
+        result = get_question_from_dictionary(node, q_dict)
         assert result == question
 
     def test_get_current_node_and_question(self, test_client:FlaskClient, test_session):

@@ -50,7 +50,6 @@ def add_preset(ll:LinkedList, name:str):
 
     return new_question.q_str
 
-
 def get_reordered_ll(old_ll:LinkedList, new_order:list):
     new_ll = LinkedList()
     reordered_nodes:list[Node] = []
@@ -69,3 +68,18 @@ def get_reordered_ll(old_ll:LinkedList, new_order:list):
         new_ll.append(node)
     # logger.info(f"new_ll is now {new_ll.returnLL()}")
     return new_ll
+
+def delete_question_or_node(ll:LinkedList, q_detail:str, is_addon:bool):
+    logger.info(f"Deleting {q_detail}")
+    if is_addon:
+        del_node:Node = ll.getByAddonDetail(q_detail)
+        if not del_node:
+            raise ValueError("Question not found")
+        del_node.addon = None
+        return f'Addon question "{q_detail}" deleted'
+    else:
+        del_node:Node = ll.getByDetail(q_detail)
+        if not del_node:
+            raise ValueError("Question not found")
+        ll.remove(del_node)
+        return f'Node "{q_detail}" deleted'

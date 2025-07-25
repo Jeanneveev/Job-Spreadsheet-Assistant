@@ -20,7 +20,7 @@ def is_last_question(q:Question) -> bool:
         last_question = ll.tail.question
     return q == last_question
 
-def get_question(node:Node, q_dict:dict):
+def get_question_from_dictionary(node:Node, q_dict:dict):
     """Get the Question from its node and its dictionary representation"""
     if node.question.q_detail == q_dict["q_detail"]:
         return node.question
@@ -62,7 +62,7 @@ def get_current_question(ll:LinkedList, curr_node:Node=None) -> Question:
     if "curr_question" in session:  # get via session variable if possible
         # logger.debug("question session variable found!")
         curr_question_dict:dict = session["curr_question"]
-        curr_question:Question = get_question(curr_node, curr_question_dict)
+        curr_question:Question = get_question_from_dictionary(curr_node, curr_question_dict)
     else:   # no curr_question has been set, assume this is the first question being called
         if curr_node == ll.head:
             curr_question:Question=curr_node.question

@@ -1,8 +1,10 @@
 import pytest
 import json
 from flask.testing import FlaskClient   #for type hint
-from app.models import Node
+from pytest_mock import MockerFixture   #for type hints
+from app.models import Node, LinkedList
 from tests.helpers import generate_node, generate_question, build_test_ll, set_test_config
+import app.routes.blueprints.q_crud as q_crud
 
 @pytest.mark.parametrize("is_mult", [True, False])
 def test_add_question_can_add_new_question_and_node_to_ll(test_client:FlaskClient, is_mult):
@@ -119,3 +121,78 @@ def test_check_if_questions_exists_returns_true_if_some_questions_exist(test_cli
     assert response.status_code == 200
     assert response.text == "true"
 
+def test_reorder_questions_cannot_reorder_nonexistent_q_details(test_client:FlaskClient):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    _ = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    wrong_order = {"order": ["2", "4", "1"]}
+
+    response = test_client.post("/reorder_questions", json=wrong_order)
+    assert response.status_code == 404
+
+def test_reorder_questions_can_reorder_linked_list(test_client:FlaskClient, mocker:MockerFixture):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    _ = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    new_order = {"order": ["2", "1", "0"]}
+
+    spy = mocker.spy(q_crud, "get_reordered_ll")
+    
+    response = test_client.post("/reorder_questions", json=new_order)
+    assert response.status_code == 200
+
+    expected = LinkedList()
+    expected.append(node_3)
+    expected.append(node_2)
+    expected.append(node_1)
+    assert spy.spy_return == expected
+
+def test_delete_question_cannot_delete_nonexistent_addon(test_client:FlaskClient):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    _ = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    data = {"deleting_detail": "0", "is_addon": "true"}
+
+    response = test_client.delete("/delete_question", json=data)
+    assert response.status_code == 404 
+
+def test_delete_question_cannot_delete_nonexistent_question(test_client:FlaskClient):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    _ = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    data = {"deleting_detail": "4", "is_addon": "false"}
+
+    response = test_client.delete("/delete_question", json=data)
+    assert response.status_code == 404 
+
+def test_delete_question_can_delete_addon_question(test_client:FlaskClient):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    _ = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    data = {"deleting_detail": "+1", "is_addon": "true"}
+
+    response = test_client.delete("/delete_question", json=data)
+    assert response.status_code == 200
+    assert response.text == f'Addon question "+1" deleted'
+
+def test_delete_question_can_delete_question_node(test_client:FlaskClient):
+    node_1 = generate_node(generate_question(q_detail="0"))
+    node_2 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_3 = generate_node(generate_question(q_detail="2"))
+    _ = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    data = {"deleting_detail": "0", "is_addon": "false"}
+
+    response = test_client.delete("/delete_question", json=data)
+    assert response.status_code == 200
+    assert response.text == f'Node "0" deleted'

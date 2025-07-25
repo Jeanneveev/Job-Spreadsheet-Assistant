@@ -3,7 +3,7 @@ import logging
 from flask import Blueprint, request, session, current_app, jsonify
 from app.models import Question, Node, LinkedList
 from app.utils.linked_list_handler import get_ll, override_ll
-from app.services import get_question_from_form, add_preset, get_reordered_ll
+from app.services import get_question_from_form, add_preset, get_reordered_ll, delete_question_or_node
 
 logger = logging.getLogger(__name__)
 q_crud_bp = Blueprint("q_crud", __name__)
@@ -95,24 +95,16 @@ def reorder_questions():
 @q_crud_bp.route("/delete_question", methods=["DELETE"])
 def del_node():
     """Given a node's detail, find and delete it"""
+    data = request.get_json() # {"deleting_detail": _, "is_addon": true or false}
+    del_detail:str = request.get_json()["deleting_detail"]
+    if data["is_addon"] == "true":
+        is_addon = True
+    else:
+        is_addon = False
+
     ll = get_ll(current_app)
-    data=request.get_json()
-    if "is_addon" in data:
-        is_addon=True
-    else:
-        is_addon=False
-    del_detail:str=request.get_json()["q_detail"]
-    logger.info(f"del_detail is {del_detail}")
-    if is_addon:
-        del_node:Node=ll.getByAddonDetail(del_detail)
-    else:
-        del_node:Node=ll.getByDetail(del_detail)
-    #if the question being deleted is an addon, just delete the addon
-    if(del_node.addon):
-        if (del_node.addon.q_detail==del_detail):
-            del_node.addon=None
-            return f"Addon question {del_detail} deleted"
-    else:   #otherwise, delete the whole node
-        ll.remove(del_node)
-        ll.printLL()
-        return f"Node {del_detail} deleted"
+    try:
+        msg = delete_question_or_node(ll, del_detail, is_addon)
+        return msg, 200
+    except ValueError as e:
+        return str(e), 404
