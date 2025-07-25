@@ -109,7 +109,7 @@
             async function getBaseNodes(){
                 /* Populate the addon_to dropdown with all the base questions' q_details */
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_base_details`,{
+                    const response=await fetch(`${SERVER_URL}/get_base_details`, {
                         method: "GET"
                     });
                     const baseNodesJSON=await response.text();
@@ -136,7 +136,7 @@
             /* On form submit, pass the detail to a list to be easily accessed by checkDetail */
             async function checkUniqueDetail(detail_to_add){
                 try{
-                    const response=await fetch(`${SERVER_URL}/check_detail/${detail_to_add}`,{ method: "GET" });
+                    const response=await fetch(`${SERVER_URL}/check_detail/${detail_to_add}`, { method: "GET" });
                     const data=await response.json();
                     console.log("Check unique detail response:", data);
                     const already_exists=data.result==="True"
@@ -169,7 +169,7 @@
             }
             async function sendDetail(detail) {
                 try{
-                    const response=await fetch(`${SERVER_URL}/add_detail`,{
+                    const response=await fetch(`${SERVER_URL}/add_detail`, {
                         method: "POST",
                         credentials: 'include',
                         headers: {
@@ -217,12 +217,12 @@
                     }
                 }
                 console.log("FormData is",Array.from(formData));
-                fetch(`${link}`,{
+                fetch(`${link}`, {
                     method: "POST",
                     body: formData
                 }).then(response=>response.json()).then((data)=>{
                     if(data.mult_response){
-                        fetch(`${SERVER_URL}/clear_current_options`,{method: "DELETE"})
+                        fetch(`${SERVER_URL}/clear_current_options`, {method: "DELETE"})
                         .then(response=>response.text()).then(data=>console.log(data))
                         .catch(err=>console.error(err));
                     }

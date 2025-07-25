@@ -4,7 +4,7 @@ process.once("loaded", ()=>{
         const { contextBridge, ipcRenderer } = require('electron')
         const path = require('path');
 
-        contextBridge.exposeInMainWorld("electron",{
+        contextBridge.exposeInMainWorld("electron", {
             on: (eventName, callback) => ipcRenderer.on(eventName, callback),
             send: (eventName, data) => ipcRenderer.send(eventName,data),
             currDir: () => process.cwd(),

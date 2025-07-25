@@ -25,7 +25,7 @@ function loadQuestion(){
     if(first_q=="true"){
         console.log("This is the first question");
         /* Get the first question's display data */
-        fetch(`${SERVER_URL}/get_first_question`,{ method: "GET" })
+        fetch(`${SERVER_URL}/get_first_question`, { method: "GET" })
         .then(response=>response.json())
         .then(data=>{
             questionHeader.innerText=data.q_str;
@@ -76,7 +76,7 @@ function submitAnswer(answer){
         .then(data=>console.log("data"));
     }else{          //if the question is an addon
         // console.log("add_addon_answer called");
-        fetch(`${SERVER_URL}/add_addon_answer`,{
+        fetch(`${SERVER_URL}/add_addon_answer`, {
             method:"POST",
             headers: {
                 "Content-Type": "text/plain"
@@ -91,7 +91,7 @@ function submitAnswer(answer){
 function fillPresetQuestion(preset=null,forwards) {
     console.log("fill preset reached")
     if(forwards){   //if called be loadNext
-        fetch(`${SERVER_URL}/set_preset_answer`,{
+        fetch(`${SERVER_URL}/set_preset_answer`, {
             method: "POST",
             headers:{
                 "Content-Type": "application/json",
@@ -120,7 +120,7 @@ function fillPresetQuestion(preset=null,forwards) {
 
 /* PREVIOUS QUESTION */
 function loadPreviousQuestion(){
-    fetch(`${SERVER_URL}/get_prev_question`,{ method: "GET" })
+    fetch(`${SERVER_URL}/get_prev_question`, { method: "GET" })
     .then(response=>response.json())
     .then((data)=>{
         //get where the page will redirect to
@@ -151,7 +151,7 @@ function loadPreviousQuestion(){
 /* NEXT QUESTION */
 function loadNextQuestion(){
     //get the display info for the next question
-    fetch(`${SERVER_URL}/get_next_question`,{ method: "GET" })
+    fetch(`${SERVER_URL}/get_next_question`, { method: "GET" })
     .then(response=>response.json())
     .then((data)=>{
         /* Set all the session variables */
@@ -229,17 +229,17 @@ function submitLastQuestion(){
     homeBtn.disabled=true;
 
     /* Add all the answers to be exported */
-    fetch(`${SERVER_URL}/add_all_answers`,{ method:"POST" })
+    fetch(`${SERVER_URL}/add_all_answers`, { method:"POST" })
     .then(response=>response.text())
     .then(data=>console.log(data));
 
     /* Send request to connect to export method and upload data */
-    fetch(`${SERVER_URL}/get_export_method`,{method: "GET"})
+    fetch(`${SERVER_URL}/get_export_method`, {method: "GET"})
     .then(response=>response.text()).then(data=>{
         console.log("Export method is: ",data);
         if(data=="sheets"){
             //NOTE: keeping this fetch in case the app is left open so long the token expires
-            return fetch(`${SERVER_URL}/get_auth_url`,{method: "GET"});
+            return fetch(`${SERVER_URL}/get_auth_url`, {method: "GET"});
         }
     })  //end of get_export_method chain, start of get_auth_url chain
     .then(response=>response.json()).then(data=>{
@@ -249,7 +249,7 @@ function submitLastQuestion(){
             window.electron.send("open-auth-window", data.auth_url);
         }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
             console.log(data.message);
-            fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
+            fetch(`${SERVER_URL}/export_data/sheets`, { method: "POST" })
             .then(response=>response.text()).then(data=>window.electron.send("open-alert",data));
         }
         /* CSV */
@@ -269,6 +269,6 @@ function submitLastQuestion(){
  */
 window.electron.on("auth-code-recieved", (event, code)=>{
     //Since the user is already logged in and the sheet has been validated, you can just directly export
-    fetch(`${SERVER_URL}/export_data/sheets`,{ method: "POST" })
+    fetch(`${SERVER_URL}/export_data/sheets`, { method: "POST" })
     .then(response=>response.text()).then(data=>alert(data));
 })

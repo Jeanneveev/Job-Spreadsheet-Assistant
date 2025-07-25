@@ -50,7 +50,7 @@
             */
             async function getJSON(){
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_ll_json`,{
+                    const response=await fetch(`${SERVER_URL}/get_ll_json`, {
                         method: "GET"
                     });
                     const ll_json=await response.json();
@@ -238,7 +238,7 @@
                 keys.forEach(key=>{ ordered_dict[key]= order_detail_dict[key] });
 
                 console.log("The new order of q_details is:",order_detail_dict);
-                fetch(`${SERVER_URL}/reorder_questions`,{
+                fetch(`${SERVER_URL}/reorder_questions`, {
                     method: "POST",
                     headers:{
                         "Content-Type": "application/json",
@@ -271,7 +271,7 @@
                 window.electron.send("open-confirm","Are you sure you want to delete this question?");
                 window.electron.on("confirm-box-confirmed",()=>{
                     if(is_addon){
-                        fetch(`${SERVER_URL}/delete_question`,{
+                        fetch(`${SERVER_URL}/delete_question`, {
                             method: "DELETE",
                             headers:{
                                 "Content-Type": "application/json",
@@ -281,7 +281,7 @@
                         .then(response=>response.text())
                         .then(data=>console.log(data));
                     }else{
-                        fetch(`${SERVER_URL}/delete_question`,{
+                        fetch(`${SERVER_URL}/delete_question`, {
                             method: "DELETE",
                             headers:{
                                 "Content-Type": "application/json",
@@ -339,7 +339,7 @@
                 fileFormData.append("file",selectedFile, selectedFile.name);
                 console.log(Array.from(fileFormData.entries()));
 
-                fetch(`${SERVER_URL}/upload_file`,{
+                fetch(`${SERVER_URL}/upload_file`, {
                     method: "POST",
                     body: fileFormData
                 }).then(response=>{

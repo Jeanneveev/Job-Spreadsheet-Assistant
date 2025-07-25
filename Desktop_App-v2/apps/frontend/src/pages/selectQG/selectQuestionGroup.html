@@ -72,7 +72,7 @@
 
             async function checkCreatedQG(){
                 try{
-                    const response = await fetch(`${SERVER_URL}/get_questions_exist`,{ method: "GET" })
+                    const response = await fetch(`${SERVER_URL}/check_if_questions_exists`, { method: "GET" })
                     const data = await response.text();
                     return data === "true";
                 }catch(error){ console.error(error) };
@@ -81,7 +81,7 @@
                 checkCreatedQG().then((result) => {
                     console.log("result is:",result)
                     if(result){
-                        fetch(`${SERVER_URL}/get_created_qg`,{
+                        fetch(`${SERVER_URL}/get_working_qg_info`, {
                             method: "GET"
                         }).then(response => response.json())
                         .then((data) =>{
@@ -94,7 +94,7 @@
                 })
             }
             function loadSavedQGs(){
-                fetch(`${SERVER_URL}/load_all_files`,{ method: "GET" })
+                fetch(`${SERVER_URL}/load_all_files`, { method: "GET" })
                 .then(response => response.text())
                 .then((data) =>{
                     const qgs = JSON.parse(data);
@@ -115,7 +115,7 @@
             /* when you click a row, set it as the selected row */
             function switchSelectedRow(row_name, td_selected){
                 selectedSpan.innerText = row_name;
-                fetch(`${SERVER_URL}/update_selected_qg`,{
+                fetch(`${SERVER_URL}/update_selected_qg`, {
                     method: "POST",
                     credentials: 'include',
                     headers: {

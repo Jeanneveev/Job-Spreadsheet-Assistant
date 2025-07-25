@@ -24,7 +24,7 @@ def get_preexisting_filenames() -> list[str]:
     #get from saves folder
     all_filenames:list[str] = []
     save_folder = current_app.config["UPLOAD_FOLDER"]
-    logger.info(f"save folder is {save_folder}")
+    # logger.info(f"save folder is {save_folder}")
     filenames = os.listdir(save_folder)
     logger.info(f"filenames are {filenames}")
     for filename in filenames:

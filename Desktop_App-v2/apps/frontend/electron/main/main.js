@@ -1,24 +1,25 @@
 const { app, BrowserWindow, ipcMain, dialog, remote } = require('electron');
 const { exec } = require("child_process");
-const fetch=require("node-fetch");
-const path=require("path");
+const fetch = require("node-fetch");
+const path = require("path");
 const { electron } = require('process');
+const { createWindow, createHomeWindow } = require('./windows'); 
 //Paths
-const rootDirectory = path.resolve(__dirname, "..", "..", "..");
+const rootDirectory = path.resolve(__dirname, "..", "..", "..", "..");
 console.log("Root directory is", rootDirectory)
-const appsDirectory = path.join(rootDirectory, "apps");
-const pagesDirectory = path.join(appsDirectory, "frontend", "pages");
-const backendDirectory = path.resolve(appsDirectory, "backend");
+const srcDirectory = path.join(rootDirectory, "apps", "frontend", "src");
+const pagesDirectory = path.join(srcDirectory, "pages");
+const backendDirectory = path.resolve(rootDirectory, "apps", "backend");
 //Other
 const SERVER_URL = "http://127.0.0.1:5000";
 
 /**
  * Connects to the Flask app, then creates the window
  */
-let flaskProc=null;
+let flaskProc = null;
 const createFlaskProc = () => {
     //dev
-    const scriptPath = "backend.run"
+    const scriptPath = "run"
     let activateVenv;
     let command;
     let args;
@@ -36,10 +37,10 @@ const createFlaskProc = () => {
     //run the venv and start the script
     //NOTE: this goes off the apps/ folder, acting as if that is the root directory
     return require("child_process").spawn(command, args, {
-        cwd: appsDirectory,
+        cwd: backendDirectory,
         env: {
             ...process.env,
-            PYTHONPATH: appsDirectory,
+            PYTHONPATH: backendDirectory,
             PYTHONUNBUFFERED: '1'  // have Python not buffer stdout
         },
         shell: true  // required for "&&" to work on Windows
@@ -93,7 +94,7 @@ const checkFlaskConnection = () => {
         }
 
         console.log("Attempting connection to Flask...");
-        return fetch(`${SERVER_URL}/`,{ method: "GET" })
+        return fetch(`${SERVER_URL}/`, { method: "GET" })
         .then((response) =>{
             if (!response.ok) { //didn't actually connect to Flask
                 console.error("Flask connection request failed:", response.status);
@@ -124,7 +125,7 @@ const connectToFlask=function(){
     const timeout = 10000;
     waitForFlaskRunning(flaskProc, timeout)
     .then(() => { return checkFlaskConnection(); })
-    .then(() => { createWindow(); })
+    .then(() => { createMainWindow(); })
     .catch((err) => {
         console.error(err);
         console.error("Connection unsuccessful");
@@ -205,20 +206,20 @@ app.on("before-quit",(evt)=>{
 /**
  * Create a new BrowserWindow that's connected to Flask with index.html as its UI
  */
-let win=null;
-const createWindow = () => {
+let win = null;
+const createMainWindow = () => {
     win = new BrowserWindow({
         width: 400,
         height: 300,
-        webPreferences:{
+        webPreferences: {
             nodeIntegration: true,
             contextIsolation: true,
-            preload: path.resolve(app.getAppPath(), 'preload.js')
+            preload: path.resolve(app.getAppPath(), "..", "preload.js")
         }
     });
     win.setAlwaysOnTop("true","main-menu", 1);
 
-    win.loadFile(path.join(pagesDirectory, "index.html"));
+    win.loadFile(path.join(srcDirectory, "index.html"));
 
     win.on('close', (evt) => {
         if(!isAppQuitting){

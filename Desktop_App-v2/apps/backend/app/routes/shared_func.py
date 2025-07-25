@@ -13,7 +13,7 @@ def get_preexisting_filenames() -> list[str]:
     #get from saves folder
     files_filenames:list[str]=[]
     save_folder=current_app.config["UPLOAD_FOLDER"]
-    logger.info(f"save folder is {save_folder}")
+    # logger.info(f"save folder is {save_folder}")
     files=os.listdir(save_folder)
     logger.info(f"files are {files}")
     for file in files:

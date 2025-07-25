@@ -38,16 +38,16 @@
         <script>
             /* FLASK STUFF */
             const SERVER_URL = window.electron.SERVER_URL;
-            const getQBtn=document.getElementById("get_q_btn");
-            const answerQBtn=document.getElementById("answ_q_btn");
-            const exportBtn=document.getElementById("export_src_btn");
+            const getQBtn = document.getElementById("get_q_btn");
+            const answerQBtn = document.getElementById("answ_q_btn");
+            const exportBtn = document.getElementById("export_src_btn");
             /* if no questions or export method set yet, grey out Answer Questions */
             async function checkAnyQuestions(){
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_questions_exist`,{
+                    const response = await fetch(`${SERVER_URL}/check_if_questions_exists`, {
                         method: "GET"
                     });
-                    const result=await response.text();
+                    const result = await response.text();
                     return result;
                 }catch(error){
                     console.error(error);
@@ -55,10 +55,10 @@
             }
             async function getExport() {
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_export_method`,{
+                    const response = await fetch(`${SERVER_URL}/get_export_method`, {
                         method: "GET"
                     });
-                    const data=await response.text();
+                    const data = await response.text();
                     return data;
                 }catch(error){
                     console.error(error);
@@ -67,7 +67,7 @@
             /* Check type of first question */
             async function getFirstAType() {
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_first_a_type`,{
+                    const response=await fetch(`${SERVER_URL}/get_first_a_type`, {
                         method: "GET"
                     });
                     const data=await response.text();

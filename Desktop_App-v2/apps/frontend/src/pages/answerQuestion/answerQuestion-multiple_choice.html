@@ -26,7 +26,7 @@
             /* SETUP */
             let i=0;
             function buildOptions(){
-                fetch(`${SERVER_URL}/get_answer_options`,{ method: "GET" })
+                fetch(`${SERVER_URL}/get_answer_options`, { method: "GET" })
                 .then(response=>response.json()).then((data)=>{
                     options=data.options
                     options.forEach(option => {

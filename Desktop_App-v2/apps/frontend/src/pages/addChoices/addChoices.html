@@ -31,21 +31,21 @@
         <button type="button" class="navBtn" onclick="closePopup();">Finish</button>
         <script>
             const SERVER_URL = window.electron.SERVER_URL;
-            const message=document.getElementById("message");
-            const form=document.getElementById("form");
-            const choiceContainer=document.getElementById("options");
-            let datalistID="";
-
-            /**
+            const message = document.getElementById("message");
+            const form = document.getElementById("form");
+            const choiceContainer = document.getElementById("options");
+            let datalistID = "";
+ 
+             /**
              * Get all the already submitted options as autofill options for the textbox
              */
              function fillAutofill(){
-                const datalist=document.createElement("datalist");
-                datalist.id="preexistingOptList";
-                datalistID=datalist.id;
-                fetch(`${SERVER_URL}/get_all_options`,{ method: "GET" })
-                .then(response=>response.json()).then((data)=>{
-                    const previous_options=data.result;
+                const datalist = document.createElement("datalist");
+                datalist.id = "preexistingOptList";
+                datalistID = datalist.id;
+                fetch(`${SERVER_URL}/get_all_options`, { method: "GET" })
+                .then(response=>response.json()).then((data) => {
+                    const previous_options = data.result;
                     console.log("Previous options are", previous_options);
                     previous_options.forEach(optVal => {
                         const opt=document.createElement("option");
@@ -57,26 +57,26 @@
 
             let i=0;
             function addChoice(presetVal=null){
-                const div=document.createElement("div");
-                div.className="input-container";
-                div.id=`input_container_${i}`
-                const lbl=document.createElement("label");
-                lbl.htmlFor=`txtbox${i}`;
-                lbl.innerText="•";
-                const txtbox=document.createElement("input");
-                txtbox.type="text";
-                txtbox.id=`txtbox${i}`;
+                const div = document.createElement("div");
+                div.className = "input-container";
+                div.id = `input_container_${i}`
+                const lbl = document.createElement("label");
+                lbl.htmlFor = `txtbox${i}`;
+                lbl.innerText = "•";
+                const txtbox = document.createElement("input");
+                txtbox.type = "text";
+                txtbox.id = `txtbox${i}`;
                 txtbox.setAttribute("name",`txtbox${i}`);
                 txtbox.setAttribute("list",datalistID);
                 if(presetVal){
                     txtbox.value=presetVal;
                 }
 
-                const minusBtn=document.createElement("button");
-                minusBtn.addEventListener("click",()=>{
+                const minusBtn = document.createElement("button");
+                minusBtn.addEventListener("click", () => {
                     removeChoice(div);
                 });
-                minusBtn.innerText="-";
+                minusBtn.innerText = "-";
                 div.appendChild(lbl);
                 div.appendChild(txtbox);
                 div.appendChild(minusBtn);
@@ -92,46 +92,46 @@
              * before submitting the question
             */
             function loadOptions(){
-                fetch(`${SERVER_URL}/get_current_options`,{ method: "GET" })
-                .then(response=>response.json()).then((data)=>{
-                    const existing_options=data.result;
+                fetch(`${SERVER_URL}/get_current_options`, { method: "GET" })
+                .then(response=>response.json()).then((data) => {
+                    const existing_options = data.result;
                     console.log("Existing options are",existing_options);
                     existing_options.forEach(choice=>{
                         addChoice(choice);
                     });
                     addChoice();    //add a blank choice regardless at the end for onwindowload
-                }).catch((err)=>console.error(err));
+                }).catch((err) => console.error(err));
             }
-            window.addEventListener("load", (event)=>{
+            window.addEventListener("load", (event) => {
                 fillAutofill();
                 loadOptions();
             });
 
-            form.addEventListener("submit",(event)=>{
+            form.addEventListener("submit", (event) => {
                 event.preventDefault();
                 const formData=new FormData(form);
                 const formDict=Object.fromEntries(formData);
                 console.log(formDict);
                 let optionsLst=[]
-                Object.entries(formDict).forEach(([key,value])=>{
+                Object.entries(formDict).forEach(([key,value]) => {
                     if(value!=""){
                         optionsLst.push(value);
                     }
                 });
                 console.log(optionsLst);
 
-                fetch(`${SERVER_URL}/set_curr_options`,{
+                fetch(`${SERVER_URL}/set_curr_options`, {
                     method: "POST",
-                    headers:{
+                    headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({options:optionsLst}),
-                }).then((response)=>{
+                }).then((response) => {
                     if(response.ok){
                         message.innerText="Options added!";
-                        return fetch(`${SERVER_URL}/add_options`,{
+                        return fetch(`${SERVER_URL}/add_options`, {
                             method: "POST",
-                            headers:{
+                            headers: {
                                 "Content-Type": "application/json",
                             },
                             body: JSON.stringify({options:optionsLst}),

@@ -30,8 +30,8 @@ def resource_path(relative_path:str):
 # print("sys.path:")
 # for p in sys.path:
 #     print("  ", p)
-from .app.app import create_app
-from .app.utils.shutdown_manager import ShutdownManager
+from app.app import create_app
+from app.utils.shutdown_manager import ShutdownManager
 
 
 # Logging Setup
@@ -51,7 +51,7 @@ logging.basicConfig(
 
 def run_flask_app(shutdown_event):
     shutdown_manager = ShutdownManager(event=shutdown_event)
-    config_path = "backend.config.config.Config"
+    config_path = "config.config.Config"
     app = create_app(config_path, shutdown_manager)
         
     serve(app, host="0.0.0.0", port=5000)

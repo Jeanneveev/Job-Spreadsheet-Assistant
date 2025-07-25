@@ -23,7 +23,7 @@
                 const formData=new FormData(form);
                 const name=formData.get("name");
                 /* Pass the name and then close the window */
-                fetch(`${SERVER_URL}/save_file`,{
+                fetch(`${SERVER_URL}/save_file`, {
                     method: "POST",
                     headers:{
                         "Content-Type": "application/json",
