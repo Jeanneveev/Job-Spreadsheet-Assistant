@@ -1,9 +1,9 @@
 """Blueprints for routes related to CRUD functionality for questions in a question group"""
-import json
 import logging
-from flask import Blueprint, request, session, current_app
-from app.models import Question, QTypeOptions, ATypeOptions, Node, LinkedList
-from app.utils.linked_list_handler import init_ll, get_ll, override_ll
+from flask import Blueprint, request, session, current_app, jsonify
+from app.models import Question, Node, LinkedList
+from app.utils.linked_list_handler import get_ll, override_ll
+from app.services import get_question_from_form, add_preset, get_reordered_ll
 
 logger = logging.getLogger(__name__)
 q_crud_bp = Blueprint("q_crud", __name__)
@@ -13,84 +13,47 @@ q_crud_bp = Blueprint("q_crud", __name__)
 def add_question():
     """Add a new question to the question group with the info passed"""
     ll = get_ll(current_app)
-    result=request.form
-    logger.info("Form is", result)
-    #all of the form sections are required, so we don't need to check for NULLs
-    # however, we do need to check if base or add-on was selected because they're in their own group
-    if "q_type_2" in result:
-        q_type=QTypeOptions(result["q_type_2"])
-    else:
-        q_type=QTypeOptions(result["q_type"])
-    a_type=ATypeOptions(result["a_type"])
-    #if it's a multiple-choice question, get the options
-    if a_type.value=="multiple-choice":
-        logger.info("Creating new multiple-choice question")
-        options:list[str]=json.loads(result["options"])
-        logger.info("options are:",options)
-        new_question=Question(result["question"],result["detail"],q_type,a_type,options)
-    elif a_type.value==None:
-        return {"response":"A_type not found"}, 404
-    else:
-        logger.info("Creating new open-ended question")
-        new_question=Question(result["question"],result["detail"],q_type,a_type)
-    logger.info("Created question:",new_question.q_str)
-    new_node=Node(new_question)
+    form = request.form
+    logger.info("Form is", form)
+
+    new_question:Question = get_question_from_form(form)
+    
+    new_node = Node(new_question)
     ll.append(new_node)
-    ll.printLL()
-    if a_type.value=="multiple-choice":
-        return {"mult_response": "added question"}
+    # ll.printLL()
+
+    if new_question.a_type.value == "multiple-choice":
+        return {"new_q_a_type": "multiple-choice"}
     else:
-        return {"response":"added question"}
+        return {"new_q_a_type": "singular"}
+    
 @q_crud_bp.route("/add_question/addon", methods=["POST"])
 def add_addon():
     ll = get_ll(current_app)
-    result=request.form
-    #make a question from the results
-    q_type=QTypeOptions(result["q_type_2"])
-    a_type=ATypeOptions(result["a_type"])
-    if a_type.value=="multiple-choice":
-        logger.info("Creating new multiple-choice question")
-        options:list[str]=json.loads(result["options"])
-        logger.info("options are:",options)
-        new_question=Question(result["question"],result["detail"],q_type,a_type,options)
-    else:
-        new_question=Question(result["question"],result["detail"],q_type,a_type)
-    #get the node of the question this one is adding onto
-    base_detail=result["addon_to"]
-    base_node=ll.getByDetail(base_detail)
-    #set the base's addon value to the addon Question
-    base_node.addon=new_question
-    logger.info(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
-    if a_type.value=="multiple-choice":
-        return {"mult_response": "added multiple-choice addon question"}
-    else:
-        return {"response":"added addon question"}
+    form = request.form
     
-def add_application_date():
-    ll = get_ll(current_app)
-    # create a Question with an a_type of "preset" where the value is the current date
-    new_q=Question("appDate","Application Date",QTypeOptions("singular"),ATypeOptions("preset"))
-    new_node=Node(new_q)
-    ll.append(new_node)
-    logger.info("New preset node appended")
-def add_empty_question(i):
-    ll = get_ll(current_app)
-    #create a preset Question with an empty value for empty columns
-    new_q=Question("empty",f"Empty-{i}",QTypeOptions("singular"),ATypeOptions("preset"))
-    new_node=Node(new_q)
-    ll.append(new_node)
-    logger.info("New preset node appended")
+    new_question:Question = get_question_from_form(form)
+    # get the node of the question this one is adding onto
+    base_detail = form["addon_to"]
+    base_node = ll.getByDetail(base_detail)
+    base_node.addon = new_question
+    logger.info(f"Addon \"{new_question.q_detail}\" added to base node \"{base_node.question.q_detail}\"")
+    
+    if new_question.a_type.value == "multiple-choice":
+        return {"new_q_a_type": "multiple-choice"}
+    else:
+        return {"new_q_a_type": "singular"}
+    
 @q_crud_bp.route("/add_question/preset", methods=["POST"])
-def add_preset():
-    value:str=request.get_json()["preset"]
-    match value:
-        case "appDate":
-            add_application_date()
-        case "empty":
-            empty_cntr=session.get("empty_cntr",0)
-            add_empty_question(empty_cntr)
-            session["empty_cntr"]=empty_cntr+1
-    return f"{value} Question added"
+def add_preset_question():
+    value:str = request.data.decode("utf-8")
+    ll = get_ll(current_app)
+    try:
+        add_preset(ll, value)
+    except ValueError as e:
+        return str(e), 409
+    
+    return f"Preset question: {value} added"
 
 ## READ
 @q_crud_bp.route("/get_ll_json", methods=["GET"])
@@ -98,49 +61,35 @@ def all_to_json():
     """Get every node in the linked list and return them as json"""
     ll:LinkedList = get_ll(current_app)
     # logger.info("Get_ll_json called. Linked list JSON is: ",ll.getAll())
-    return {"result":ll.getAll()}
+    return jsonify(ll.getAll())
 
-@q_crud_bp.route("/get_questions_exist", methods=["GET"])
+@q_crud_bp.route("/check_if_questions_exists", methods=["GET"])
 def check_ll_exists():
-    current_app.logger.info("API /get_questions_exist called")
-
     ll:LinkedList = get_ll(current_app)
     if ll.head == None: #if nothing's in the LinkedList
+        return "false"
+    elif ll.head.question == None:
         return "false"
     else:
         return "true"
 
 ## EDIT
 @q_crud_bp.route("/reorder_questions", methods=["POST"])
-def reorder_nodes():
+def reorder_questions():
     """Upon being given an ordered list of node details, reorder the linked list to be in that order"""
-    current_app.logger.info("API /reorder_questions called")
-
     ll = get_ll(current_app)
-    ordered_dict:dict=request.get_json()["order"]
-    logger.info(f"The ordered dict is {ordered_dict}. It is of type {type(ordered_dict)}")
+    new_q_detail_order:list = request.get_json()["order"]
+    logger.info(f"The new order will be {new_q_detail_order}")
     logger.info(f"Before reordering, the ll looks like: {ll.returnLL()}")
-    new_ll=LinkedList()
+    
+    try:
+        new_ll = get_reordered_ll(ll, new_q_detail_order)
+        ll = override_ll(current_app, new_ll)
+        logger.info(f"After reordering, the ll looks like: {ll.returnLL()}")
+    except ValueError as e:
+        return str(e), 404
 
-    reordered_nodes:list[Node]=[]
-    for k,v in ordered_dict.items():
-        logger.info("Reordering",v)
-        node:Node=ll.getByDetail(v)
-        if node is None:
-            return "ERROR: Node not found", 404
-        reordered_nodes.append(node)
-    #append the reordered nodes
-    for node in reordered_nodes:
-        #NOTE: Clearing the node's pointers here is key, or else it will cause an infinite loop
-        node.next=None
-        node.prev=None
-        new_ll.append(node)
-    logger.info(f"new_ll is now {new_ll.returnLL()}")
-    # override both local and global ll
-    ll=override_ll(current_app, new_ll)
-    logger.info(f"After reordering, the ll looks like: {ll.returnLL()}")
-
-    return "Linked List reordered",200
+    return "Linked List reordered", 200
 
 ## DELETE
 @q_crud_bp.route("/delete_question", methods=["DELETE"])

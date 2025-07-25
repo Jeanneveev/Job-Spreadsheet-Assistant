@@ -8,6 +8,24 @@ class LinkedList:
     def __init__(self):
         self.head:Node = None
         self.tail:Node = None
+    
+    def __eq__(self, other):
+        if not isinstance(other, LinkedList):
+            return False
+        
+        curr_self = self.head
+        curr_other = other.head
+        while curr_self and curr_other:
+            if curr_self != curr_other:
+                return False
+            curr_self = curr_self.next
+            curr_other = curr_other.next
+        
+        if curr_self != curr_other:
+            return False
+        
+        return True
+
 
     def append(self,node:Node)->None:
         """Append node to end of linked list"""
@@ -30,7 +48,7 @@ class LinkedList:
         prev:Node = node.prev
         prev.next = node.next
         prev.next.prev = prev
-        #fully unlinking node so that the garbace collector knows to get it
+        # NOTE: fully unlinking node so that the garbace collector knows to get it
         node.next = None
         node.prev = None
 
@@ -38,7 +56,7 @@ class LinkedList:
         """Print all of the linked list's node's details"""
         curr = self.head
         while curr:
-            logger.info(curr.question,end="->")
+            logger.info(curr.question, end="->")
             curr = curr.next
         logger.info("null")
     def returnLL(self):

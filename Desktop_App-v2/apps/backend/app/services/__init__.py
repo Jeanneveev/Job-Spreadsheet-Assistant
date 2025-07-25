@@ -4,3 +4,4 @@ from .details import *
 from .export import *
 from .save import *
 from .load import *
+from .q_crud import *
