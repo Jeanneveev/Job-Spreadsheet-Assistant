@@ -239,7 +239,7 @@ function submitLastQuestion(){
     fetch(`${SERVER_URL}/get_export_method`, {method: "GET"})
     .then(response => response.text())
     .then(data => {
-        console.log("Export method is: ",data);
+        console.log("Export method is: ", data);
         if(data == "sheets"){
             //NOTE: keeping this fetch in case the app is left open so long the token expires
             return fetch(`${SERVER_URL}/get_auth_url`, {method: "GET"});
