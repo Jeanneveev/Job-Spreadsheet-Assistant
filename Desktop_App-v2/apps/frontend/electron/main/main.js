@@ -208,15 +208,7 @@ app.on("before-quit",(evt)=>{
  */
 let win = null;
 const createMainWindow = () => {
-    win = new BrowserWindow({
-        width: 400,
-        height: 300,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: true,
-            preload: path.resolve(app.getAppPath(), "..", "preload.js")
-        }
-    });
+    win = createHomeWindow();
     win.setAlwaysOnTop("true","main-menu", 1);
 
     win.loadFile(path.join(srcDirectory, "index.html"));
@@ -279,31 +271,24 @@ ipcMain.on("print-to-main-terminal",(event,message)=>{
  * Create a second browser window for handling question creation
  */
 let questionWindow=null;
-ipcMain.on("open-question-window",(event)=>{
-    console.log("Question window opening");
-    questionWindow=new BrowserWindow({
-        width: 600,
-        height: 400,
-        webPreferences:{
-            nodeIntegration: true,
-            contextIsolation: true,
-            preload: path.resolve(app.getAppPath(), 'preload.js')
-        },
-        parent: win,
-        // modal: true
-    });
+ipcMain.on("open-question-window", (event) => {
+    console.log("Select question group window opening");
+    const foldername = "selectQG";
+    const width = 600
+    const height = 400
+    const filename = "selectQuestionGroup.html"
+    const parent = win;
+    questionWindow = createWindow(width, height, foldername, filename, parent);
 
     win.setAlwaysOnTop("false"); //remove parent's always on top
     questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
 
-    questionWindow.loadFile(path.join(pagesDirectory, 'selectQuestionGroup.html'));
-
-    questionWindow.on("closed",()=>{
-        win.loadFile(path.join(pagesDirectory, "index.html")); //reload main page to activate buttons
-        questionWindow=null;
+    questionWindow.on("closed", () => {
+        win.loadFile(path.join(srcDirectory, "index.html")); //reload main page to activate buttons
+        questionWindow = null;
     });
 });
-ipcMain.on("close-question-window",()=>{
+ipcMain.on("close-question-window", () => {
     if(questionWindow){
         questionWindow.close();
         questionWindow=null;
@@ -318,9 +303,9 @@ ipcMain.on("close-question-window",()=>{
  * Create a popup browser window, listen for the auth landing page,
  * and send the code back when/if it is reached.
  */
-let authWindow=null;
-ipcMain.on("open-auth-window", (event,authURL)=>{
-    authWindow=new BrowserWindow({
+let authWindow = null;
+ipcMain.on("open-auth-window", (event, authURL)=>{
+    authWindow = new BrowserWindow({
         width: 400,
         height: 500,
         webPreferences: {
@@ -334,8 +319,8 @@ ipcMain.on("open-auth-window", (event,authURL)=>{
     authWindow.webContents.on("did-navigate", (ev,url)=>{
         // console.log("URL is:", url);
         if(url.includes("/auth_landing_page/?")){
-            const urlParams=new URLSearchParams(new URL(url).search);
-            const codeParam=urlParams.get("code");
+            const urlParams = new URLSearchParams(new URL(url).search);
+            const codeParam = urlParams.get("code");
 
             if(codeParam!=null){
                 // console.log("Code is:", codeParam);
@@ -346,7 +331,7 @@ ipcMain.on("open-auth-window", (event,authURL)=>{
         }
     });
 
-    authWindow.on("closed",()=>{
+    authWindow.on("closed", () => {
         authWindow=null;
     });
 });
@@ -378,66 +363,60 @@ ipcMain.on("open-alert", (event,message)=>{
         "message": message,
         "buttons": ["OK"]
     })
-    .then((result)=>{
+    .then((result) => {
         console.log("Alert closed");
         return;
     })
 });
-let promptWindow=null
+let promptWindow = null
 ipcMain.on("open-prompt", (event)=>{
-    promptWindow=new BrowserWindow({
-        width: 300,
-        height: 175,
-        parent: BrowserWindow.getFocusedWindow(),
-        autoHideMenuBar: true,
-        webPreferences:{
-            nodeIntegration: true,
-            contextIsolation: true,
-            preload: path.resolve(app.getAppPath(), 'preload.js')
-        },
-    });
+    const width = 300
+    const height = 175
+    const foldername = "saveQG";
+    const filename = "requestSaveName.html"
+    const parent = BrowserWindow.getFocusedWindow();
+    promptWindow = createWindow(width, height, foldername, filename, parent);
     
-    questionWindow.setAlwaysOnTop("false"); //remove parent's always on top
+    parent.setAlwaysOnTop("false"); //remove parent's always on top
     promptWindow.setAlwaysOnTop("true",'pop-up-menu', 1);
-    promptWindow.loadFile(path.join(pagesDirectory, "requestSaveName.html"));
 
-    promptWindow.on("closed",()=>{
-        promptWindow=null;
+    promptWindow.on("closed", () => {
+        promptWindow = null;
     });
 });
-ipcMain.on("close-prompt",(event)=>{
+ipcMain.on("close-prompt", (event)=>{
     if(promptWindow){
         promptWindow.close();
-        promptWindow=null;
+        promptWindow = null;
         //reset parent's always on top
-        if(questionWindow){
+        if(parent){
             questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
         }
     }
-})
+});
 
-let choiceWindow=null;
-ipcMain.on("open-options-window",(event)=>{
-    choiceWindow=new BrowserWindow({
+let choiceWindow = null;
+ipcMain.on("open-options-window", (event)=>{
+    choiceWindow = new BrowserWindow({
         width: 400,
         height: 500,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            preload: path.resolve(app.getAppPath(), 'preload.js'),   //add preload to be able to use ipcRenderer in popup
+            preload: path.resolve(__dirname, "..", "preload", "preload.js"),   //add preload to be able to use ipcRenderer in popup
             sandbox: false  //to allow path to be imported in the preload script
         },
     });
     choiceWindow.setAlwaysOnTop("true",'pop-up-menu', 1)
-    choiceWindow.loadFile(path.join(pagesDirectory, 'addoptions.html'));
+    choiceWindow.loadFile(path.join(pagesDirectory, "addChoices", "addChoices.html"));
 
-    choiceWindow.on("closed",()=>{
-        choiceWindow=null;
+    choiceWindow.on("closed", () => {
+        choiceWindow = null;
     });
 });
-ipcMain.on("close-options",(event)=>{
+ipcMain.on("close-options", (event)=>{
     if(choiceWindow){
         choiceWindow.close();
-        choiceWindow=null;
+        choiceWindow = null;
     }
 })

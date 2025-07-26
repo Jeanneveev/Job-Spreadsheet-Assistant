@@ -15,31 +15,32 @@
             <button type="submit" id="previous">Previous</button>
             <button type="reset" id="reset">Reset</button>
         </form>
-        <button id="home" onclick="window.location.href='index.html'">Back to Home</button>
+        <button id="home" onclick="window.location.href='../../index.html'">Back to Home</button>
         <!-- Include all the shared functions from JS file -->
         <script src="answerQuestion.js"></script>
         <!-- multiple-choice.html specific JS -->
         <script>
             console.log("This is a multiple choice question");
-            const optContainer=document.getElementById("options-container");
+            const optContainer = document.getElementById("options-container");
             
             /* SETUP */
             let i=0;
             function buildOptions(){
                 fetch(`${SERVER_URL}/get_answer_options`, { method: "GET" })
-                .then(response=>response.json()).then((data)=>{
-                    options=data.options
+                .then(response => response.json())
+                .then((data) => {
+                    options = data;
                     options.forEach(option => {
-                        const lbl=document.createElement("label");
-                        lbl.htmlFor=`opt${i}`;
-                        lbl.innerText=option;
-                        const radioBtn=document.createElement("input");
-                        radioBtn.id=`opt${i}`;
-                        radioBtn.type="radio";
-                        radioBtn.setAttribute("name","option");
-                        radioBtn.setAttribute("required","");
-                        radioBtn.addEventListener("change",()=>{
-                            nextBtn.innerHTML="Next";
+                        const lbl = document.createElement("label");
+                        lbl.htmlFor = `opt${i}`;
+                        lbl.innerText = option;
+                        const radioBtn = document.createElement("input");
+                        radioBtn.id = `opt${i}`;
+                        radioBtn.type = "radio";
+                        radioBtn.setAttribute("name", "option");
+                        radioBtn.setAttribute("required", "");
+                        radioBtn.addEventListener("change", () => {
+                            nextBtn.innerHTML = "Next";
                         });
                         optContainer.appendChild(radioBtn);
                         optContainer.appendChild(lbl);

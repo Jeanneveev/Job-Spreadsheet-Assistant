@@ -8,8 +8,8 @@ process.once("loaded", ()=>{
             on: (eventName, callback) => ipcRenderer.on(eventName, callback),
             send: (eventName, data) => ipcRenderer.send(eventName,data),
             currDir: () => process.cwd(),
-            getPath: (filename) => {
-                const completePath=path.join(process.cwd(), "apps", "frontend", "pages", filename);
+            getPath: (foldername, filename) => {
+                const completePath=path.join(process.cwd(), "apps", "frontend", "src", "pages", foldername, filename);
                 return completePath;
             },
             SERVER_URL: "http://127.0.0.1:5000",

@@ -54,11 +54,11 @@ class ExportData:
         """A function to send the URL of the log-in page for the frontend to open,
             allow for user certification, and send back that certification via another route
         """
-        SCOPES=["https://www.googleapis.com/auth/spreadsheets"]
-        creds=None
-        token_path=os.path.join(basedir,"token.json")
+        SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+        creds = None
+        token_path = os.path.join(basedir,"token.json")
         if os.path.exists(token_path):
-            creds=Credentials.from_authorized_user_file(token_path, SCOPES)
+            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -142,7 +142,7 @@ class ExportData:
             logger.info(f"An Authentication error occurred: {error}")
             raise ServiceBuildError(f"Authentication error: {error}")
    
-    def _validate_sheet_id(self, id)->tuple[bool,str]:
+    def _validate_sheet_id(self, id:str) -> tuple[bool,str]:
         """A function that checks if the given Google Sheets id exists by
         attempting to open it."""
         try:
@@ -158,7 +158,7 @@ class ExportData:
                 return False, "Access denied: The given ID does not match to any Google Sheets file"
             else:
                 return False, f"Unexpected error: {error}"
-    def set_sheet_id(self, id)->str|SheetsConnectionError:
+    def set_sheet_id(self, id:str) -> str|SheetsConnectionError:
         """Sets the sheet_id variable of the ExportData instance if the id is valid"""
         print("Setting sheet id")
         is_valid, msg = self._validate_sheet_id(id)

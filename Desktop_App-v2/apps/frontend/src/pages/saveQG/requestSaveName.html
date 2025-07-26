@@ -14,22 +14,22 @@
         </form>
         <script>
             const SERVER_URL = window.electron.SERVER_URL;
-            const form=document.getElementById("form");
-            const message=document.getElementById("message");
-            const cancelBtn=document.getElementById("cancel");
-            const submitBtn=document.getElementById("submit");
+            const form = document.getElementById("form");
+            const message = document.getElementById("message");
+            const cancelBtn = document.getElementById("cancel");
+            const submitBtn = document.getElementById("submit");
 
-            form.addEventListener("submit",()=>{
-                const formData=new FormData(form);
-                const name=formData.get("name");
+            form.addEventListener("submit", () => {
+                const formData = new FormData(form);
+                const name = formData.get("name");
                 /* Pass the name and then close the window */
                 fetch(`${SERVER_URL}/save_file`, {
                     method: "POST",
-                    headers:{
-                        "Content-Type": "application/json",
+                    headers: {
+                        "Content-Type": "text/plain",
                     },
-                    body: JSON.stringify({name:name})
-                }).then(response=>{
+                    body: name
+                }).then(response => {
                     if(response.ok){
                         message.innerText="Question Group saved to Saves folder.\n"
                         message.innerText+="You can now close this popup."
@@ -37,10 +37,10 @@
                     }
                     message.innerText="Name already exists, please try again";
                     return Promise.reject(response.text());
-                }).then(data=>console.log(data))
-                .catch(err=>console.error(err));
+                }).then(data => console.log(data))
+                .catch(err => console.error(err));
             });
-            cancelBtn.addEventListener("click",()=>{
+            cancelBtn.addEventListener("click", () => {
                 window.electron.send("close-prompt");
             })
         </script>

@@ -31,15 +31,16 @@
             </thead>
         </table>
         <button id="back">Back</button>
-        <button onclick="window.location.href='viewQuestions.html'">Create Question Group</button>
+        <button id="toView" onclick="window.location.href='../viewQG/viewQuestions.html'">Create Question Group</button>
 
         <script>
             const SERVER_URL = window.electron.SERVER_URL;
             const selectedSpan = document.getElementById("selected");
             const table = document.getElementById("table");
             const backBtn = document.getElementById("back");
+            const viewQGBtn = document.getElementById("toView");
 
-            backBtn.addEventListener("click",()=>{
+            backBtn.addEventListener("click", () => {
                 window.electron.send("close-question-window");
             });
 
@@ -85,20 +86,21 @@
                             method: "GET"
                         }).then(response => response.json())
                         .then((data) =>{
-                            const createdDisplayDetails = JSON.parse(data.result);
+                            const createdDisplayDetails = data.display_info;
                             console.log(createdDisplayDetails);
                             createQGRow(createdDisplayDetails);
-                            selectedSpan.innerText=createdDisplayDetails[0]
+                            selectedSpan.innerText = createdDisplayDetails[0];
+                            viewQGBtn.innerText = "Update Question Group";
                         })
                     }
                 })
             }
             function loadSavedQGs(){
                 fetch(`${SERVER_URL}/load_all_files`, { method: "GET" })
-                .then(response => response.text())
+                .then(response => response.json())
                 .then((data) =>{
-                    const qgs = JSON.parse(data);
-                    // console.log(qgs);
+                    const qgs = data.files_display_info;
+                    console.log("QGs are:", qgs);
                     qgs.forEach(qg => {
                         createQGRow(qg);
                     });
@@ -123,17 +125,20 @@
                     },
                     body: row_name
                 }).then(response => response.text())
-                .then(data => console.log(data))
+                .then(data => {
+                    console.log(data);
+                    viewQGBtn.innerText = "Update Question Group";
+                })
                 .catch(error => console.error(error));
 
                 //switch check
                 prevSelected = document.querySelector(".selected_qg");
                 if(prevSelected){
                     prevSelected.classList.remove("selected_qg");
-                    prevSelected.innerText=="";
+                    prevSelected.innerText == "";
                 }
                 td_selected.classList.add("selected_qg");
-                td_selected.innerText=="X";
+                td_selected.innerText == "X";
             }
         </script>
     </body>

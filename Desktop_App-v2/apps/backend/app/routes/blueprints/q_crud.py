@@ -14,7 +14,7 @@ def add_question():
     """Add a new question to the question group with the info passed"""
     ll = get_ll(current_app)
     form = request.form
-    logger.info("Form is", form)
+    # logger.info("Form is", form)
 
     new_question:Question = get_question_from_form(form)
     
@@ -96,7 +96,7 @@ def reorder_questions():
 def del_node():
     """Given a node's detail, find and delete it"""
     data = request.get_json() # {"deleting_detail": _, "is_addon": true or false}
-    del_detail:str = request.get_json()["deleting_detail"]
+    del_detail:str = data["deleting_detail"]
     if data["is_addon"] == "true":
         is_addon = True
     else:

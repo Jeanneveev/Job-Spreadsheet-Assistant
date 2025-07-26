@@ -59,10 +59,10 @@ def set_sheets_id():
 @export_bp.route("/get_auth_url", methods=["GET"])
 def get_auth_url():
     exportData = get_export_data(current_app)
-    url=exportData.get_auth_url()
+    url = exportData.get_auth_url()
     if url:
         logger.info(f"auth_url is {url}")
-        return {"auth_url":url}
+        return {"auth_url": url}
     else:
         logger.info("Credentials are already validated")
         return {"message": "Credentials are already validated"}, 200

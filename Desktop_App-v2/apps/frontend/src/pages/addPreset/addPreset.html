@@ -11,11 +11,11 @@
             <button type="submit" id="appDate" class="one-time">Get Application Date</button>
             <button type="submit" id="empty" class="repeatable">Empty Column</button>
         </form>
-        <button type="button" onclick="window.location.href='viewQuestions.html'">Back</button>
+        <button type="button" onclick="window.location.href='../viewQG/viewQuestions.html'">Back</button>
     </body>
     <script>
         const SERVER_URL=window.electron.SERVER_URL;
-        const form=document.getElementById("form");
+        const form = document.getElementById("form");
 
         form.addEventListener("submit",(event)=>{
             event.preventDefault();
@@ -32,12 +32,14 @@
                     break;
             }
             fetch(`${SERVER_URL}/add_question/preset`, {
-                method:"POST",
-                headers:{
-                    "Content-Type": "application/json",
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain",
                 },
-                body:JSON.stringify({preset:value})
-            }).then(response=>response.text()).then(data=>console.log(data));
+                body: value
+            })
+            .then(response => response.text())
+            .then(data => console.log(data));
             if(submitterBtn.classList.contains("one-time")){
                 submitterBtn.disabled=true;
             }

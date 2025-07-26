@@ -56,9 +56,9 @@ def check_detail(detail:str):
     details
     """
     detail:str = unquote(detail)
-    details:list[str]=session.get("all_details",[])
+    details:list[str] = session.get("all_details", [])
     if detail in details:
-        return jsonify({"exists":"True","all_details":details})
+        return jsonify({"exists":"true", "all_details":details})
     else:
-        return jsonify({"exists":"False","all_details":details})
+        return jsonify({"exists":"false", "all_details":details})
 

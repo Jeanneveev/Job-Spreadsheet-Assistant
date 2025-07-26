@@ -94,4 +94,4 @@ def test_check_detail_can_check_if_detail_in_all_details(test_client:FlaskClient
     response = test_client.get(f"/check_detail/{detail}")
     assert response.status_code == 200
     result = response.get_json()
-    assert result == {"exists":str(detail_exist),"all_details":details}
+    assert result == {"exists":str(detail_exist).lower(),"all_details":details}

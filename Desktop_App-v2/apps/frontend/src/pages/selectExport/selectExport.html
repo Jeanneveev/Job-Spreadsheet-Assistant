@@ -8,9 +8,6 @@
         <h1>Export Settings</h1>
         <p>You are currently exporting your answers to: <span id="result">None</span></p>
         <form id="form">
-            <!-- <input type="radio" name="exportOpt" id="csv" value="csv" required /> -->
-            <!-- <label for="csv">CSV</label> -->
-            <!-- TODO: Add file selector input -->
             <input type="radio" name="exportOpt" id="sheets" value="sheets" required />
             <label for="sheets">Google Sheets</label>
             <br />
@@ -19,22 +16,22 @@
             <br />
             <button id="submit" type="submit">Submit</button>
         </form>
-        <button id="back" onclick="window.location.href='index.html'">Back to Home</button>
+        <button id="back" onclick="window.location.href='../../index.html'">Back to Home</button>
         <script>
             const SERVER_URL = "http://127.0.0.1:5000";
-            const result=document.getElementById("result");
-            const form=document.getElementById("form");
+            const result = document.getElementById("result");
+            const form = document.getElementById("form");
             const submitBtn = document.getElementById("submit");
             const backBtn = document.getElementById("back");
-            form.addEventListener("submit", (event)=>{
+            form.addEventListener("submit", (event) => {
                 event.preventDefault();
-                const selectedEl=document.querySelector('input[name="exportOpt"]:checked');  //get the checked option
-                const selectedOpt=selectedEl.value;
-                const optText=selectedEl.labels[0].textContent;
+                const selectedEl = document.querySelector('input[name="exportOpt"]:checked');  //get the checked option
+                const selectedOpt = selectedEl.value;
+                const optText = selectedEl.labels[0].textContent;
                 result.innerText="...";
                 //disable the submit and back button so that the user can't leave the page before the id's been set
-                submitBtn.disabled=true;
-                backBtn.disabled=true;
+                submitBtn.disabled = true;
+                backBtn.disabled = true;
 
                 const sheet_id = document.getElementById("sheet_id").value;
                 //set the export method
@@ -45,12 +42,13 @@
                     },
                     body: selectedOpt
                 })
-                .then(response=>response.text())
-                .then(data=>console.log("set result:",data))
+                .then(response => response.text())
+                .then(data => console.log("set result:", data))
+                .catch(error => console.error(error));
                 //if the export method is Google Sheets, login the user and set the given id
                 if(selectedOpt == "sheets"){
-                    fetch(`${SERVER_URL}/get_auth_url`, {method: "GET"})
-                    .then(response=>response.json()).then(data=>{
+                    fetch(`${SERVER_URL}/get_auth_url`, { method: "GET" })
+                    .then(response => response.json()).then(data=>{
                         /* Sheets */
                         if(data.auth_url){
                             //send message to ipcMain to open popup and get code
@@ -59,7 +57,7 @@
                             console.log(data.message);
                         }
                     })
-                    .then(()=>{
+                    .then(() => {
                         return fetch(`${SERVER_URL}/set_sheet_id`, {
                             method: "POST",
                             headers: {
@@ -68,18 +66,15 @@
                             body: sheet_id
                         })
                     })
-                    .then(response=>response.text())
-                    .then(data=>{
+                    .then(response => response.text())
+                    .then(data => {
                         console.log(data);
-                        result.innerText=optText;
-                        submitBtn.disabled=false;
-                        backBtn.disabled=false;
+                        result.innerText = optText;
+                        submitBtn.disabled = false;
+                        backBtn.disabled = false;
                     })
-                    .catch(error=>console.error(error))
+                    .catch(error => console.error(error))
                 }
-                // fetch(`${SERVER_URL}/set_export_loc`, {method: "POST"})
-                // .then(response=>response.text())
-                // .then(data=>console.log("set filepath:",data));
             });
 
             /**
@@ -87,14 +82,14 @@
             * and check the corresponding radio button
             */
             window.addEventListener("load", (event)=>{
-                fetch(`${SERVER_URL}/get_export_method`, {method: "GET"})
-                .then(response=>response.text()).then((data)=>{
-                    console.log("data:",data);
-                    if(data!="None"){
-                        presetOpt=document.getElementById(data);
-                        presetOptLabel=presetOpt.labels[0].textContent;
-                        result.innerText=presetOptLabel;
-                        presetOpt.checked=true;
+                fetch(`${SERVER_URL}/get_export_method`,  {method: "GET" })
+                .then(response => response.text()).then((data)=>{
+                    console.log("data:", data);
+                    if(data != "None"){
+                        presetOpt = document.getElementById(data);
+                        presetOptLabel = presetOpt.labels[0].textContent;
+                        result.innerText = presetOptLabel;
+                        presetOpt.checked = true;
                     }
                 });
             });

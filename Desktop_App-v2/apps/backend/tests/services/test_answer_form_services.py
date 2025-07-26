@@ -190,6 +190,7 @@ class TestGetDisplayInfo:
 
         expected = {
             "q_str": prev_question.q_str,
+            "curr_question_a_type": prev_question.a_type.value,
             "next_question_a_type": curr_question.a_type.value,
             "is_first": str(prev_is_first).lower(),
             "is_addon": str(prev_is_addon).lower()

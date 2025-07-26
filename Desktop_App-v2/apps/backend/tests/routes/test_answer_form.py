@@ -109,7 +109,7 @@ class TestDisplayInfo():
         nodes = []
         # add nodes to ll
         curr_q:Question = generate_question(q_str="current question", q_detail="curr", a_type="preset")
-        prev_q:Question = generate_question(q_str="previous question", q_detail="prev")
+        prev_q:Question = generate_question(q_str="previous question", q_detail="prev", a_type="open-ended")
         curr_node:Node = generate_node(curr_q)
         if prev_is_addon:
             prev_node:Node = generate_node(addon=prev_q)
@@ -130,6 +130,7 @@ class TestDisplayInfo():
         assert response.status_code == 200
         expected = {
             "q_str": "previous question",
+            "curr_question_a_type": "open-ended",
             "next_question_a_type": "preset",
             "is_first": str(prev_is_first).lower(),
             "is_addon": str(prev_is_addon).lower()
@@ -172,11 +173,11 @@ class TestAnswers:
         test_session(test_client, sess_var)
 
         if valid_entry:
-           response = test_client.post("/set_preset_answer", json={"preset_type": "empty"})
+           response = test_client.post("/set_preset_answer", data="empty")
            assert response.status_code == 200
            assert node.answer == " "
         else:
-            response = test_client.post("/set_preset_answer", json={"preset_type": "invalid"})
+            response = test_client.post("/set_preset_answer", data="invalid")
             assert response.status_code == 404
             assert node.answer == None
 

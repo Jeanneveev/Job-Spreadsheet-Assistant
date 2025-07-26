@@ -33,7 +33,7 @@
         <div class="buttons-wrapper">
             <button id="get_q_btn">Get Questions</button>
             <button id="answ_q_btn" disabled>Answer Questions</button>
-            <button id="export_src_btn" onclick="window.location.href='selectExport.html'" disabled>Select Export Source</button>
+            <button id="export_src_btn" onclick="window.location.href='./pages/selectExport/selectExport.html'" disabled>Select Export Source</button>
         </div>
         <script>
             /* FLASK STUFF */
@@ -67,10 +67,10 @@
             /* Check type of first question */
             async function getFirstAType() {
                 try{
-                    const response=await fetch(`${SERVER_URL}/get_first_a_type`, {
+                    const response = await fetch(`${SERVER_URL}/get_first_a_type`, {
                         method: "GET"
                     });
-                    const data=await response.text();
+                    const data = await response.text();
                     return data;
                 }catch(error){
                     console.error(error);
@@ -79,28 +79,28 @@
             window.addEventListener("load", async (event) => {
                 const checkQuestionsResult = await checkAnyQuestions();
                 const getExportResult = await getExport();
-                const jsonResult = checkQuestionsResult==="true";
+                const jsonResult = checkQuestionsResult === "true";
                 const exportResult = getExportResult == "sheets" || getExportResult == "csv"
                 
                 if(jsonResult && !exportResult){
-                    exportBtn.disabled=false;
+                    exportBtn.disabled = false;
                 }else if(jsonResult && exportResult){
-                    answerQBtn.disabled=false;
-                    exportBtn.disabled=false;
+                    answerQBtn.disabled = false;
+                    exportBtn.disabled = false;
                     //add correct redirect to the button
                     getFirstAType().then((result)=>{
                         console.log("first a_type is", result);
                         if(result=="open-ended"){
-                            answerQBtn.addEventListener("click",()=>{
-                                window.location.href=window.electron.getPath("answerQuestion-open_ended.html");
+                            answerQBtn.addEventListener("click", () => {
+                                window.location.href = "./pages/answerQuestion/answerQuestion-open_ended.html";
                             });
                         }else if(result=="multiple-choice"){
-                            answerQBtn.addEventListener("click",()=>{
-                                window.location.href=window.electron.getPath("answerQuestion-multiple_choice.html");
+                            answerQBtn.addEventListener("click", () => {
+                                window.location.href = "./pages/answerQuestion/answerQuestion-open_ended.html";
                             });
                         }else{
-                            answerQBtn.addEventListener("click",()=>{
-                                window.electron.send("open-alert",result);
+                            answerQBtn.addEventListener("click", () => {
+                                window.electron.send("open-alert", result);
                             })
                         }
                     });
@@ -110,7 +110,7 @@
                 }
             });
             /* Initialize question flags */
-            answerQBtn.addEventListener("click",()=>{
+            answerQBtn.addEventListener("click", () => {
                 sessionStorage.setItem("first_q","true");
                 sessionStorage.setItem("first_submit","true");
             });

@@ -64,6 +64,7 @@ def get_prev_question():
      Returns:
         A dictionary with the following keys:
             "q_str": str - The q_str of the previous question
+            "curr_question_a_type: str - The value of the a_type of the previous question
             "next_question_a_type": str - The value of the a_type of the current question
             "is_first": str - Wheter or not the previous question is the first question
             "is_addon": str - Whether or not the previous question is an addon question
@@ -95,7 +96,7 @@ def add_addon_answer():
 def add_preset_answer():
     ll:LinkedList = get_ll(current_app)
     curr_node:Node = get_current_node(ll)
-    preset_type:str=request.get_json()["preset_type"]
+    preset_type:str = request.data.decode("utf-8")
     try:
         answ = answer_preset_node(curr_node, preset_type)
         return f"Preset answer {answ} set", 200

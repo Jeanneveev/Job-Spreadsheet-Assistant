@@ -65,7 +65,7 @@ def get_current_question(ll:LinkedList, curr_node:Node=None) -> Question:
         curr_question:Question = get_question_from_dictionary(curr_node, curr_question_dict)
     else:   # no curr_question has been set, assume this is the first question being called
         if curr_node == ll.head:
-            curr_question:Question=curr_node.question
+            curr_question:Question = curr_node.question
         else:
             raise LookupError("Current question not found")
     logging.debug(f"curr_question is {curr_question}")
@@ -153,9 +153,10 @@ def get_prev_question_display_info(curr_node:Node, curr_question:Question):
         Returns:
         res: dict - A dictionary with the following keys:
             "q_str": str - The q_str of the previous question
+            "curr_question_a_type: str - The value of the a_type of the previous question
             "next_question_a_type": str - The value of the a_type of the current question
             "is_first": str - Wheter or not the previous question is the first question
-            "is_addon": str - Whether or not the question is an addon question
+            "is_addon": str - Whether or not the previous question is an addon question
     """
     res = {}
     curr_is_addon = False
@@ -173,6 +174,8 @@ def get_prev_question_display_info(curr_node:Node, curr_question:Question):
             prev_question = prev_node.addon
         else:
             prev_question = prev_node.question
+
+    res["curr_question_a_type"] = prev_question.a_type.value
     
     if is_first_question(prev_question):
         res["is_first"] = "true"

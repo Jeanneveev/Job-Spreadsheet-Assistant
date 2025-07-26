@@ -22,7 +22,7 @@ def get_question_from_form(form_data:dict):
     else:
         logger.info("Creating new open-ended question")
         new_question = Question(q_str, q_detail, q_type, a_type)
-    logger.info("Created question:", new_question.q_str)
+    logger.info(f"Created question: {new_question.q_str}")
 
     return new_question
 
@@ -55,7 +55,7 @@ def get_reordered_ll(old_ll:LinkedList, new_order:list):
     reordered_nodes:list[Node] = []
 
     for q_detail in new_order:
-        logger.info("Reordering", q_detail)
+        # logger.info("Reordering", q_detail)
         node:Node = old_ll.getByDetail(q_detail)
         if node is None:
             raise ValueError("Node not found")

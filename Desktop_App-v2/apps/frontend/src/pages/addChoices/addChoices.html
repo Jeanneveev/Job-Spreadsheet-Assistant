@@ -25,8 +25,8 @@
             <div class="options-container" id="options">
 
             </div>
-            <a href="javascript:;" onclick="addChoice();">+ Add Another Choice</a>
-            <button type="submit">Submit</button>
+            <a href="javascript:;" onclick="addChoice();">+ Add Choice</a>
+            <button type="submit">Add Options</button>
         </form>
         <button type="button" class="navBtn" onclick="closePopup();">Finish</button>
         <script>
@@ -44,11 +44,11 @@
                 datalist.id = "preexistingOptList";
                 datalistID = datalist.id;
                 fetch(`${SERVER_URL}/get_all_options`, { method: "GET" })
-                .then(response=>response.json()).then((data) => {
-                    const previous_options = data.result;
+                .then(response => response.json()).then((data) => {
+                    const previous_options = data.all_options;
                     console.log("Previous options are", previous_options);
                     previous_options.forEach(optVal => {
-                        const opt=document.createElement("option");
+                        const opt = document.createElement("option");
                         opt.setAttribute("value",optVal);
                     });
                 });
@@ -93,8 +93,8 @@
             */
             function loadOptions(){
                 fetch(`${SERVER_URL}/get_current_options`, { method: "GET" })
-                .then(response=>response.json()).then((data) => {
-                    const existing_options = data.result;
+                .then(response => response.json()).then((data) => {
+                    const existing_options = data.curr_options;
                     console.log("Existing options are",existing_options);
                     existing_options.forEach(choice=>{
                         addChoice(choice);
@@ -125,7 +125,7 @@
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({options:optionsLst}),
+                    body: JSON.stringify({options: optionsLst}),
                 }).then((response) => {
                     if(response.ok){
                         message.innerText="Options added!";
@@ -137,7 +137,7 @@
                             body: JSON.stringify({options:optionsLst}),
                         });
                     }
-                }).then(response=>response.text()).then(data=>console.log(data))
+                }).then(response => response.text()).then(data=>console.log(data))
                 .catch((err)=>console.error(err));
             });
 
