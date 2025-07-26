@@ -206,7 +206,7 @@ def answer_empty():
     return " "
 def answer_leading_presets(ll:LinkedList):
     """Loop backwards from the first non-preset node and answer all, if any, preset nodes before it"""
-    curr:Node = get_first_non_preset_node()
+    curr:Node = get_first_non_preset_node(ll)
     if curr != ll.head:
         while curr != ll.head: 
             curr = curr.prev
@@ -224,9 +224,9 @@ def answer_preset_node(node:Node, p_type:str):
     answ=""
     match p_type:
         case "appDate":
-            answ=answer_application_date()
+            answ = answer_application_date()
         case "empty":
-            answ=answer_empty()
+            answ = answer_empty()
         case _:
             raise ValueError(f"Unidentified preset type {p_type}")
     node.answer = answ

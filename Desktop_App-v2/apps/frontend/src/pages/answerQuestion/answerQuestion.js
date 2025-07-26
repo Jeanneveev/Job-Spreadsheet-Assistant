@@ -231,7 +231,7 @@ function submitLastQuestion(){
     homeBtn.disabled = true;
 
     /* Add all the answers to be exported */
-    fetch(`${SERVER_URL}/add_all_answers`, { method:"POST" })
+    fetch(`${SERVER_URL}/set_answers_to_export`, { method:"POST" })
     .then(response => response.text())
     .then(data => console.log(data));
 
@@ -253,7 +253,9 @@ function submitLastQuestion(){
         }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
             console.log(data.message);
             fetch(`${SERVER_URL}/export_data/sheets`, { method: "POST" })
-            .then(response => response.text()).then(data=>window.electron.send("open-alert",data));
+            .then(response => response.text())
+            .then(data => window.electron.send("open-alert",data))
+            .catch(err => console.error(err));
         }
         /* CSV */
     }).then(() => {
@@ -274,5 +276,6 @@ window.electron.on("auth-code-recieved", (event, code) => {
     //Since the user is already logged in and the sheet has been validated, you can just directly export
     fetch(`${SERVER_URL}/export_data/sheets`, { method: "POST" })
     .then(response => response.text())
-    .then(data=>alert(data));
+    .then(data => alert(data))
+    .catch(err => console.error(err));
 })

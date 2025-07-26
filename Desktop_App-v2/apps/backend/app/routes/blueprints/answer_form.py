@@ -36,7 +36,7 @@ def get_first_question_display_info()->dict:
     """
     ll:LinkedList = get_ll(current_app)
     first_valid:Node = get_first_non_preset_node(ll)
-    answer_leading_presets()    # answer any leading preset questions
+    answer_leading_presets(ll)    # answer any leading preset questions
     res = get_current_question_display_info(first_valid, first_valid.question)
     del res["is_addon"] #it's impossible to be anything but "false", so just remove it
     return jsonify(res)

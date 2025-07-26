@@ -73,7 +73,7 @@ class ExportData:
             else:
                 #redirect_uri is the page Google redirects to after sign-in is complete
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    "backend/sheets_credentials.json", SCOPES, redirect_uri="http://127.0.0.1:5000/auth_landing_page/"
+                    "sheets_credentials.json", SCOPES, redirect_uri="http://127.0.0.1:5000/auth_landing_page/"
                 )
                 #get and return the auth url
                 auth_url, _= flow.authorization_url()
@@ -193,10 +193,10 @@ class ExportData:
         """
         try:
             if self.service is None:
-                # logger.info("Check 1, self.service is None")
+                logger.info("Check 1, self.service is None")
                 self.get_service()  #ensure self.service is set
             if self.service is None:    #check again
-                # logger.info("Check 2: self.service is still None")
+                logger.info("Check 2: self.service is still None")
                 raise ServiceBuildError("Google Sheets service could not be obtained.")
         except AuthenticationError as e:
             logger.info(f"Authentication error: {e}")
@@ -210,9 +210,10 @@ class ExportData:
         except Exception as e:
             logger.info(f"An error has occured: {e}")
             return {"error": f"{e}"}, 404
-        data=self.data
-        end_col=self.length_to_col_letter(len(data))
-        rnge=f"A2:{end_col}2"
+        logger.info("service found")
+        data = self.data
+        end_col = self.length_to_col_letter(len(data))
+        rnge = f"A2:{end_col}2"
 
         try:
             values=[data]

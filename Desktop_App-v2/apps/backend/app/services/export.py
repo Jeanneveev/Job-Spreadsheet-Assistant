@@ -36,13 +36,14 @@ def get_service_from_auth_url_str(url_str:str):
         logger.info("Authentification successful and connection built")
 
 def export_data_to_sheets():
+    logger.info("export_data_to_sheets reached")
     exportData = get_export_data(current_app)
-    export_result=exportData.export_to_sheets()
+    export_result = exportData.export_to_sheets()
     logger.info(f"export_result is {export_result}")
     if type(export_result) is tuple:
-        export_result=export_result[0]
+        export_result = export_result[0]
     if export_result.get("error", None) is None: # if no errors, update it
-        res_msg:str=f"{(export_result.get('updates').get('updatedCells'))} cells appended."
+        res_msg:str = f"{(export_result.get('updates').get('updatedCells'))} cells appended."
         return res_msg
     else:
         raise Exception(f"{export_result.get('error')}")

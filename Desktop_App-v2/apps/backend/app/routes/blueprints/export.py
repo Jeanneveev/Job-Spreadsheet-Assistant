@@ -40,7 +40,7 @@ def set_answers_to_export():
     exportData = get_export_data(current_app)
     ll:LinkedList = get_ll(current_app)
     answs = get_all_answers(ll)
-    exportData.data=answs
+    exportData.data = answs
     logger.info(f"Answers {exportData.data} added")
     return f"Answers {exportData.data} added"
 
@@ -85,10 +85,10 @@ def auth_landing_page():
     return "You reached the landing page! You can close this window now."
 
 @export_bp.route("/export_data/sheets", methods=["POST"])
-def export_data_sheets():
+def export_sheets():
     try:
         result_msg = export_data_to_sheets()
     except Exception as e:
-        return str(e), 400
+        return str(e), 401
     
     return result_msg
