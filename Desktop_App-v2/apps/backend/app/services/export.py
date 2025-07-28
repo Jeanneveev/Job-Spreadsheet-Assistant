@@ -2,6 +2,7 @@ import os
 import logging
 from urllib.parse import parse_qs, urlparse
 from flask import current_app
+from werkzeug.datastructures import FileStorage
 from app.utils.export_data_handler import get_export_data
 
 logger = logging.getLogger(__name__)
@@ -13,14 +14,6 @@ def set_export_method(method:str) -> str:
     export_data = get_export_data(current_app)
     export_data.method = method
     return export_data.method
-
-# def set_export_loc(filename):
-#     export_data = get_export_data(current_app)
-#     upload_folder=current_app.config.get("UPLOAD_FOLDER")
-#     file_path=os.path.join(upload_folder,"CSV")
-#     ### TODO: Replace with the passed filename later
-#     full_file_path=os.path.join(file_path, filename)
-#     export_data.loc=full_file_path
 
 def get_service_from_auth_url_str(url_str:str):
     url = urlparse(url_str)
@@ -47,3 +40,33 @@ def export_data_to_sheets():
         return res_msg
     else:
         raise Exception(f"{export_result.get('error')}")
+    
+def set_new_export_csv(form_data:dict):
+    """Create a new CSV in the uploads folder with the given filename"""
+    name:str = form_data["new_csv_name"]
+    filename = name + ".csv"
+    folder = current_app.config.get("UPLOAD_FOLDER")
+    upload_path = os.path.join(folder, "exports", filename)
+
+    if os.path.exists(upload_path):
+        raise FileExistsError(f'CSV {name} already exists')
+
+    with open(upload_path, 'w') as file:
+        file.write("")
+    
+    return upload_path
+
+def set_old_export_csv(file_data:dict[str, FileStorage]):
+    """Take an existing CSV file and upload it to the uploads folder"""
+    if "file" not in file_data:
+        raise FileNotFoundError("ERROR: No file in request")
+    file = file_data["file"]
+    if file.filename == "":
+        raise FileNotFoundError("ERROR: No file selected")
+    
+    filename = file.filename
+    folder = current_app.config.get("UPLOAD_FOLDER")
+    path = os.path.join(folder, "exports", filename)
+    file.save(path)
+
+    return path

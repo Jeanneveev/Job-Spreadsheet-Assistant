@@ -4,11 +4,12 @@ another form
 import os
 import logging
 from flask import Blueprint, request, current_app
+from werkzeug.utils import secure_filename
 from ...utils.export_data_handler import get_export_data
 from ...utils.linked_list_handler import get_ll
 from ...models import LinkedList
 from ...services import (get_all_answers, set_export_method,
-    get_service_from_auth_url_str, export_data_to_sheets)
+    get_service_from_auth_url_str, export_data_to_sheets, set_new_export_csv, set_old_export_csv)
 
 logger = logging.getLogger(__name__)
 export_bp = Blueprint("export", __name__)
@@ -22,14 +23,32 @@ def set_export_data_method():
         return str(e), 409
     
     return f"Method: {set_method} set"
-# @export_bp.route("/set_export_loc", methods=["POST"])
-# def set_export_loc():
-#     filename:str = request.data.decode("utf-8")
-#     try:
-#         ...
-#     except:
-#         ...
-#     return f"Filepath set as {full_file_path}"
+
+@export_bp.route("/set_export_loc", methods=["POST"])
+def set_export_loc():
+    """Given a form containing the name of the CSV to export and whether it is a new or
+    pre-existing CSV, upload it to the UPLOAD_FOLDER, if necessary, and set its path to
+    the app's ExportData instance
+    """
+    form = request.form
+    new_or_old = request.form["csvOpt"]
+
+    if "new" in new_or_old:
+        try:
+            path = set_new_export_csv(form)
+        except FileExistsError as e:
+            return str(e), 409
+    elif "old" in new_or_old:
+        try:
+            path = set_old_export_csv(request.files)
+        except FileNotFoundError as e:
+            return str(e), 409
+    
+    export_data = get_export_data(current_app)
+    export_data.loc = path
+
+    return "Export location set"
+
 @export_bp.route("/get_export_method", methods=["GET"])
 def get_export_method():
     export_data = get_export_data(current_app)

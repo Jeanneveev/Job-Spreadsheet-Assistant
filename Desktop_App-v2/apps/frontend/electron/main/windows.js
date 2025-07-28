@@ -7,8 +7,8 @@ const preloadDirectory = path.resolve(__dirname, "..", "preload", "preload.js")
 
 const createHomeWindow = () => {
     win = new BrowserWindow({
-        width: 400,
-        height: 300,
+        width: 500,
+        height: 375,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: true,

@@ -11,7 +11,7 @@
                 box-sizing: border-box;
             }
             h1{
-                margin-block: .5rem 1rem;
+                margin-block: .5rem 2.5rem;
                 text-align: center;
             }
             .buttons-wrapper{
@@ -36,7 +36,6 @@
             <button id="export_src_btn" onclick="window.location.href='./pages/selectExport/selectExport.html'" disabled>Select Export Source</button>
         </div>
         <script>
-            /* FLASK STUFF */
             const SERVER_URL = window.electron.SERVER_URL;
             const getQBtn = document.getElementById("get_q_btn");
             const answerQBtn = document.getElementById("answ_q_btn");
@@ -64,7 +63,7 @@
                     console.error(error);
                 }
             }
-            /* Check type of first question */
+            /* Check type of first question to know which page to load */
             async function getFirstAType() {
                 try{
                     const response = await fetch(`${SERVER_URL}/get_first_a_type`, {

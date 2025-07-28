@@ -3,96 +3,42 @@
     <head>
         <meta charset='UTF-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <style>
+            .indented{
+                padding-left: 1rem;
+            }
+            .buttons{
+                padding-top: 2rem;
+            }
+        </style>
     </head>
     <body>
         <h1>Export Settings</h1>
         <p>You are currently exporting your answers to: <span id="result">None</span></p>
         <form id="form">
             <input type="radio" name="exportOpt" id="sheets" value="sheets" required />
-            <label for="sheets">Google Sheets</label>
-            <br />
-            <label for="sheets_id">Google Sheets ID</label>
+            <label for="sheets">Google Sheets:</label>
+            <label for="sheets_id" style="padding-left: .25rem;">ID</label>
             <input type="text" name="sheet_id" id="sheet_id" />
             <br />
-            <button id="submit" type="submit">Submit</button>
+            <input type="radio" name="exportOpt" id="csv" value="csv" required />
+            <label for="csv">CSV</label>
+            <br />
+            <div class="indented">
+                <input type="radio" name="csvOpt" id="new_csv" value="new_csv" disabled />
+                <label for="new_csv">New: </label>
+                <label for="new_csv_name">Name</label>
+                <input type="text" name="new_csv_name" id="new_csv_name" disabled />
+                <br />
+                <input type="radio" name="csvOpt" id="old_csv" value="old_csv" disabled />
+                <label for="old_csv">Old: </label>
+                <input type="file" id="old_csv_file" accept=".csv" disabled />
+            </div>
+            <div class="buttons">
+                <button id="back" onclick="window.location.href='../../index.html'">Back to Home</button>
+                <button id="submit" type="submit">Submit</button>
+            </div>
         </form>
-        <button id="back" onclick="window.location.href='../../index.html'">Back to Home</button>
-        <script>
-            const SERVER_URL = "http://127.0.0.1:5000";
-            const result = document.getElementById("result");
-            const form = document.getElementById("form");
-            const submitBtn = document.getElementById("submit");
-            const backBtn = document.getElementById("back");
-            form.addEventListener("submit", (event) => {
-                event.preventDefault();
-                const selectedEl = document.querySelector('input[name="exportOpt"]:checked');  //get the checked option
-                const selectedOpt = selectedEl.value;
-                const optText = selectedEl.labels[0].textContent;
-                result.innerText="...";
-                //disable the submit and back button so that the user can't leave the page before the id's been set
-                submitBtn.disabled = true;
-                backBtn.disabled = true;
-
-                const sheet_id = document.getElementById("sheet_id").value;
-                //set the export method
-                fetch(`${SERVER_URL}/set_export_method`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "text/plain"
-                    },
-                    body: selectedOpt
-                })
-                .then(response => response.text())
-                .then(data => console.log("set result:", data))
-                .catch(error => console.error(error));
-                //if the export method is Google Sheets, login the user and set the given id
-                if(selectedOpt == "sheets"){
-                    fetch(`${SERVER_URL}/get_auth_url`, { method: "GET" })
-                    .then(response => response.json()).then(data=>{
-                        /* Sheets */
-                        if(data.auth_url){
-                            //send message to ipcMain to open popup and get code
-                            window.electron.send("open-auth-window", data.auth_url);
-                        }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
-                            console.log(data.message);
-                        }
-                    })
-                    .then(() => {
-                        return fetch(`${SERVER_URL}/set_sheet_id`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "text/plain"
-                            },
-                            body: sheet_id
-                        })
-                    })
-                    .then(response => response.text())
-                    .then(data => {
-                        console.log(data);
-                        result.innerText = optText;
-                        submitBtn.disabled = false;
-                        backBtn.disabled = false;
-                    })
-                    .catch(error => console.error(error))
-                }
-            });
-
-            /**
-            * If a method has already been set, onpageload set the span to the method
-            * and check the corresponding radio button
-            */
-            window.addEventListener("load", (event)=>{
-                fetch(`${SERVER_URL}/get_export_method`,  {method: "GET" })
-                .then(response => response.text()).then((data)=>{
-                    console.log("data:", data);
-                    if(data != "None"){
-                        presetOpt = document.getElementById(data);
-                        presetOptLabel = presetOpt.labels[0].textContent;
-                        result.innerText = presetOptLabel;
-                        presetOpt.checked = true;
-                    }
-                });
-            });
-        </script>
+        <script src="./selectExport.js"></script>
     </body>
 </html>

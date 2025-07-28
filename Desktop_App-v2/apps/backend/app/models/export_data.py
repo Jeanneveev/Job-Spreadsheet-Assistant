@@ -45,7 +45,7 @@ class ExportData:
         self.sheet_id=None
     # CSV
     def export_to_CSV(self):
-        if self.loc==None:
+        if self.loc == None:
             raise FileNotFoundError
         pass
     # GOOGLE SHEETS
@@ -80,7 +80,7 @@ class ExportData:
                 return auth_url
         return None
 
-    def get_service(self,code=None)->Any|dict|HttpError:
+    def get_service(self, code=None)->Any|dict|HttpError:
         """Connects to the Google Sheets API
         Args:
             code: The authentification code gotten from the user login
@@ -90,12 +90,12 @@ class ExportData:
             error (HttError): an HttpError
         """
         ## NOTE: If modifying this scope, delete token.json file
-        SCOPES=["https://www.googleapis.com/auth/spreadsheets"]
-        creds=None  #initialize creds
+        SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+        creds = None  #initialize creds
         # If there is already a token.json, just get the credentials from it
-        token_path=os.path.join(basedir,"token.json")
+        token_path = os.path.join(basedir, "token.json")
         if os.path.exists(token_path):
-            creds=Credentials.from_authorized_user_file(token_path, SCOPES)
+            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
             logger.info(f"Credentials from token.json: {creds}")
         #if there isn't or the credentials aren't valid
         if not creds or not creds.valid:
@@ -109,14 +109,14 @@ class ExportData:
                         os.remove(token_path)
                     return self.get_service()
             elif code:
-                creds_path=os.path.join(basedir,"sheets_credentials.json")
+                creds_path = os.path.join(basedir, "sheets_credentials.json")
                 flow = InstalledAppFlow.from_client_secrets_file(
                     creds_path, SCOPES, redirect_uri="http://127.0.0.1:5000/auth_landing_page/"
                 )
                 #try getting the token of the credentials from the auth code
                 try:
                     flow.fetch_token(code=code)
-                    creds=flow.credentials
+                    creds = flow.credentials
                     with open(token_path, "w") as token:
                         token.write(creds.to_json())
                 except Exception as e:
@@ -153,6 +153,7 @@ class ExportData:
         except HttpError as error:
             status_code = error.response.status_code
             if status_code == 403:
+                logger.error("Access denied: User does not have permission to access this sheet")
                 return False, "Access denied: User does not have permission to access this sheet"
             elif status_code == 404:
                 return False, "Access denied: The given ID does not match to any Google Sheets file"
@@ -170,20 +171,20 @@ class ExportData:
 
     ## EXPORTING
     def length_to_col_letter(self,length:int):
-        num2char={1:"A",2:"B",3:"C",4:"D",5:"E",
+        num2char = {1:"A",2:"B",3:"C",4:"D",5:"E",
                   6:"F",7:"G",8:"H",9:"I",10:"J",
                   11:"K",12:"L",13:"M",14:"N",15:"O",
                   16:"P",17:"Q",18:"R",19:"S",20:"T",
                   21:"U",22:"V",23:"W",24:"X",25:"Y",26:"Z"}
-        col=""
-        if length>26:
-            len1=length//26
-            len2=length%26
-            col=num2char[len1]+num2char[len2]
+        col = ""
+        if length > 26:
+            len1 = length//26
+            len2 = length%26
+            col = num2char[len1]+num2char[len2]
         else:
-            col=num2char[length]
+            col = num2char[length]
         return col
-    def export_to_sheets(self)->Any|dict:
+    def export_to_sheets(self) -> Any|dict:
         """Appends the list of details as a new row of a Google Sheets spreadsheet
         Args:
             self: The current instance of ExportData
@@ -216,9 +217,9 @@ class ExportData:
         rnge = f"A2:{end_col}2"
 
         try:
-            values=[data]
-            body={"values": values}
-            result=(
+            values = [data]
+            body = {"values": values}
+            result = (
                 self.service.spreadsheets()
                 .values()
                 .append(

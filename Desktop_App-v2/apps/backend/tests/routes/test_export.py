@@ -1,8 +1,9 @@
+import io
 import pytest
-from flask.testing import FlaskClient   #for type hint
+from flask.testing import FlaskClient   #for type hints
 from pytest_mock import MockerFixture   #for type hints
 from app.models import Question, Node, ExportData
-from ..helpers import build_test_export_data, build_test_ll, generate_node, generate_question
+from ..helpers import build_test_export_data, build_test_ll, generate_node, generate_question, set_test_config
 
 def test_set_export_method_cannot_set_invalid_export_data_method(test_client:FlaskClient):
     invalid_method = "json"
@@ -66,3 +67,58 @@ def test_set_sheet_id_can_only_set_valid_sheet_id(test_client:FlaskClient, mocke
     else:
         assert response.status_code == 409
         assert response.text == "Access denied: The given ID does not match to any Google Sheets file"
+
+def test_set_export_loc_cannot_set_to_new_existing_location(test_client:FlaskClient, tmp_path):
+    test_upload_folder = tmp_path / "upload"
+    test_export_folder = test_upload_folder / "exports"
+    existing_csv = test_export_folder / "test.csv"
+    test_upload_folder.mkdir()
+    test_export_folder.mkdir()
+    existing_csv.touch()
+
+    config_params = {"UPLOAD_FOLDER": test_upload_folder}
+    set_test_config(test_client, config_params)
+
+    name = "test"
+    data = {"csvOpt": "new", "new_csv_name":name}
+
+    response = test_client.post("/set_export_loc", data=data)
+    assert response.status_code == 409
+
+def test_set_export_loc_can_set_to_new_nonexistent_location(test_client:FlaskClient, tmp_path):
+    test_upload_folder = tmp_path / "upload"
+    test_export_folder = test_upload_folder / "exports"
+    test_upload_folder.mkdir()
+    test_export_folder.mkdir()
+
+    config_params = {"UPLOAD_FOLDER": test_upload_folder}
+    set_test_config(test_client, config_params)
+
+    name = "test"
+    data = {"csvOpt": "new", "new_csv_name": name}
+
+    response = test_client.post("/set_export_loc", data=data)
+    assert response.status_code == 200
+
+def test_set_export_loc_can_set_to_new_or_existing_location(test_client:FlaskClient, tmp_path):
+    test_upload_folder = tmp_path / "upload"
+    test_export_folder = test_upload_folder / "exports"
+    test_upload_folder.mkdir()
+    test_export_folder.mkdir()
+
+    config_params = {"UPLOAD_FOLDER": test_upload_folder}
+    set_test_config(test_client, config_params)
+
+    name = "test.csv"
+    file_data = (io.BytesIO(b"smth"), name)
+    data = {"csvOpt": "old", "new_csv_name": "test", "file": file_data}
+
+    response = test_client.post("/set_export_loc", data=data)
+    assert response.status_code == 200
+
+    # Remake the file data to allow the file to be reopened
+    file_data = (io.BytesIO(b"smth"), name)
+    data = {"csvOpt": "old", "new_csv_name": "test", "file": file_data}
+    
+    response = test_client.post("/set_export_loc", data=data)
+    assert response.status_code == 200
