@@ -109,7 +109,7 @@ function fillPresetQuestion(preset, forwards) {
                 loadNextQuestion();
                 return;
             }else{
-                window.electron.send("open-confirm","This is the last question. Do you wish to submit all your answers?");
+                window.electron.send("open-confirm", "This is the last question. Do you wish to submit all your answers?");
             }
         })
         .catch(err => console.error(err));
@@ -143,7 +143,7 @@ function loadPreviousQuestion(){
         }else{
             /* Set session variables */
             sessionStorage.setItem("next_q_str",data.q_str);
-            sessionStorage.setItem("is_last","false");  //always false because the current question exists
+            sessionStorage.setItem("is_last", "false");  //always false because the current question exists
         }
         
         window.location.href = form.action;   //load page of next (previous) question
@@ -157,15 +157,15 @@ function loadNextQuestion(){
     .then(response => response.json())
     .then((data) => {
         /* Set all the session variables */
-        sessionStorage.setItem("next_q_str",data.q_str);
-        sessionStorage.setItem("next_a_type",data.next_question_a_type);
+        sessionStorage.setItem("next_q_str", data.q_str);
+        sessionStorage.setItem("next_a_type", data.next_question_a_type);
         if(data.is_addon.includes("true")){
-            sessionStorage.setItem("is_addon","true");
-            window.electron.send("print-to-main-terminal","The next question is an addon");
+            sessionStorage.setItem("is_addon", "true");
+            window.electron.send("print-to-main-terminal", "The next question is an addon");
         }else{
-            sessionStorage.setItem("is_addon","false");
+            sessionStorage.setItem("is_addon", "false");
         }
-        sessionStorage.setItem("is_last",data.is_last);
+        sessionStorage.setItem("is_last", data.is_last);
 
         //Get where the page will redirect to
         if(next_a_type == "open-ended"){
@@ -198,10 +198,10 @@ function addFormListener(openEndedFlag){
                 loadNextQuestion();
             }else{                  //this is the last question
                 if(sessionStorage.getItem("first_submit")==="true"){
-                    window.electron.send("open-confirm","This is the last question. Do you wish to submit all your answers?");
-                    sessionStorage.setItem("first_submit","false");
+                    window.electron.send("open-confirm", "This is the last question. Do you wish to submit all your answers?");
+                    sessionStorage.setItem("first_submit", "false");
                 }else{
-                    window.electron.send("open-confirm","You've already submitted your answers. Do you wish to submit them all again?")
+                    window.electron.send("open-confirm", "You've already submitted your answers. Do you wish to submit them all again?")
                 }
                 
                 /* NOTE: The rest of the logic is handled by the listeners below */
@@ -233,7 +233,7 @@ function export_to_sheets(){
             console.log(data.message);
             fetch(`${SERVER_URL}/export_data/sheets`, { method: "POST" })
             .then(response => response.text())
-            .then(data => window.electron.send("open-alert", data))
+            .then(data => window.electron.send("open-notification", data))
             .catch(err => console.error(err));
         }
     })
@@ -242,7 +242,7 @@ function export_to_sheets(){
 function export_to_csv(){
     fetch(`${SERVER_URL}/export_data/csv`, { method: "POST" })
     .then(response => response.text())
-    .then(data => window.electron.send("open-alert", data))
+    .then(data => window.electron.send("open-notification", data))
     .catch(err => console.error(err));
 }
 
@@ -270,15 +270,19 @@ function submitLastQuestion(){
             export_to_csv();
         }
     })
-    .then(() => {
-        //enable all the buttons
-        nextBtn.disabled = false;
-        prevBtn.disabled = false;
-        resetBtn.disabled = false;
-        homeBtn.disabled = false;
-    })
     .catch(err => console.error("Export request failed",err));
 }
+
+window.electron.on("notification-closed", () => {
+    fetch(`${SERVER_URL}/reset_answer_form`, { method: "DELETE" })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .then(() => {
+        //return to home
+        window.location.href = "../../index.html";
+    })
+    .catch(err => console.error(err));
+})
 
 /* Listen for the trigger from ipcMain in main.js
  * Activated on the authorization code successfully being gotten

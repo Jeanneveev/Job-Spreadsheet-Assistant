@@ -132,7 +132,7 @@ def test_export_data_csv_can_append_to_existing_csv(test_client:FlaskClient, tmp
     test_export_folder.mkdir()
     existing_csv.touch()
 
-    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1","2","3"])
+    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1", "2", "3"])
     existing_df.to_csv(existing_csv, index=False)
 
     data = ["A", "B", "C"]

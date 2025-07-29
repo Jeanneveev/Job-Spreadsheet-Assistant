@@ -38,7 +38,7 @@ def validate_upload(loaded_json):
                         "a_type": {"type":"string"},
                         "options": {"type":"array"}
                     },
-                    "required":["q_str","q_detail","q_type","a_type"]
+                    "required":["q_str", "q_detail", "q_type", "a_type"]
                 },
                 "addon": {
                     "type":"object",
@@ -49,7 +49,7 @@ def validate_upload(loaded_json):
                         "a_type": {"type":"string"},
                         "options": {"type":"array"}
                     },
-                    "required":["q_str","q_detail","q_type","a_type"]
+                    "required":["q_str", "q_detail", "q_type", "a_type"]
                 },
                 "answer": {
                     "type":"string"

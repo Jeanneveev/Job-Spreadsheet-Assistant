@@ -111,7 +111,7 @@ def test_export_data_to_csv_can_append_equal_lengths_of_data_to_existing_csv(tes
     test_export_folder.mkdir()
     existing_csv.touch()
 
-    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1","2","3"])
+    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1", "2", "3"])
     existing_df.to_csv(existing_csv, index=False)
 
     data = ["A", "B", "C"]
@@ -120,7 +120,7 @@ def test_export_data_to_csv_can_append_equal_lengths_of_data_to_existing_csv(tes
     spy = mocker.spy(pandas, "concat")
     _ = export_data_to_csv()
 
-    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", "C"]], columns=["1","2","3"])
+    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", "C"]], columns=["1", "2", "3"])
     assert spy.spy_return.equals(expected)
 
 def test_export_data_to_csv_can_append_shorter_data_to_existing_csv(test_client:FlaskClient, tmp_path, mocker):
@@ -131,7 +131,7 @@ def test_export_data_to_csv_can_append_shorter_data_to_existing_csv(test_client:
     test_export_folder.mkdir()
     existing_csv.touch()
 
-    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1","2","3"])
+    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1", "2", "3"])
     existing_df.to_csv(existing_csv, index=False)
 
     data = ["A", "B"]
@@ -140,7 +140,7 @@ def test_export_data_to_csv_can_append_shorter_data_to_existing_csv(test_client:
     spy = mocker.spy(pandas, "concat")
     _ = export_data_to_csv()
 
-    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", ""]], columns=["1","2","3"])
+    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", ""]], columns=["1", "2", "3"])
     assert spy.spy_return.equals(expected)
 
 def test_export_data_to_csv_can_append_shortened_longer_data_to_existing_csv(test_client:FlaskClient, tmp_path, mocker):
@@ -151,7 +151,7 @@ def test_export_data_to_csv_can_append_shortened_longer_data_to_existing_csv(tes
     test_export_folder.mkdir()
     existing_csv.touch()
 
-    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1","2","3"])
+    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1", "2", "3"])
     existing_df.to_csv(existing_csv, index=False)
 
     data = ["A", "B", "C", "D"]
@@ -160,5 +160,5 @@ def test_export_data_to_csv_can_append_shortened_longer_data_to_existing_csv(tes
     spy = mocker.spy(pandas, "concat")
     _ = export_data_to_csv()
 
-    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", "C"]], columns=["1","2","3"])
+    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", "C"]], columns=["1", "2", "3"])
     assert spy.spy_return.equals(expected)

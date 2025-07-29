@@ -135,7 +135,7 @@
                     const select = document.createElement("select");
                     select.classList.add("order-select");
                     td_order.appendChild(select);
-                    td_order.setAttribute("rowspan","2");
+                    td_order.setAttribute("rowspan", "2");
                     row.prepend(td_order);
                 }else{
                     const td_order = document.createElement("td");
@@ -225,7 +225,7 @@
                         // console.log("select found. order is",order);
                         // console.log("detail is",detail);
                         if(Object.keys(order_detail_dict).includes(order)){
-                            window.electron.send("open-alert","ERROR: Two questions cannot share the same order number.");
+                            window.electron.send("open-alert", "ERROR: Two questions cannot share the same order number.");
                             return;
                         }else{
                             order_detail_dict[order]=detail;
@@ -268,7 +268,7 @@
             */
             function deleteQuestion(q_detail,is_addon=false){
                 console.log("Q_detail to delete is",q_detail,"and its type is", typeof q_detail);
-                window.electron.send("open-confirm","Are you sure you want to delete this question?");
+                window.electron.send("open-confirm", "Are you sure you want to delete this question?");
                 window.electron.on("confirm-box-confirmed", () => {
                     if(is_addon){
                         fetch(`${SERVER_URL}/delete_question`, {

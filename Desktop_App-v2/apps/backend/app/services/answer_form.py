@@ -231,7 +231,6 @@ def answer_preset_node(node:Node, p_type:str):
             raise ValueError(f"Unidentified preset type {p_type}")
     node.answer = answ
     return answ
-    
 
 def get_all_answers(ll:LinkedList):
     return ll.getAllAnswers()

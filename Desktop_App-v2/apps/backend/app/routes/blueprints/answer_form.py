@@ -117,3 +117,10 @@ def get_all_answers_endpoint():
     """
     ll:LinkedList = get_ll(current_app)
     return jsonify(get_all_answers(ll))
+
+@answ_bp.route("/reset_answer_form", methods=["DELETE"])
+def reset_answer_form():
+    session.pop("curr_node")
+    session.pop("curr_question")
+
+    return "Reset current node and question"

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, remote } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, remote, ipcRenderer } = require('electron');
 const { exec } = require("child_process");
 const fetch = require("node-fetch");
 const path = require("path");
@@ -209,7 +209,7 @@ app.on("before-quit",(evt)=>{
 let win = null;
 const createMainWindow = () => {
     win = createHomeWindow();
-    win.setAlwaysOnTop("true","main-menu", 1);
+    win.setAlwaysOnTop("true", "main-menu", 1);
 
     win.loadFile(path.join(srcDirectory, "index.html"));
 
@@ -281,7 +281,7 @@ ipcMain.on("open-question-window", (event) => {
     questionWindow = createWindow(width, height, foldername, filename, parent);
 
     win.setAlwaysOnTop("false"); //remove parent's always on top
-    questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
+    questionWindow.setAlwaysOnTop("true", "torn-off-menu", 1);
 
     questionWindow.on("closed", () => {
         win.loadFile(path.join(srcDirectory, "index.html")); //reload main page to activate buttons
@@ -294,7 +294,7 @@ ipcMain.on("close-question-window", () => {
         questionWindow=null;
         //reset parent's always on top
         if(win){
-            win.setAlwaysOnTop("true","main-menu", 1);
+            win.setAlwaysOnTop("true", "main-menu", 1);
         }
     }
 })
@@ -356,7 +356,7 @@ ipcMain.on("open-confirm", (event,message)=>{
         }
     })
 });
-ipcMain.on("open-alert", (event,message)=>{
+ipcMain.on("open-alert", (event, message) => {
     dialog.showMessageBox(win, {
         "type": "warning",
         "title": "Warning",
@@ -368,6 +368,21 @@ ipcMain.on("open-alert", (event,message)=>{
         return;
     })
 });
+
+ipcMain.on("open-notification", (event, message) => {
+    dialog.showMessageBox(win, {
+        "type": "info",
+        "title": "Notification",
+        "message": message,
+        "buttons": ["OK"]
+    })
+    .then((result) => {
+        console.log("Notification closed");
+        event.sender.send("notification-closed")
+        return;
+    })
+});
+
 let promptWindow = null
 ipcMain.on("open-prompt", (event)=>{
     const width = 300
@@ -390,7 +405,7 @@ ipcMain.on("close-prompt", (event)=>{
         promptWindow = null;
         //reset parent's always on top
         if(parent){
-            questionWindow.setAlwaysOnTop("true","torn-off-menu", 1);
+            questionWindow.setAlwaysOnTop("true", "torn-off-menu", 1);
         }
     }
 });

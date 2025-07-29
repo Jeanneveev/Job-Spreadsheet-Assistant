@@ -264,14 +264,14 @@
                     validateOptions().then((validated)=>{
                         if(validated){
                             //send message to main.js to create confirm popup box
-                        window.electron.send("open-confirm","Are you sure you want to submit?");
+                        window.electron.send("open-confirm", "Are you sure you want to submit?");
                         }else{
-                            window.electron.send("open-alert","Multiple-choice questions must have options set. Please add options");
+                            window.electron.send("open-alert", "Multiple-choice questions must have options set. Please add options");
                         }
                     })
                 }else{
                     //send message to main.js to create confirm popup box
-                    window.electron.send("open-confirm","Are you sure you want to submit?");
+                    window.electron.send("open-confirm", "Are you sure you want to submit?");
                 }
             });
         </script>
