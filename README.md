@@ -5,6 +5,7 @@ A small widget to help me save details about jobs I applied to
 ## Prerequisites
 You'll need:
 - Python 3.10.7 or later
+
 If you wish to use the "Export to Google Sheets" functionality, you will also require:
 - A Google account
 - [A Google Cloud project](https://developers.google.com/workspace/guides/create-project)
