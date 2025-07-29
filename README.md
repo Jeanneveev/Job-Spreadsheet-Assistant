@@ -12,15 +12,15 @@ If you wish to use the "Export to Google Sheets" functionality, you will also re
 - A Google Sheets file
 
 ## Installation
-1. Create a ".env" file within the "apps/backend" folder
-2. Set `SECRET_KEY = "some_secret_key"`, where some_secret_key is your secret key
-3. Run `pip install -r requirements.txt`
+1. Navigate to the "apps/backend" folder
+2. Create a ".env" file and put the following text within it: `SECRET_KEY = "some_secret_key"`, where some_secret_key is your secret key
+4. Run `pip install -r requirements.txt`
 
 To export to a Google Sheets spreadsheet, also do the following:
 4. Create a credentials JSON file for your Google Cloud project ([steps found here](https://developers.google.com/sheets/api/quickstart/python#authorize_credentials_for_a_desktop_application))
 5. Copy its contents into "empty_sheets_credentials.json" file and rename it to "sheets_credentials.json"
 
-6. In the terminal, navigate to the folder you downloaded Desktop_App-v2 into and run the program with:
+6. In the terminal, navigate back to the "Desktop_App-v2" folder and run the program with:
    ```sh
    npm start
    ```
