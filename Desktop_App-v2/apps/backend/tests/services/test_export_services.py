@@ -1,7 +1,11 @@
 import pytest
+import pandas
+import numpy as np
 from flask.testing import FlaskClient   #for type hint
 from werkzeug.datastructures import FileStorage
-from ..helpers import build_test_export_data, set_test_config
+from ..helpers import (build_test_export_data, set_test_config,
+    generate_node, generate_question, build_test_ll
+)
 from app.services.export import *
 
 def test_set_export_method_cannot_set_invalid_method(test_client:FlaskClient):
@@ -86,3 +90,75 @@ def test_set_old_export_csv_can_set_to_new_files(test_client:FlaskClient, tmp_pa
     result = set_old_export_csv({"file": file})
     assert "\\upload\\exports\\test.csv" in result
     
+def test_get_csv_headers_can_get_existing_headers():
+    df = pandas.DataFrame(columns=["1", "2", "3"])
+    assert get_csv_headers(df) == ["1", "2", "3"]
+
+def test_get_csv_headers_can_get_q_details_as_headers(test_client:FlaskClient):
+    node_1 = generate_node(generate_question(q_detail="1"), generate_question(q_detail="+1"))
+    node_2 = generate_node(generate_question(q_detail="2"))
+    node_3 = generate_node(generate_question(q_detail="4"))
+    _ = build_test_ll(test_client, [node_1, node_2, node_3])
+
+    df = pandas.DataFrame()
+    assert get_csv_headers(df) == ["1", "2", "4"]
+
+def test_export_data_to_csv_can_append_equal_lengths_of_data_to_existing_csv(test_client:FlaskClient, tmp_path, mocker):
+    test_upload_folder = tmp_path / "upload"
+    test_export_folder = test_upload_folder / "exports"
+    existing_csv = test_export_folder / "test.csv"
+    test_upload_folder.mkdir()
+    test_export_folder.mkdir()
+    existing_csv.touch()
+
+    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1","2","3"])
+    existing_df.to_csv(existing_csv, index=False)
+
+    data = ["A", "B", "C"]
+    build_test_export_data(test_client, {"loc": existing_csv, "data": data})
+
+    spy = mocker.spy(pandas, "concat")
+    _ = export_data_to_csv()
+
+    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", "C"]], columns=["1","2","3"])
+    assert spy.spy_return.equals(expected)
+
+def test_export_data_to_csv_can_append_shorter_data_to_existing_csv(test_client:FlaskClient, tmp_path, mocker):
+    test_upload_folder = tmp_path / "upload"
+    test_export_folder = test_upload_folder / "exports"
+    existing_csv = test_export_folder / "test.csv"
+    test_upload_folder.mkdir()
+    test_export_folder.mkdir()
+    existing_csv.touch()
+
+    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1","2","3"])
+    existing_df.to_csv(existing_csv, index=False)
+
+    data = ["A", "B"]
+    build_test_export_data(test_client, {"loc": existing_csv, "data": data})
+
+    spy = mocker.spy(pandas, "concat")
+    _ = export_data_to_csv()
+
+    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", ""]], columns=["1","2","3"])
+    assert spy.spy_return.equals(expected)
+
+def test_export_data_to_csv_can_append_shortened_longer_data_to_existing_csv(test_client:FlaskClient, tmp_path, mocker):
+    test_upload_folder = tmp_path / "upload"
+    test_export_folder = test_upload_folder / "exports"
+    existing_csv = test_export_folder / "test.csv"
+    test_upload_folder.mkdir()
+    test_export_folder.mkdir()
+    existing_csv.touch()
+
+    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1","2","3"])
+    existing_df.to_csv(existing_csv, index=False)
+
+    data = ["A", "B", "C", "D"]
+    build_test_export_data(test_client, {"loc": existing_csv, "data": data})
+
+    spy = mocker.spy(pandas, "concat")
+    _ = export_data_to_csv()
+
+    expected = pandas.DataFrame([["a", "b", "c"], ["A", "B", "C"]], columns=["1","2","3"])
+    assert spy.spy_return.equals(expected)

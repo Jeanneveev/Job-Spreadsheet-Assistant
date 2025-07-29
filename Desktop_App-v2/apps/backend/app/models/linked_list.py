@@ -113,7 +113,7 @@ class LinkedList:
             if i == idx:
                 return curr
             i += 1
-            curr=curr.next
+            curr = curr.next
         raise IndexError("Index out of range")
     def getAll(self) -> list[dict]:
         """Return a list of the dictionary forms of all the nodes"""
@@ -121,7 +121,7 @@ class LinkedList:
         curr:Node = self.head
         while curr:
             res.append(curr.as_dict())
-            curr=curr.next
+            curr = curr.next
         return res
     def getAllAnswers(self) -> list[str]:
         """Returns a list of all answers of all nodes in the linked list"""
@@ -129,7 +129,25 @@ class LinkedList:
         curr:Node = self.head
         while curr:
             res.append(curr.answer)
-            curr=curr.next
+            curr = curr.next
+        return res
+    def getAllDetails(self) -> list[str]:
+        """Returns a list off all q_details of all questions in the linked list"""
+        res = []
+        curr:Node = self.head
+        while curr:
+            res.append(curr.question.q_detail)
+            if curr.addon:
+                res.append(curr.addon.q_detail)
+            curr = curr.next
+        return res
+    def getAllQuestionDetails(self) -> list[str]:
+        """Returns a list off all q_details of all questions in the linked list"""
+        res = []
+        curr:Node = self.head
+        while curr:
+            res.append(curr.question.q_detail)
+            curr = curr.next
         return res
     def getQNum(self) -> int:
         """Get the number of questions in the linked list"""

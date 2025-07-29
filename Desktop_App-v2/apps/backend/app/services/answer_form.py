@@ -132,12 +132,12 @@ def get_next_question_display_info(curr_node:Node, curr_question:Question):
 
     if curr_is_addon or not curr_node.addon:
         #the next question is the next node's question
-        next_node:Node=curr_node.next
-        next_question:Question=curr_node.next.question
+        next_node:Node = curr_node.next
+        next_question:Question = curr_node.next.question
     else:
         # the current question has an addon, which will be the next question
-        next_node:Node=curr_node
-        next_question:Question=curr_node.addon
+        next_node:Node = curr_node
+        next_question:Question = curr_node.addon
 
     session["curr_question"] = next_question.as_dict()
     session["curr_node"] = next_node.as_dict()

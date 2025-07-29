@@ -1,4 +1,5 @@
 import io
+import pandas
 import pytest
 from flask.testing import FlaskClient   #for type hints
 from pytest_mock import MockerFixture   #for type hints
@@ -122,3 +123,21 @@ def test_set_export_loc_can_set_to_new_or_existing_location(test_client:FlaskCli
     
     response = test_client.post("/set_export_loc", data=data)
     assert response.status_code == 200
+
+def test_export_data_csv_can_append_to_existing_csv(test_client:FlaskClient, tmp_path, mocker):
+    test_upload_folder = tmp_path / "upload"
+    test_export_folder = test_upload_folder / "exports"
+    existing_csv = test_export_folder / "test.csv"
+    test_upload_folder.mkdir()
+    test_export_folder.mkdir()
+    existing_csv.touch()
+
+    existing_df = pandas.DataFrame([["a", "b", "c"]], columns=["1","2","3"])
+    existing_df.to_csv(existing_csv, index=False)
+
+    data = ["A", "B", "C"]
+    build_test_export_data(test_client, {"loc": existing_csv, "data": data})
+
+    response = test_client.post("/export_data/csv")
+    assert response.status_code == 200
+    assert response.text == "3 cells appended"

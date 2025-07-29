@@ -10,7 +10,7 @@ def test_check_allowed_extension_only_allows_json_extensions(is_allowed):
     else:
         file = "invalid.txt"
 
-    assert check_allowed_extension(file) == is_allowed
+    assert check_allowed_extension_json(file) == is_allowed
 
 def test_validate_upload_cannot_validate_incorrectly_formatted_json():
     invalid_json = [{"invalid": "Invalid"}]

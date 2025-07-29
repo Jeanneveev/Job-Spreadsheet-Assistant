@@ -11,15 +11,15 @@ from app.services import get_preexisting_filenames, get_root_filename
 
 logger = logging.getLogger(__name__)
 
-def check_allowed_extension(filename:str) -> bool:
+def check_allowed_extension_json(filename:str) -> bool:
     ALLOWED_EXTENSIONS = [".json"]
     extension = os.path.splitext(filename)[1]
     # logger.info(f"Extension is: {extension}")
     if extension in ALLOWED_EXTENSIONS:
-        logger.info("Correct file extension")
+        # logger.info("Correct file extension")
         return True
     else:
-        logger.info("Incorrect file extension")
+        logger.error("Incorrect file extension")
         return False
     
 def validate_upload(loaded_json):

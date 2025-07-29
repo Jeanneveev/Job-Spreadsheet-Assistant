@@ -4,7 +4,7 @@ question groups
 import os
 import logging
 from flask import Blueprint, request, current_app, session, jsonify
-from ...services import (check_allowed_extension, validate_upload,
+from ...services import (check_allowed_extension_json, validate_upload,
     load_ll_and_details, get_working_qg_info, get_files_display_info)
 from ...utils.linked_list_handler import get_ll
 from werkzeug.utils import secure_filename
@@ -24,7 +24,7 @@ def upload_file():
         return "ERROR: No file selected", 404
     
     # if the file exists and it's of the right extension in the right format
-    if file and check_allowed_extension(file.filename):
+    if file and check_allowed_extension_json(file.filename):
         file_json:list[dict] = json.load(file)   #this puts the file stream pointer at the end
         file.seek(0)    #reset file pointer to the start
         # logger.info(f"File is: {file_json}. Filename is: {file.filename}")

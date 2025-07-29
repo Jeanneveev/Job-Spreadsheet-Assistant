@@ -29,7 +29,20 @@ exportOptBtns.forEach(exportOptBtn => {
             oldCSV.required = false;
         }
     });
-})
+});
+
+/* If Name is changed, select New, if file is uploaded, select old */
+newCSVName.addEventListener("change", () => {
+    if(newCSV.checked == false){
+        newCSV.checked = true;
+    }
+});
+
+oldCSVFile.addEventListener("change", () => {
+    if(oldCSV.checked == false){
+        oldCSV.checked = true;
+    }
+});
 
 /* EXPORT */
 const setSheetsExport = () => {
@@ -61,8 +74,8 @@ const setSheetsExport = () => {
             }
             return response.text();
         })
-        .then(data => {
-            console.log(data);
+        .then(data => console.log(data))
+        .then(() => {
             result.innerText = "Google Sheets";
             submitBtn.disabled = false;
             backBtn.disabled = false;
@@ -75,17 +88,19 @@ const setSheetsExport = () => {
 }
 
 const setCSVExport = () => {
-    const selectedVer = document.querySelector('input[name="csvOpt"]:checked');  //get the checked option
-    const new_or_old = selectedVer.value;
-    if(new_or_old == "new_csv"){
-        
-    }else if(new_or_old == "old_csv"){
-
-    }
-
-    result.innerText = "CSV";
-    submitBtn.disabled = false;
-    backBtn.disabled = false;
+    const formData = new FormData(form);
+    fetch(`${SERVER_URL}/set_export_loc`, {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .then(() => {
+            result.innerText = "CSV";
+            submitBtn.disabled = false;
+            backBtn.disabled = false;
+    })
+    .catch(error => console.error(error))
 }
 
 form.addEventListener("submit", (event) => {
@@ -111,7 +126,7 @@ form.addEventListener("submit", (event) => {
     //if the export method is Google Sheets, login the user and set the given id
     if(selectedOpt == "sheets"){
         setSheetsExport();
-    } else if(selectedOpt == "csv"){
+    } else if(selectedOpt == "csv"){    //if the method is CSV, set up the CSV to be exported to
         setCSVExport();
     }
 });

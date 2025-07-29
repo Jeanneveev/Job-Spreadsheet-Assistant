@@ -222,6 +222,30 @@ window.electron.on("confirm-box-denied", () => {
 })
 
 /* EXPORTING ANSWERS */
+function export_to_sheets(){
+    fetch(`${SERVER_URL}/get_auth_url`, {method: "GET"})
+    .then(response => response.json()).then(data=>{
+        /* Sheets */
+        if(data.auth_url){
+            //send message to ipcMain to open popup and get code
+            window.electron.send("open-auth-window", data.auth_url);
+        }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
+            console.log(data.message);
+            fetch(`${SERVER_URL}/export_data/sheets`, { method: "POST" })
+            .then(response => response.text())
+            .then(data => window.electron.send("open-alert", data))
+            .catch(err => console.error(err));
+        }
+    })
+}
+
+function export_to_csv(){
+    fetch(`${SERVER_URL}/export_data/csv`, { method: "POST" })
+    .then(response => response.text())
+    .then(data => window.electron.send("open-alert", data))
+    .catch(err => console.error(err));
+}
+
 function submitLastQuestion(){
     console.log("Answer submission confirmed");
     /* Temporarily turn off buttons to prevent repeat calls */
@@ -241,24 +265,12 @@ function submitLastQuestion(){
     .then(data => {
         console.log("Export method is: ", data);
         if(data == "sheets"){
-            //NOTE: keeping this fetch in case the app is left open so long the token expires
-            return fetch(`${SERVER_URL}/get_auth_url`, {method: "GET"});
+            export_to_sheets();
+        }else if(data == "csv"){
+            export_to_csv();
         }
-    })  //end of get_export_method chain, start of get_auth_url chain
-    .then(response => response.json()).then(data=>{
-        /* Sheets */
-        if(data.auth_url){
-            //send message to ipcMain to open popup and get code
-            window.electron.send("open-auth-window", data.auth_url);
-        }else if(data.message){ //a valid token.json exists, so there's no need to reauthenticate, just export
-            console.log(data.message);
-            fetch(`${SERVER_URL}/export_data/sheets`, { method: "POST" })
-            .then(response => response.text())
-            .then(data => window.electron.send("open-alert",data))
-            .catch(err => console.error(err));
-        }
-        /* CSV */
-    }).then(() => {
+    })
+    .then(() => {
         //enable all the buttons
         nextBtn.disabled = false;
         prevBtn.disabled = false;

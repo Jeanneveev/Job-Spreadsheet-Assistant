@@ -5,11 +5,12 @@ import os
 import logging
 from flask import Blueprint, request, current_app
 from werkzeug.utils import secure_filename
-from ...utils.export_data_handler import get_export_data
+from ...utils.export_data_handler import get_export_data, override_export_data
 from ...utils.linked_list_handler import get_ll
 from ...models import LinkedList
 from ...services import (get_all_answers, set_export_method,
-    get_service_from_auth_url_str, export_data_to_sheets, set_new_export_csv, set_old_export_csv)
+    get_service_from_auth_url_str, export_data_to_sheets,
+    set_new_export_csv, set_old_export_csv, export_data_to_csv)
 
 logger = logging.getLogger(__name__)
 export_bp = Blueprint("export", __name__)
@@ -34,11 +35,13 @@ def set_export_loc():
     new_or_old = request.form["csvOpt"]
 
     if "new" in new_or_old:
+        logger.info("Setting new loc path")
         try:
             path = set_new_export_csv(form)
         except FileExistsError as e:
             return str(e), 409
     elif "old" in new_or_old:
+        logger.info("Setting old loc path")
         try:
             path = set_old_export_csv(request.files)
         except FileNotFoundError as e:
@@ -46,6 +49,7 @@ def set_export_loc():
     
     export_data = get_export_data(current_app)
     export_data.loc = path
+    # logger.info(f"export loc is {export_data.loc}")
 
     return "Export location set"
 
@@ -109,5 +113,14 @@ def export_sheets():
         result_msg = export_data_to_sheets()
     except Exception as e:
         return str(e), 401
+    
+    return result_msg
+
+@export_bp.route("/export_data/csv", methods=["POST"])
+def export_csv():
+    try:
+        result_msg = export_data_to_csv()
+    except Exception as e:
+        return str(e), 400
     
     return result_msg

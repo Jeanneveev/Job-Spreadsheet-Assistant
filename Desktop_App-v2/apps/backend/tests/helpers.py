@@ -45,19 +45,14 @@ def build_test_export_data(test_client:FlaskClient, args:dict=None):
                 match k:
                     case "data":
                         app.export_data.data = v
-                        break
                     case "method":
                         app.export_data.method = v
-                        break
                     case "service":
                         app.export_data.service = v
-                        break
                     case "loc":
                         app.export_data.loc = v
-                        break
                     case "sheet_id":
                         app.export_data.sheet_id = v
-                        break
                     case _:
                         break
 

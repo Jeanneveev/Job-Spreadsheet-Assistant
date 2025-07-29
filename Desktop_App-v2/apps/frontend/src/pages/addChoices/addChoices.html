@@ -109,12 +109,12 @@
 
             form.addEventListener("submit", (event) => {
                 event.preventDefault();
-                const formData=new FormData(form);
-                const formDict=Object.fromEntries(formData);
+                const formData = new FormData(form);
+                const formDict = Object.fromEntries(formData);
                 console.log(formDict);
-                let optionsLst=[]
+                let optionsLst = []
                 Object.entries(formDict).forEach(([key,value]) => {
-                    if(value!=""){
+                    if(value != ""){
                         optionsLst.push(value);
                     }
                 });
@@ -137,8 +137,8 @@
                             body: JSON.stringify({options:optionsLst}),
                         });
                     }
-                }).then(response => response.text()).then(data=>console.log(data))
-                .catch((err)=>console.error(err));
+                }).then(response => response.text()).then(data => console.log(data))
+                .catch((err) => console.error(err));
             });
 
             function closePopup() {
