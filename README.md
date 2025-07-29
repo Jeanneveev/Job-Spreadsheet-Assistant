@@ -37,5 +37,5 @@ To export to a Google Sheets spreadsheet, also do the following:
 7. Click the "Answer Questions" button
 8. Answer your created questions until you reach the confirmation popup
 9. If you are sure of your answers, click "Yes"
-10. The data you entered will be appended to the end of your export method of choice and you will recieve a confirmation message
-11. From here, you can click "Back to Home" and "Answer Questions" again to enter data about a different job, or close the app
+10. The data you entered will be appended to the end of your export method of choice and you will recieve a success notification
+11. Close the notification by clicking "Ok" to return to the home page
