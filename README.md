@@ -37,5 +37,5 @@ To export to a Google Sheets spreadsheet, also do the following:
 7. Click the "Answer Questions" button
 8. Answer your created questions until you reach the confirmation popup
 9. If you are sure of your answers, click "Yes"
-10. The data you entered will be appended to the end of your export method of choice and you will recieve a success notification
+10. The data you entered will be appended to the end of your export method of choice and you will recieve a success notification popup
 11. Close the notification by clicking "Ok" to return to the home page

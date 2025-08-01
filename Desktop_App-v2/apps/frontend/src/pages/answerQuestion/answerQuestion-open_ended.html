@@ -14,7 +14,7 @@
             <button type="submit" id="previous">Previous</button>
             <button type="reset" id="reset">Reset</button>
         </form>
-        <button id="home" onclick="window.location.href='../../index.html'">Back to Home</button>
+        <button id="home">Back to Home</button>
         <!-- Include all the shared functions from JS file -->
         <script src="answerQuestion.js"></script>
         <!-- open-ended.html specific JS -->
@@ -28,9 +28,7 @@
             // When an input is entered, change button text
             input.addEventListener('input', e => {
                 nextBtn.innerHTML="Next";
-            });
-
-            
+            });            
         </script>
     </body>
 </html>

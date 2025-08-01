@@ -71,8 +71,10 @@ def get_prev_question():
     """
     ll:LinkedList = get_ll(current_app)
     (curr_node, curr_question) = get_current_node_and_question(ll)
+    prev_q_display_info:dict = get_prev_question_display_info(curr_node, curr_question)
 
-    return jsonify(get_prev_question_display_info(curr_node, curr_question))
+    logger.info(f"previous q data is: {prev_q_display_info}")
+    return jsonify(prev_q_display_info)
     
 
 @answ_bp.route("/set_answer", methods=["POST"])

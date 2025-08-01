@@ -138,11 +138,11 @@ function loadPreviousQuestion(){
             return;
         }
 
-        if(data.is_first){ //the previous question is the first question
+        if(data.is_first == "true"){ //the previous question is the first question
             sessionStorage.setItem("first_q", "true");  //reset flag
         }else{
             /* Set session variables */
-            sessionStorage.setItem("next_q_str",data.q_str);
+            sessionStorage.setItem("next_q_str", data.q_str);
             sessionStorage.setItem("is_last", "false");  //always false because the current question exists
         }
         
@@ -183,13 +183,13 @@ function loadNextQuestion(){
     });
 }
 
-function addFormListener(openEndedFlag){
+function addFormListener(isOpenEnded){
     form.addEventListener("submit", (event)=>{
         event.preventDefault();
         submitterId = event.submitter.id;
         if(submitterId == "next"){
             /* Pass the answer to the backend, the value depending on the a_type */
-            if(openEndedFlag){
+            if(isOpenEnded){
                 submitAnswer(input.value);
             }else{
                 submitAnswer(document.querySelector('input[name="option"]:checked').labels[0].textContent);
@@ -273,7 +273,7 @@ function submitLastQuestion(){
     .catch(err => console.error("Export request failed",err));
 }
 
-window.electron.on("notification-closed", () => {
+function returnToHome(){
     fetch(`${SERVER_URL}/reset_answer_form`, { method: "DELETE" })
     .then(response => response.text())
     .then(data => console.log(data))
@@ -282,6 +282,14 @@ window.electron.on("notification-closed", () => {
         window.location.href = "../../index.html";
     })
     .catch(err => console.error(err));
+}
+
+window.electron.on("notification-closed", () => {
+    returnToHome();
+})
+
+homeBtn.addEventListener("click", () => {
+    returnToHome();
 })
 
 /* Listen for the trigger from ipcMain in main.js
